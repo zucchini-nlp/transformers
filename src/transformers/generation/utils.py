@@ -1348,6 +1348,15 @@ class GenerationMixin:
         inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(
             inputs, generation_config.bos_token_id, model_kwargs
         )
+        
+        # if we got input ids and it is a multimodal LLM, concatenate its soft prompts and extend attn mask
+        # i will get a better check later
+        if (
+            model_input_name != "inputs_embeds"
+            and hasattr(self, "_merge_input_ids_with_image_features")
+            and generation_config.use_cache
+        ):
+            inputs_tensor, model_kwargs = self._merge_input_ids_with_image_features(inputs_tensor, **model_kwargs)
         batch_size = inputs_tensor.shape[0]
 
         # 4. Define other model kwargs
@@ -1489,6 +1498,13 @@ class GenerationMixin:
                 raise ValueError("assisted generate is only supported for batch_size = 1")
             if not model_kwargs["use_cache"]:
                 raise ValueError("assisted generate requires `use_cache=True`")
+
+            if "inputs_embeds" in model_kwargs and input_ids.shape[-1] > 0:
+                model_kwargs.pop("inputs_embeds")
+            elif "inputs_embeds" in model_kwargs:
+                raise NotImplementedError(
+                    "Assisted decoding currently does not support generation from `inputs_embeds`"
+                )
 
             # 11. Get the candidate generator, given the parameterization
             candidate_generator = self._get_candidate_generator(
@@ -4547,9 +4563,9 @@ class GenerationMixin:
             # 2.1. Prepare the model inputs
             candidate_kwargs = copy.copy(model_kwargs)
             candidate_kwargs = _prepare_attention_mask(
-                candidate_kwargs, candidate_input_ids.shape[1], self.config.is_encoder_decoder
+                candidate_kwargs, candidate_length, self.config.is_encoder_decoder
             )
-            candidate_kwargs = _prepare_token_type_ids(candidate_kwargs, candidate_input_ids.shape[1])
+            candidate_kwargs = _prepare_token_type_ids(candidate_kwargs, candidate_length)
 
             model_inputs = self.prepare_inputs_for_generation(candidate_input_ids, **candidate_kwargs)
 
@@ -4615,8 +4631,9 @@ class GenerationMixin:
             new_cur_len = input_ids.shape[-1]
 
             # 4.2. Discard past key values relative to unused assistant tokens
-            new_cache_size = new_cur_len - 1
-            outputs.past_key_values = _crop_past_key_values(self, outputs.past_key_values, new_cache_size)
+            outputs.past_key_values = _crop_past_key_values(
+                self, outputs.past_key_values, candidate_length - n_matches
+            )
 
             # 5. Update the candidate generation strategy if needed
             candidate_generator.update_candidate_strategy(input_ids, new_logits, n_matches)
@@ -4668,7 +4685,7 @@ class GenerationMixin:
                         )
 
             model_kwargs = self._update_model_kwargs_for_generation(
-                outputs, model_kwargs, is_encoder_decoder=self.config.is_encoder_decoder, model_inputs=model_inputs
+                outputs, candidate_kwargs, is_encoder_decoder=self.config.is_encoder_decoder, model_inputs=model_inputs
             )
 
             # if eos_token was found in one sentence, set sentence to finished

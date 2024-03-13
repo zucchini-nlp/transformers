@@ -182,15 +182,14 @@ class AssistedCandidateGenerator(CandidateGenerator):
         # (which implicitly contains the number of accepted candidates from the previous round)
         has_past_key_values = self.assistant_kwargs.get("past_key_values", None) is not None
         if has_past_key_values:
-            new_cache_size = new_cur_len - 1
             self.assistant_kwargs["past_key_values"] = _crop_past_key_values(
-                self.assistant_model, self.assistant_kwargs["past_key_values"], new_cache_size - 1
+                self.assistant_model, self.assistant_kwargs["past_key_values"], self.length_to_remove
             )  # the assistant does not have the token after the last match, hence the -1
 
             self.assistant_kwargs = _prepare_attention_mask(
-                self.assistant_kwargs, new_cur_len, self.assistant_model.config.is_encoder_decoder
+                self.assistant_kwargs, self.max_diff_length, self.assistant_model.config.is_encoder_decoder
             )
-            self.assistant_kwargs = _prepare_token_type_ids(self.assistant_kwargs, new_cur_len)
+            self.assistant_kwargs = _prepare_token_type_ids(self.assistant_kwargs, self.max_diff_length)
 
         # 2. Forecast next N tokens using the assistant model.
         assistant_generation_kwargs = {
@@ -226,6 +225,8 @@ class AssistedCandidateGenerator(CandidateGenerator):
         # Adjust the max number of assistant tokens to use in the next iteration. This is a simple heuristic,
         # probably can be improved -- we want to balance the benefits of getting assistant tokens correct with the
         # cost of forecasting incorrect assistant tokens.
+        self.max_diff_length = num_matches + 1
+        self.length_to_remove = int(self.num_assistant_tokens - num_matches)
         if self.assistant_model.generation_config.num_assistant_tokens_schedule in {
             "heuristic",
             "heuristic_transient",
@@ -328,15 +329,19 @@ class PromptLookupCandidateGenerator(CandidateGenerator):
         return
 
 
-def _crop_past_key_values(model, past_key_values, maximum_length):
+def _crop_past_key_values(model, past_key_values, length_to_remove):
     """Crops the past key values up to a certain maximum length."""
+
+    if length_to_remove == 0:
+        return past_key_values
+
     new_past = []
     if model.config.is_encoder_decoder:
         for idx in range(len(past_key_values)):
             new_past.append(
                 (
-                    past_key_values[idx][0][:, :, :maximum_length, :],
-                    past_key_values[idx][1][:, :, :maximum_length, :],
+                    past_key_values[idx][0][:, :, :-length_to_remove, :],
+                    past_key_values[idx][1][:, :, :-length_to_remove, :],
                     past_key_values[idx][2],
                     past_key_values[idx][3],
                 )
@@ -349,8 +354,8 @@ def _crop_past_key_values(model, past_key_values, maximum_length):
         for idx in range(len(past_key_values)):
             new_past.append(
                 (
-                    past_key_values[idx][0][:, :, :maximum_length],
-                    past_key_values[idx][1][:, :maximum_length, :],
+                    past_key_values[idx][0][:, :, :-length_to_remove],
+                    past_key_values[idx][1][:, :-length_to_remove, :],
                 )
             )
         past_key_values = tuple(new_past)
@@ -360,23 +365,25 @@ def _crop_past_key_values(model, past_key_values, maximum_length):
     ):
         if model.config.multi_query:
             for idx in range(len(past_key_values)):
-                past_key_values[idx] = past_key_values[idx][:, :maximum_length, :]
+                past_key_values[idx] = past_key_values[idx][:, :-length_to_remove, :]
         else:
             for idx in range(len(past_key_values)):
-                past_key_values[idx] = past_key_values[idx][:, :, :maximum_length, :]
+                past_key_values[idx] = past_key_values[idx][:, :, :-length_to_remove, :]
     else:
         for idx in range(len(past_key_values)):
             new_past.append(
                 (
-                    past_key_values[idx][0][:, :, :maximum_length, :],
-                    past_key_values[idx][1][:, :, :maximum_length, :],
+                    past_key_values[idx][0][:, :, :-length_to_remove, :],
+                    past_key_values[idx][1][:, :, :-length_to_remove, :],
                 )
             )
         past_key_values = tuple(new_past)
     return past_key_values
 
 
-def _prepare_attention_mask(model_kwargs: Dict[str, Any], new_length: int, is_encoder_decoder: bool) -> Dict[str, Any]:
+def _prepare_attention_mask(
+    model_kwargs: Dict[str, Any], mask_length_diff: int, is_encoder_decoder: bool
+) -> Dict[str, Any]:
     """Expands or crops the model's mask for decoding purposes, to the defined length"""
 
     mask_key = "decoder_attention_mask" if is_encoder_decoder else "attention_mask"
@@ -384,7 +391,6 @@ def _prepare_attention_mask(model_kwargs: Dict[str, Any], new_length: int, is_en
         return model_kwargs
 
     mask = model_kwargs[mask_key]
-    mask_length_diff = new_length - mask.shape[1]
 
     if mask_length_diff < 0:
         model_kwargs[mask_key] = mask[:, :mask_length_diff]
@@ -393,14 +399,13 @@ def _prepare_attention_mask(model_kwargs: Dict[str, Any], new_length: int, is_en
     return model_kwargs
 
 
-def _prepare_token_type_ids(model_kwargs: Dict[str, Any], new_length: int) -> Dict[str, Any]:
+def _prepare_token_type_ids(model_kwargs: Dict[str, Any], type_length_diff: int) -> Dict[str, Any]:
     """Expands or crops the model's token_type_ids for decoding purposes, to the defined length"""
     if "token_type_ids" not in model_kwargs or model_kwargs["token_type_ids"] is None:
         return model_kwargs
 
     token_type_ids = model_kwargs["token_type_ids"]
     final_token_type = token_type_ids[:, -1].unsqueeze(-1)
-    type_length_diff = new_length - token_type_ids.shape[1]
 
     if type_length_diff < 0:
         token_type_ids = token_type_ids[:, :type_length_diff]
