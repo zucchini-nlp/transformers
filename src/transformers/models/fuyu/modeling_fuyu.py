@@ -59,6 +59,9 @@ class FuyuPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = True
     _no_split_modules = []
     _skip_keys_device_placement = "past_key_values"
+    _supports_cache_class = True
+    _supports_quantized_cache = True
+    _supports_static_cache = True
 
     def _init_weights(self, module):
         std = self.config.initializer_range
@@ -138,6 +141,10 @@ FUYU_INPUTS_DOCSTRING = r"""
             more detail.
         return_dict (`bool`, *optional*):
             Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
+        cache_position (`torch.LongTensor` of shape `(sequence_length)`, *optional*):
+            Indices depicting the position of the input sequence tokens in the sequence. Contrarily to `position_ids`,
+            this tensor is not affected by padding. It is used to update the cache in the correct position and to infer
+            the complete sequence length.
 """
 
 
@@ -226,6 +233,7 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        cache_position: Optional[torch.LongTensor] = None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         r"""
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
@@ -266,28 +274,16 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
 
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
-        if input_ids is not None and inputs_embeds is not None:
-            raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
-        elif input_ids is not None:
-            batch_size, seq_length = input_ids.shape
-        elif inputs_embeds is not None:
-            batch_size, seq_length, _ = inputs_embeds.shape
-        else:
-            raise ValueError("You have to specify either input_is or inputs_embeds")
-
-        seq_length_with_past = seq_length
-        past_key_values_length = 0
-
-        if past_key_values is not None:
-            past_key_values_length = past_key_values[0][0].shape[2]
-            seq_length_with_past = seq_length_with_past + past_key_values_length
-
-        if position_ids is None:
-            device = input_ids.device if input_ids is not None else inputs_embeds.device
-            position_ids = torch.arange(
-                past_key_values_length, seq_length + past_key_values_length, dtype=torch.long, device=device
+        if (input_ids is None) ^ (inputs_embeds is not None):
+            raise ValueError(
+                "You cannot specify both input_ids and inputs_embeds at the same time, and must specify either one"
             )
-            position_ids = position_ids.unsqueeze(0)
+
+        if self.gradient_checkpointing and self.training and use_cache:
+            logger.warning_once(
+                "`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`."
+            )
+            use_cache = False
 
         if inputs_embeds is None:
             inputs_embeds = self.language_model.get_input_embeddings()(input_ids)
@@ -314,6 +310,7 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
             labels=labels,
             use_cache=use_cache,
             return_dict=return_dict,
+            cache_position=cache_position,
         )
 
         return outputs
@@ -326,10 +323,38 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
         inputs_embeds=None,
         image_patches=None,
         image_patches_indices=None,
+        cache_position=None,
         **kwargs,
     ):
-        if past_key_values:
-            input_ids = input_ids[:, -1:]
+        past_length = 0
+        if past_key_values is not None:
+            # Past key values are always initialized with a `Cache` object -> no need for if-else anymore
+            past_length = cache_position[0] if cache_position is not None else past_key_values.get_seq_length()
+            max_cache_length = (
+                torch.tensor(past_key_values.get_max_length(), device=input_ids.device)
+                if past_key_values.get_max_length() is not None
+                else None
+            )
+            cache_length = past_length if max_cache_length is None else torch.min(max_cache_length, past_length)
+
+            # Keep only the unprocessed tokens:
+            # 1 - If the length of the attention_mask exceeds the length of input_ids, then we are in a setting where
+            # some of the inputs are exclusively passed as part of the cache (e.g. when passing input_embeds as input)
+            if attention_mask is not None and attention_mask.shape[1] > input_ids.shape[1]:
+                input_ids = input_ids[:, -(attention_mask.shape[1] - past_length) :]
+            # 2 - If the past_length is smaller than input_ids', then input_ids holds all input tokens. We can discard
+            # input_ids based on the past_length.
+            elif past_length < input_ids.shape[1]:
+                input_ids = input_ids[:, past_length:]
+            # 3 - Otherwise (past_length >= input_ids.shape[1]), let's assume input_ids only has unprocessed tokens.
+
+            # If we are about to go beyond the maximum cache length, we need to crop the input attention mask.
+            if (
+                max_cache_length is not None
+                and attention_mask is not None
+                and cache_length + input_ids.shape[1] > max_cache_length
+            ):
+                attention_mask = attention_mask[:, -max_cache_length:]
 
         position_ids = kwargs.get("position_ids", None)
         if attention_mask is not None and position_ids is None:
@@ -340,7 +365,7 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
                 position_ids = position_ids[:, -1].unsqueeze(-1)
 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
-        if inputs_embeds is not None and past_key_values is None:
+        if inputs_embeds is not None and past_length == 0:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
             model_inputs = {"input_ids": input_ids}
@@ -356,6 +381,7 @@ class FuyuForCausalLM(FuyuPreTrainedModel):
                 "attention_mask": attention_mask,
                 "image_patches_indices": image_patches_indices if past_key_values is None else None,
                 "image_patches": image_patches if past_key_values is None else None,
+                "cache_position": cache_position,
             }
         )
         return model_inputs

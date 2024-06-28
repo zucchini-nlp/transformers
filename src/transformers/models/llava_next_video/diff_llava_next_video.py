@@ -29,7 +29,6 @@ from transformers.models.llava_next.modeling_llava_next import (
     image_size_to_num_patches,
 )
 
-from ...cache_utils import Cache
 from ...utils import (
     logging,
     replace_return_docstrings,
@@ -504,12 +503,16 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
         attention_mask=None,
         **kwargs,
     ):
+        past_length = 0
         if past_key_values is not None:
-            if isinstance(past_key_values, Cache):
-                cache_length = past_key_values.get_seq_length()
-                past_length = past_key_values.seen_tokens
-            else:
-                cache_length = past_length = past_key_values[0][0].shape[2]
+            # Past key values are always initialized with a `Cache` object -> no need for if-else anymore
+            past_length = past_key_values.get_seq_length()
+            max_cache_length = (
+                torch.tensor(past_key_values.get_max_length(), device=input_ids.device)
+                if past_key_values.get_max_length() is not None
+                else None
+            )
+            cache_length = past_length if max_cache_length is None else torch.min(max_cache_length, past_length)
 
             # Keep only the unprocessed tokens:
             # 1 - If the length of the attention_mask exceeds the length of input_ids, then we are in a setting where
@@ -526,10 +529,13 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
             elif self.config.image_token_index in input_ids or self.config.video_token_index in input_ids:
                 input_ids = input_ids[:, input_ids.shape[1] - 1 :]
 
-            # If the cache has seen more tokens than it can hold, then the cache has a size limit. Let's discard the
-            # older attention values, as their corresponding values are not part of the input.
-            if cache_length < past_length and attention_mask is not None:
-                attention_mask = attention_mask[:, -(cache_length + input_ids.shape[1]) :]
+            # If we are about to go beyond the maximum cache length, we need to crop the input attention mask.
+            if (
+                max_cache_length is not None
+                and attention_mask is not None
+                and cache_length + input_ids.shape[1] > max_cache_length
+            ):
+                attention_mask = attention_mask[:, -max_cache_length:]
 
         position_ids = kwargs.get("position_ids", None)
         if attention_mask is not None and position_ids is None:
@@ -540,7 +546,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
                 position_ids = position_ids[:, -input_ids.shape[1] :]
 
         # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
-        if inputs_embeds is not None and past_key_values is None:
+        if inputs_embeds is not None and past_length == 0:
             model_inputs = {"inputs_embeds": inputs_embeds}
         else:
             model_inputs = {"input_ids": input_ids}
