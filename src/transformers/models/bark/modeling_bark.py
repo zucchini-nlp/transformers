@@ -576,6 +576,9 @@ class BarkCausalModel(BarkPreTrainedModel):
     def set_input_embeddings(self, new_embeddings):
         self.input_embeds_layer = new_embeddings
 
+    def get_output_embeddings(self):
+        return self.lm_head
+
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, **kwargs):
         input_embeds = kwargs.get("input_embeds", None)
 

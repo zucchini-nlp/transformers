@@ -1291,6 +1291,9 @@ class ClvpForCausalLM(ClvpPreTrainedModel):
     def get_input_embeddings(self):
         return self.model.decoder.input_embeds_layer
 
+    def get_output_embeddings(self):
+        return self.lm_head
+
     def set_input_embeddings(self, new_embeddings):
         self.model.decoder.input_embeds_layer = new_embeddings
 

@@ -1559,6 +1559,17 @@ class GenerationMixin:
         generation_config.pad_token_id = pad_token_id
         generation_config.decoder_start_token_id = decoder_start_token_id
 
+    @property
+    def lm_head_device(self) -> torch.device:
+        """
+        `torch.device`: The device on which the module will output the logits.
+        """
+        lm_head = self.get_output_embeddings()
+        # some models like bark, musicgen have several lm-heads
+        if isinstance(lm_head, torch.nn.ModuleList):
+            return lm_head[0].weight.device
+        return lm_head.weight.device
+
     @torch.no_grad()
     def generate(
         self,
@@ -1847,7 +1858,7 @@ class GenerationMixin:
             encoder_input_ids=inputs_tensor,
             prefix_allowed_tokens_fn=prefix_allowed_tokens_fn,
             logits_processor=logits_processor,
-            device=inputs_tensor.device,
+            device=self.lm_head_device,  # we need to have device aligned with the out.logits device
             model_kwargs=model_kwargs,
             negative_prompt_ids=negative_prompt_ids,
             negative_prompt_attention_mask=negative_prompt_attention_mask,
@@ -1857,6 +1868,13 @@ class GenerationMixin:
         prepared_stopping_criteria = self._get_stopping_criteria(
             generation_config=generation_config, stopping_criteria=stopping_criteria, tokenizer=tokenizer, **kwargs
         )
+
+        # Compatibility with Accelerate big model inference: we need the encoder to outputs stuff on the same device
+        # as the inputs.
+        # if hasattr(self, "_hf_hook"):
+        #     self._hf_hook.io_same_device = True
+        # else:
+        #     add_hook_to_module(self, AlignDevicesHook(execution_device=self.device, io_same_device=True))
 
         # 10. go into different generation modes
         if generation_mode == GenerationMode.ASSISTED_GENERATION:
@@ -2898,6 +2916,8 @@ class GenerationMixin:
         """
         # init values
         pad_token_id = generation_config.pad_token_id
+        if pad_token_id is not None:  # send to out.logits device for multi-gpu inference
+            pad_token_id = pad_token_id.to(self.lm_head_device)
         output_attentions = generation_config.output_attentions
         output_hidden_states = generation_config.output_hidden_states
         output_scores = generation_config.output_scores
@@ -2928,7 +2948,7 @@ class GenerationMixin:
         # keep track of which sequences are already finished
         batch_size = input_ids.shape[0]
         this_peer_finished = False
-        unfinished_sequences = torch.ones(batch_size, dtype=torch.long, device=input_ids.device)
+        unfinished_sequences = torch.ones(batch_size, dtype=torch.long, device=self.lm_head_device)
         model_kwargs = self._get_initial_cache_position(input_ids, model_kwargs)
 
         while self._has_unfinished_sequences(this_peer_finished, synced_gpus, device=input_ids.device):
@@ -2950,6 +2970,7 @@ class GenerationMixin:
             next_token_logits = outputs.logits[:, -1, :].clone()
 
             # pre-process distribution
+            print(logits_processor)
             next_token_scores = logits_processor(input_ids, next_token_logits)
             if do_sample:
                 next_token_scores = logits_warper(input_ids, next_token_scores)
@@ -2982,6 +3003,13 @@ class GenerationMixin:
                 next_tokens = torch.argmax(next_token_scores, dim=-1)
 
             # finished sentences should have their next token be a padding token
+            print(
+                self.device,
+                next_tokens.device,
+                pad_token_id.device,
+                unfinished_sequences.device,
+                self.__class__.__name__,
+            )
             if has_eos_stopping_criteria:
                 next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences)
 
