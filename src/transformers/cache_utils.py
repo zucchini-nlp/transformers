@@ -2,14 +2,27 @@ import copy
 import importlib.metadata
 import json
 import os
+import warnings
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from packaging import version
 
+from .. import __version__
 from .configuration_utils import PretrainedConfig
-from .utils import is_hqq_available, is_quanto_available, logging
+from .utils import (
+    CACHE_CONFIG_NAME,
+    ExplicitEnum,
+    PushToHubMixin,
+    cached_file,
+    download_url,
+    extract_commit_hash,
+    is_hqq_available,
+    is_quanto_available,
+    is_remote_url,
+    logging,
+)
 
 
 if is_quanto_available():
@@ -20,6 +33,7 @@ if is_quanto_available():
 if is_hqq_available():
     from hqq.core.quantize import Quantizer as HQQQuantizer
 
+METADATA_FIELDS = ("_from_model_config", "_commit_hash", "_original_object_hash", "transformers_version")
 logger = logging.get_logger(__name__)
 
 
@@ -94,105 +108,9 @@ class Cache:
         else:
             return None
 
-
+# Kept for BC, have to deprecate and use a general CacheConfig
 @dataclass
-class CacheConfig:
-    """
-    Base class for cache configs
-    """
-
-    cache_implementation: None
-
-    @classmethod
-    def from_dict(cls, config_dict, **kwargs):
-        """
-        Constructs a CacheConfig instance from a dictionary of parameters.
-        Args:
-            config_dict (Dict[str, Any]): Dictionary containing configuration parameters.
-            **kwargs: Additional keyword arguments to override dictionary values.
-        Returns:
-            CacheConfig: Instance of CacheConfig constructed from the dictionary.
-        """
-        config = cls(**config_dict)
-        to_remove = []
-        for key, value in kwargs.items():
-            if hasattr(config, key):
-                setattr(config, key, value)
-                to_remove.append(key)
-        for key in to_remove:
-            kwargs.pop(key, None)
-        return config
-
-    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.to_json_file
-    def to_json_file(self, json_file_path: Union[str, os.PathLike]):
-        """
-        Save this instance to a JSON file.
-
-        Args:
-            json_file_path (`str` or `os.PathLike`):
-                Path to the JSON file in which this configuration instance's parameters will be saved.
-            use_diff (`bool`, *optional*, defaults to `True`):
-                If set to `True`, only the difference between the config instance and the default
-                `QuantizationConfig()` is serialized to JSON file.
-        """
-        with open(json_file_path, "w", encoding="utf-8") as writer:
-            config_dict = self.to_dict()
-            json_string = json.dumps(config_dict, indent=2, sort_keys=True) + "\n"
-
-            writer.write(json_string)
-
-    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.to_dict
-    def to_dict(self) -> Dict[str, Any]:
-        """
-        Serializes this instance to a Python dictionary. Returns:
-            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance.
-        """
-        return copy.deepcopy(self.__dict__)
-
-    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__iter__
-    def __iter__(self):
-        """allows `dict(obj)` for situations where obj may be a dict or QuantizationConfigMixin"""
-        for attr, value in copy.deepcopy(self.__dict__).items():
-            yield attr, value
-
-    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__repr__
-    def __repr__(self):
-        return f"{self.__class__.__name__} {self.to_json_string()}"
-
-    def to_json_string(self):
-        """
-        Serializes this instance to a JSON formatted string.
-        Returns:
-            str: JSON formatted string representing the configuration instance.
-        """
-        return json.dumps(self.__dict__, indent=2) + "\n"
-
-    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.update
-    def update(self, **kwargs):
-        """
-        Updates attributes of this class instance with attributes from `kwargs` if they match existing attributes,
-        returning all the unused kwargs.
-
-        Args:
-            kwargs (`Dict[str, Any]`):
-                Dictionary of attributes to tentatively update this class.
-
-        Returns:
-            `Dict[str, Any]`: Dictionary containing all the key-value pairs that were not used to update the instance.
-        """
-        to_remove = []
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-                to_remove.append(key)
-
-        # Remove all the attributes that were updated, without modifying the input dict
-        unused_kwargs = {key: value for key, value in kwargs.items() if key not in to_remove}
-        return unused_kwargs
-
-
-@dataclass
-class QuantizedCacheConfig(CacheConfig):
+class QuantizedCacheConfig:
     """
     Configuration class for quantized cache settings.
 
@@ -289,6 +207,73 @@ class QuantizedCacheConfig(CacheConfig):
                 ),
             )
 
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.to_json_file
+    def to_json_file(self, json_file_path: Union[str, os.PathLike]):
+        """
+        Save this instance to a JSON file.
+
+        Args:
+            json_file_path (`str` or `os.PathLike`):
+                Path to the JSON file in which this configuration instance's parameters will be saved.
+            use_diff (`bool`, *optional*, defaults to `True`):
+                If set to `True`, only the difference between the config instance and the default
+                `QuantizationConfig()` is serialized to JSON file.
+        """
+        with open(json_file_path, "w", encoding="utf-8") as writer:
+            config_dict = self.to_dict()
+            json_string = json.dumps(config_dict, indent=2, sort_keys=True) + "\n"
+
+            writer.write(json_string)
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.to_dict
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary. Returns:
+            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance.
+        """
+        return copy.deepcopy(self.__dict__)
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__iter__
+    def __iter__(self):
+        """allows `dict(obj)` for situations where obj may be a dict or QuantizationConfigMixin"""
+        for attr, value in copy.deepcopy(self.__dict__).items():
+            yield attr, value
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__repr__
+    def __repr__(self):
+        return f"{self.__class__.__name__} {self.to_json_string()}"
+
+    def to_json_string(self):
+        """
+        Serializes this instance to a JSON formatted string.
+        Returns:
+            str: JSON formatted string representing the configuration instance.
+        """
+        return json.dumps(self.__dict__, indent=2) + "\n"
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.update
+    def update(self, **kwargs):
+        """
+        Updates attributes of this class instance with attributes from `kwargs` if they match existing attributes,
+        returning all the unused kwargs.
+
+        Args:
+            kwargs (`Dict[str, Any]`):
+                Dictionary of attributes to tentatively update this class.
+
+        Returns:
+            `Dict[str, Any]`: Dictionary containing all the key-value pairs that were not used to update the instance.
+        """
+        to_remove = []
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+                to_remove.append(key)
+
+        # Remove all the attributes that were updated, without modifying the input dict
+        unused_kwargs = {key: value for key, value in kwargs.items() if key not in to_remove}
+        return unused_kwargs
+
 
 class DynamicCache(Cache):
     """
@@ -296,6 +281,22 @@ class DynamicCache(Cache):
 
     It stores the Key and Value states as a list of tensors, one for each layer. The expected shape for each tensor is
     `[batch_size, num_heads, seq_len, head_dim]`.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, DynamicCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> past_key_values = DynamicCache()
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
     def __init__(self) -> None:
@@ -461,11 +462,11 @@ class QuantizedCache(DynamicCache):
     is `[batch_size, num_heads, seq_len - residual_length, head_dim]`
     """
 
-    def __init__(self, cache_config: QuantizedCacheConfig) -> None:
+    def __init__(self, cache_config: Union[QuantizedCacheConfig, CacheConfig]) -> None:
         self._quantized_key_cache: List[torch.Tensor] = []
         self._quantized_value_cache: List[torch.Tensor] = []
 
-        self.nbits = cache_config.nbits
+        self.nbits = cache_config.get("nbits") or cache_config.get("quant_nbits")
         self.residual_length = cache_config.residual_length
         self.q_group_size = cache_config.q_group_size
         self.axis_key = cache_config.axis_key
@@ -541,9 +542,27 @@ class QuantoQuantizedCache(QuantizedCache):
     Parameters:
         cache_config (`QuantizedCacheConfig`,):
             A configuration containing all the arguments to be used by the quantizer, including axis, qtype and group size.
+
+    Example:
+
+        ```python
+        >>> # Run pip install quanto first if you don't have it yet
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, QuantoQuantizedCache, QuantizedCacheConfig
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> cache_config = QuantizedCacheConfig(nbits=4)
+        >>> past_key_values = QuantoQuantizedCache(cache_config=cache_config)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
-    def __init__(self, cache_config: CacheConfig) -> None:
+    def __init__(self, cache_config: QuantizedCacheConfig) -> None:
         super().__init__(cache_config)
         quanto_version = version.parse(importlib.metadata.version("quanto"))
         if quanto_version < version.parse("0.2.0"):
@@ -582,9 +601,27 @@ class HQQQuantizedCache(QuantizedCache):
     Parameters:
         cache_config (`QuantizedCacheConfig`,):
             A configuration containing all the arguments to be used by the quantizer, including axis, qtype and group size.
+
+    Example:
+
+        ```python
+        >>> # Run pip install hqq first if you don't have it yet
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, HQQQuantizedCache, QuantizedCacheConfig
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> cache_config = QuantizedCacheConfig(nbits=4, axis_key=1, axis_value=1)
+        >>> past_key_values = HQQQuantizedCache(cache_config=cache_config)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
-    def __init__(self, cache_config: CacheConfig) -> None:
+    def __init__(self, cache_config: QuantizedCacheConfig) -> None:
         super().__init__(cache_config)
         if self.nbits not in [1, 2, 3, 4, 8]:
             raise ValueError(
@@ -632,6 +669,22 @@ class SinkCache(Cache):
             The length of the context window.
         num_sink_tokens (`int`):
             The number of sink tokens. See the original paper for more information.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, SinkCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> past_key_values = SinkCache(window_length=256, num_sink_tokens=4)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
     def __init__(self, window_length: int, num_sink_tokens: int) -> None:
@@ -800,6 +853,24 @@ class StaticCache(Cache):
             The device on which the cache should be initialized. Should be the same as the layer.
         dtype (*optional*, defaults to `torch.float32`):
             The default `dtype` to use when initializing the layer.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, StaticCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> # Leave empty space for 10 new tokens, which can be used when calling forward iteratively 10 times to generate
+        >>> max_generated_length = inputs.input_ids.shape[1] + 10
+        >>> past_key_values = StaticCache(config=model.config, max_batch_size=1, max_cache_len=max_generated_length, device=model.device, dtype=model.dtype)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
     def __init__(self, config: PretrainedConfig, max_batch_size: int, max_cache_len: int, device, dtype=None) -> None:
@@ -924,6 +995,24 @@ class SlidingWindowCache(StaticCache):
             The device on which the cache should be initialized. Should be the same as the layer.
         dtype (*optional*, defaults to `torch.float32`):
             The default `dtype` to use when initializing the layer.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, SlidingWindowCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai-community/gpt2")
+        >>> tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+
+        >>> inputs = tokenizer(text="My name is GPT2", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> # Leave empty space for 10 new tokens, which can be used when calling forward iteratively 10 times to generate
+        >>> max_generated_length = inputs.input_ids.shape[1] + 10
+        >>> past_key_values = SlidingWindowCache(config=model.config, max_batch_size=1, max_cache_len=max_generated_length, device=model.device, dtype=model.dtype)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
     """
 
     def __init__(self, config: PretrainedConfig, max_batch_size: int, max_cache_len: int, device, dtype=None) -> None:
@@ -1001,6 +1090,25 @@ class EncoderDecoderCache(Cache):
     """
     Base, abstract class for all encoder-decoder caches. Can be used to hold combinations of self-attention and
     cross-attention caches.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoProcessor, AutoModelForCausalLM, DynamicCache, EncoderDecoderCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("openai/whisper-small")
+        >>> processor = AutoProcessor.from_pretrained("openai/whisper-small")
+
+        >>> inputs = processor(audio=YOUR-AUDIO, return_tensors="pt")
+
+        >>> # Prepare cache classes for encoder and decoder and pass it to model's forward
+        >>> self_attention_cache = DynamicCache()
+        >>> cross_attention_cache = DynamicCache()
+        >>> past_key_values = EncoderDecoderCache(self_attention_cache, cross_attention_cache)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
+
     """
 
     def __init__(self, self_attention_cache: Cache, cross_attention_cache: Cache):
@@ -1146,6 +1254,42 @@ class EncoderDecoderCache(Cache):
 
 
 class HybridCache(Cache):
+    """
+    Hybrid Cache class to be used with `torch.compile` for Gemma2 models that alternate between a local sliding window attention
+    and global attention in every other layer. Under the hood, Hybrid Cache leverages ["SlidingWindowCache"] for sliding window attention
+    and ["StaticCache"] for global attention. For more information, see the documentation of each subcomponeent cache class.
+
+    Parameters:
+        config (`PretrainedConfig):
+            The configuration file defining the shape-related attributes required to initialize the static cache.
+        max_batch_size (`int`):
+            The maximum batch size with which the model will be used.
+        max_cache_len (`int`):
+            The maximum sequence length with which the model will be used.
+        device (`torch.device`):
+            The device on which the cache should be initialized. Should be the same as the layer.
+        dtype (*optional*, defaults to `torch.float32`):
+            The default `dtype` to use when initializing the layer.
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, AutoModelForCausalLM, HybridCache
+
+        >>> model = AutoModelForCausalLM.from_pretrained("google/gemma-2-9b")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/gemma-2-9b")
+
+        >>> inputs = tokenizer(text="My name is Gemma", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> # Leave empty space for 10 new tokens, which can be used when calling forward iteratively 10 times to generate
+        >>> max_generated_length = inputs.input_ids.shape[1] + 10
+        >>> past_key_values = HybridCache(config=model.config, max_batch_size=1, max_cache_len=max_generated_length, device=model.device, dtype=model.dtype)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv_length = outputs.past_key_values.get_seq_length()
+        ```
+    """
+
     def __init__(self, config: PretrainedConfig, max_batch_size, max_cache_len, device="cpu", dtype=None) -> None:
         if not hasattr(config, "sliding_window") or config.sliding_window is None:
             raise ValueError(
@@ -1272,18 +1416,44 @@ class MambaCache:
     Cache for mamba model which does not have attention mechanism and key value states.
 
     Arguments:
-        config: MambaConfig
-        max_batch_size: int
-        dtype: torch.dtype
-        device: torch.device
+        config: (`MambaConfig`):
+            The configuration file defining the shape-related attributes required to initialize the static cache.
+        max_batch_size (`int`):
+            The maximum batch size with which the model will be used.
+        device (`torch.device`):
+            The device on which the cache should be initialized. Should be the same as the layer.
+        dtype (*optional*, defaults to `torch.float32`):
+            The default `dtype` to use when initializing the layer.
 
     Attributes:
-        dtype: torch.dtype
-        intermediate_size: int
-        ssm_state_size: int
-        conv_kernel_size: int
-        conv_states: torch.Tensor [layer_idx, batch_size, intermediate_size, conv_kernel_size]
-        ssm_states: torch.Tensor [layer_idx, batch_size, intermediate_size, ssm_state_size]
+        dtype: (`torch.dtype`):
+            The default `dtype` used to initializing the cache.
+        intermediate_size: (`int`):
+            Model's intermediate_size taken from config.
+        ssm_state_size: (`int`):
+            Model's state_size taken from config.
+        conv_kernel_size: (`int`):
+            Model's convolution kernel size taken from config
+        conv_states: (`torch.Tensor`):
+            A tensor of shape `[layer_idx, batch_size, intermediate_size, conv_kernel_size]` that holds convolutional states.
+        ssm_states: (`torch.Tensor`):
+            A tensor of shape `[layer_idx, batch_size, intermediate_size, ssm_state_size]` that holds ssm states
+
+    Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, MambaForCausalLM, MambaCache
+
+        >>> model = MambaForCausalLM.from_pretrained("state-spaces/mamba-130m-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("state-spaces/mamba-130m-hf")
+
+        >>> inputs = tokenizer(text="My name is Mamba", return_tensors="pt")
+
+        >>> # Prepare a cache class and pass it to model's forward
+        >>> past_key_values = MambaCache(config=model.config, max_batch_size=1, device=model.device, dtype=model.dtype)
+        >>> outputs = model(**inputs, past_key_values=past_key_values, use_cache=True)
+        >>> past_kv = outputs.past_key_values
+        ```
     """
 
     def __init__(
@@ -1339,3 +1509,580 @@ class MambaCache:
     def reset(self):
         self.conv_states.zero_()
         self.ssm_states.zero_()
+
+
+class CacheImplementation(ExplicitEnum):
+    """
+    Possible cache implamentations.
+    """
+
+    STATIC = StaticCache
+    SLIDING_WINDOW = SlidingWindowCache
+    HYBRID = HybridCache
+    SINK = SinkCache
+    MAMBA = MambaCache
+    QUANTO_QUANTIZED = QuantoQuantizedCache
+    HQQ_QUANTIZED = HQQQuantizedCache
+
+
+@dataclass
+class CacheConfig(PushToHubMixin):
+    """
+    Configuration class for cache settings that holds specific cache implementation and kwargs used by it.
+
+    Attributes:
+        config (`PretrainedConfig):
+            The configuration file defining the shape-related attributes required to initialize the static cache.
+        max_batch_size (`int`):
+            The maximum batch size with which the model will be used.
+        max_cache_len (`int`):
+            The maximum sequence length with which the model will be used.
+        device (`torch.device`, defaults to `cpu`):
+            The device on which the cache should be initialized. Should be the same as the layer.
+        dtype (*optional*, defaults to `torch.float32`):
+            The default `dtype` to use when initializing the layer.
+    """
+
+    def __init__(
+        self,
+        config: PretrainedConfig,
+        **kwargs,
+    ):
+        # common kwargs
+        self.device = kwargs.pop("device", "cpu")
+        self.dtype = kwargs.pop("dtype", torch.float16)
+
+        # quant cache kwargs
+        self.quant_backend = kwargs.pop("quant_backend", None)
+        self.quant_nbits = kwargs.pop("quant_nbits", None)
+        self.quant_axis_key = kwargs.pop("quant_axis_key", None)
+        self.quant_axis_value = kwargs.pop("quant_axis_value", None)
+        self.quant_group_size = kwargs.pop("quant_group_size", None)
+        self.quant_residual_length = kwargs.pop("quant_residual_length", None)
+
+        # sink cache kwargs
+        self.window_length = kwargs.pop("window_length", None)
+        self.num_sink_tokens = kwargs.pop("num_sink_tokens", None)
+
+        # static cache kwargs
+        self.max_batch_size = kwargs.pop("max_batch_size", None)
+        self.max_cache_len = kwargs.pop("max_cache_len", config.max_position_embeddings)
+
+        # Some model define a custom `head_dim` != config.hidden_size // config.num_attention_heads
+        head_dim = config.head_dim if hasattr(config, "head_dim") else config.hidden_size // config.num_attention_heads
+        num_key_value_heads = (
+            config.num_attention_heads if config.num_key_value_heads is None else config.num_key_value_heads
+        )
+        self.cache_shape = (self.max_batch_size, num_key_value_heads, self.max_cache_len, head_dim)
+
+    def __hash__(self):
+        return hash(self.to_json_string())
+
+    def __eq__(self, other):
+        if not isinstance(other, CacheConfig):
+            return False
+
+        self_without_metadata = self.to_json_string()
+        other_without_metadata = other.to_json_string()
+        return self_without_metadata == other_without_metadata
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__iter__
+    def __iter__(self):
+        """allows `dict(obj)` for situations where obj may be a dict or QuantizationConfigMixin"""
+        for attr, value in copy.deepcopy(self.__dict__).items():
+            yield attr, value
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.__repr__
+    def __repr__(self):
+        return f"{self.__class__.__name__} {self.to_json_string()}"
+
+    def validate(self):
+        """Validates if the arguments passed are correct"""
+
+        # General validation that values make sense
+        incorrect_arg_msg = (
+            "Some of the keys in `cache_config` are defined incorrectly. `{key}` should be {correct_value}` "
+            "but found {found_value}"
+        )
+        if self.quant_nbits not in [1, 2, 3, 4, 8]:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="quant_nbits",
+                    correct_value="2 or 4 or 8",
+                    found_value=self.quant_nbits,
+                ),
+            )
+        if self.quant_group_size <= 0:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="quant_group_size",
+                    correct_value="a positive integer",
+                    found_value=self.quant_group_size,
+                ),
+            )
+        if self.quant_residual_length < 0:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="quant_residual_length",
+                    correct_value="a positive integer",
+                    found_value=self.quant_residual_length,
+                ),
+            )
+
+        if self.quant_axis_key not in [0, 1, -1]:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="quant_axis_key",
+                    correct_value="`1` or `0`, `-1`",
+                    found_value=self.quant_axis_key,
+                ),
+            )
+
+        if self.quant_axis_value not in [0, 1, -1]:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="quant_axis_value",
+                    correct_value="`1` or `0` or `-1`",
+                    found_value=self.quant_axis_value,
+                ),
+            )
+
+        if not isinstance(self.device, torch.device) and self.device not in ["cpu", "cuda", "mps"]:
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="device",
+                    correct_value="'cpu' or 'cuda' or 'mps'",
+                    found_value=self.device,
+                ),
+            )
+        if not isinstance(self.dtype, torch.dtype):
+            raise ValueError(
+                incorrect_arg_msg.format(
+                    key="dtype",
+                    correct_value="a `torch.dtype`",
+                    found_value=self.dtype,
+                ),
+            )
+
+    @classmethod
+    def _dict_from_json_file(cls, json_file: Union[str, os.PathLike]):
+        with open(json_file, "r", encoding="utf-8") as reader:
+            text = reader.read()
+        return json.loads(text)
+
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any], **kwargs) -> "CacheConfig":
+        """
+        Instantiates a [`CacheConfig`] from a Python dictionary of parameters.
+
+        Args:
+            config_dict (`Dict[str, Any]`):
+                Dictionary that will be used to instantiate the configuration object.
+            kwargs (`Dict[str, Any]`):
+                Additional parameters from which to initialize the configuration object.
+
+        Returns:
+            [`CacheConfig`]: The configuration object instantiated from those parameters.
+        """
+        return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
+        # Those arguments may be passed along for our internal telemetry.
+        # We remove them so they don't appear in `return_unused_kwargs`.
+        kwargs.pop("_from_auto", None)
+        kwargs.pop("_from_pipeline", None)
+        # The commit hash might have been updated in the `config_dict`, we don't want the kwargs to erase that update.
+        if "_commit_hash" in kwargs and "_commit_hash" in config_dict:
+            kwargs["_commit_hash"] = config_dict["_commit_hash"]
+
+        # The line below allows model-specific config to be loaded as well through kwargs, with safety checks.
+        # See https://github.com/huggingface/transformers/pull/21269
+        config = cls(**{**config_dict, **kwargs})
+        unused_kwargs = config.update(**kwargs)
+
+        logger.info(f"Generate config {config}")
+        if return_unused_kwargs:
+            return config, unused_kwargs
+        else:
+            return config
+
+    def dict_torch_dtype_to_str(self, d: Dict[str, Any]) -> None:
+        """
+        Checks whether the passed dictionary and its nested dicts have a *dtype* key and if it's not None,
+        converts torch.dtype to a string of just the type. For example, `torch.float32` get converted into *"float32"*
+        string, which can then be stored in the json format.
+        """
+        if d.get("dtype", None) is not None and not isinstance(d["dtype"], str):
+            d["dtype"] = str(d["dtype"]).split(".")[1]
+        for value in d.values():
+            if isinstance(value, dict):
+                self.dict_torch_dtype_to_str(value)
+
+    def to_diff_dict(self) -> Dict[str, Any]:
+        """
+        Removes all attributes from config which correspond to the default config attributes for better readability and
+        serializes to a Python dictionary.
+
+        Returns:
+            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance,
+        """
+        config_dict = self.to_dict()
+
+        # get the default config dict
+        default_config_dict = CacheConfig().to_dict()
+
+        serializable_config_dict = {}
+
+        # only serialize values that differ from the default config
+        for key, value in config_dict.items():
+            if key not in default_config_dict or key == "transformers_version" or value != default_config_dict[key]:
+                serializable_config_dict[key] = value
+
+        self.dict_torch_dtype_to_str(serializable_config_dict)
+        return serializable_config_dict
+
+    # Copied from transformers.generation.configuration_utils.GenerationConfig.to_dict
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary.
+
+        Returns:
+            `Dict[str, Any]`: Dictionary of all the attributes that make up this configuration instance.
+        """
+        output = copy.deepcopy(self.__dict__)
+
+        # Fields to ignore at serialization time
+        if "_commit_hash" in output:
+            del output["_commit_hash"]
+        if "_original_object_hash" in output:
+            del output["_original_object_hash"]
+
+        # Transformers version when serializing this file
+        output["transformers_version"] = __version__
+
+        self.dict_torch_dtype_to_str(output)
+        return output
+
+    def to_json_string(self, use_diff: bool = True, ignore_metadata: bool = False) -> str:
+        """
+        Serializes this instance to a JSON string.
+
+        Args:
+            use_diff (`bool`, *optional*, defaults to `True`):
+                If set to `True`, only the difference between the config instance and the default `CacheConfig()`
+                is serialized to JSON string.
+            ignore_metadata (`bool`, *optional*, defaults to `False`):
+                Whether to ignore the metadata fields present in the instance
+
+        Returns:
+            `str`: String containing all the attributes that make up this configuration instance in JSON format.
+        """
+        if use_diff is True:
+            config_dict = self.to_diff_dict()
+        else:
+            config_dict = self.to_dict()
+
+        if ignore_metadata:
+            for metadata_field in METADATA_FIELDS:
+                config_dict.pop(metadata_field, None)
+
+        return json.dumps(config_dict, indent=2, sort_keys=True) + "\n"
+
+    # Copied from transformers.generation.configuration_utils.GenerationConfig.to_json_file
+    def to_json_file(self, json_file_path: Union[str, os.PathLike], use_diff: bool = True):
+        """
+        Save this instance to a JSON file.
+
+        Args:
+            json_file_path (`str` or `os.PathLike`):
+                Path to the JSON file in which this configuration instance's parameters will be saved.
+            use_diff (`bool`, *optional*, defaults to `True`):
+                If set to `True`, only the difference between the config instance and the default `CacheConfig()`
+                is serialized to JSON file.
+        """
+        with open(json_file_path, "w", encoding="utf-8") as writer:
+            writer.write(self.to_json_string(use_diff=use_diff))
+
+    # Copied from transformers.utils.quantization_config.QuantizationConfigMixin.update
+    def update(self, **kwargs):
+        """
+        Updates attributes of this class instance with attributes from `kwargs` if they match existing attributes,
+        returning all the unused kwargs.
+
+        Args:
+            kwargs (`Dict[str, Any]`):
+                Dictionary of attributes to tentatively update this class.
+
+        Returns:
+            `Dict[str, Any]`: Dictionary containing all the key-value pairs that were not used to update the instance.
+        """
+        to_remove = []
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+                to_remove.append(key)
+
+        # Remove all the attributes that were updated, without modifying the input dict
+        unused_kwargs = {key: value for key, value in kwargs.items() if key not in to_remove}
+        return unused_kwargs
+
+    def save_pretrained(
+        self,
+        save_directory: Union[str, os.PathLike],
+        config_file_name: Optional[Union[str, os.PathLike]] = None,
+        push_to_hub: bool = False,
+        **kwargs,
+    ):
+        r"""
+        Save a cache configuration object to the directory `save_directory`, so that it can be re-loaded using the
+        [`~CacheConfig.from_pretrained`] class method.
+
+        Args:
+            save_directory (`str` or `os.PathLike`):
+                Directory where the configuration JSON file will be saved (will be created if it does not exist).
+            config_file_name (`str` or `os.PathLike`, *optional*, defaults to `"generation_config.json"`):
+                Name of the generation configuration JSON file to be saved in `save_directory`.
+            push_to_hub (`bool`, *optional*, defaults to `False`):
+                Whether or not to push your model to the Hugging Face model hub after saving it. You can specify the
+                repository you want to push to with `repo_id` (will default to the name of `save_directory` in your
+                namespace).
+            kwargs (`Dict[str, Any]`, *optional*):
+                Additional key word arguments passed along to the [`~utils.PushToHubMixin.push_to_hub`] method.
+        """
+
+        # At save time, validate the instance -- if any warning/exception is thrown, we refuse to save the instance.
+        # This strictness is enforced to prevent bad configurations from being saved and re-used.
+        try:
+            with warnings.catch_warnings(record=True) as caught_warnings:
+                self.validate()
+            if len(caught_warnings) > 0:
+                raise ValueError(str([w.message for w in caught_warnings]))
+        except ValueError as exc:
+            raise ValueError(
+                "The cache config instance is invalid -- `.validate()` throws warnings and/or exceptions. "
+                "Fix these issues to save the configuration.\n\nThrown during validation:\n" + str(exc)
+            )
+
+        use_auth_token = kwargs.pop("use_auth_token", None)
+
+        if use_auth_token is not None:
+            warnings.warn(
+                "The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers. Please use `token` instead.",
+                FutureWarning,
+            )
+            if kwargs.get("token", None) is not None:
+                raise ValueError(
+                    "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
+                )
+            kwargs["token"] = use_auth_token
+
+        config_file_name = config_file_name if config_file_name is not None else CACHE_CONFIG_NAME
+
+        if os.path.isfile(save_directory):
+            raise AssertionError(f"Provided path ({save_directory}) should be a directory, not a file")
+
+        os.makedirs(save_directory, exist_ok=True)
+
+        if push_to_hub:
+            commit_message = kwargs.pop("commit_message", None)
+            repo_id = kwargs.pop("repo_id", save_directory.split(os.path.sep)[-1])
+            repo_id = self._create_repo(repo_id, **kwargs)
+            files_timestamps = self._get_files_timestamps(save_directory)
+
+        output_config_file = os.path.join(save_directory, config_file_name)
+
+        self.to_json_file(output_config_file)
+        logger.info(f"Configuration saved in {output_config_file}")
+
+        if push_to_hub:
+            self._upload_modified_files(
+                save_directory,
+                repo_id,
+                files_timestamps,
+                commit_message=commit_message,
+                token=kwargs.get("token"),
+            )
+
+    @classmethod
+    def from_pretrained(
+        cls,
+        pretrained_model_name: Union[str, os.PathLike],
+        config_file_name: Optional[Union[str, os.PathLike]] = None,
+        cache_dir: Optional[Union[str, os.PathLike]] = None,
+        force_download: bool = False,
+        local_files_only: bool = False,
+        token: Optional[Union[str, bool]] = None,
+        revision: str = "main",
+        **kwargs,
+    ) -> "CacheConfig":
+        r"""
+        Instantiate a [`CacheConfig`] from a generation configuration file.
+
+        Args:
+            pretrained_model_name (`str` or `os.PathLike`):
+                This can be either:
+
+                - a string, the *model id* of a pretrained model configuration hosted inside a model repo on
+                  huggingface.co.
+                - a path to a *directory* containing a configuration file saved using the
+                  [`~CacheConfig.save_pretrained`] method, e.g., `./my_model_directory/`.
+            config_file_name (`str` or `os.PathLike`, *optional*, defaults to `"generation_config.json"`):
+                Name of the generation configuration JSON file to be loaded from `pretrained_model_name`.
+            cache_dir (`str` or `os.PathLike`, *optional*):
+                Path to a directory in which a downloaded pretrained model configuration should be cached if the
+                standard cache should not be used.
+            force_download (`bool`, *optional*, defaults to `False`):
+                Whether or not to force to (re-)download the configuration files and override the cached versions if
+                they exist.
+            resume_download:
+                Deprecated and ignored. All downloads are now resumed by default when possible.
+                Will be removed in v5 of Transformers.
+            proxies (`Dict[str, str]`, *optional*):
+                A dictionary of proxy servers to use by protocol or endpoint, e.g., `{'http': 'foo.bar:3128',
+                'http://hostname': 'foo.bar:4012'}.` The proxies are used on each request.
+            token (`str` or `bool`, *optional*):
+                The token to use as HTTP bearer authorization for remote files. If `True`, or not specified, will use
+                the token generated when running `huggingface-cli login` (stored in `~/.huggingface`).
+            revision (`str`, *optional*, defaults to `"main"`):
+                The specific model version to use. It can be a branch name, a tag name, or a commit id, since we use a
+                git-based system for storing models and other artifacts on huggingface.co, so `revision` can be any
+                identifier allowed by git.
+
+                <Tip>
+
+                To test a pull request you made on the Hub, you can pass `revision="refs/pr/<pr_number>".
+
+                </Tip>
+
+            return_unused_kwargs (`bool`, *optional*, defaults to `False`):
+                If `False`, then this function returns just the final configuration object.
+
+                If `True`, then this functions returns a `Tuple(config, unused_kwargs)` where *unused_kwargs* is a
+                dictionary consisting of the key/value pairs whose keys are not configuration attributes: i.e., the
+                part of `kwargs` which has not been used to update `config` and is otherwise ignored.
+            subfolder (`str`, *optional*, defaults to `""`):
+                In case the relevant files are located inside a subfolder of the model repo on huggingface.co, you can
+                specify the folder name here.
+            kwargs (`Dict[str, Any]`, *optional*):
+                The values in kwargs of any keys which are configuration attributes will be used to override the loaded
+                values. Behavior concerning key/value pairs whose keys are *not* configuration attributes is controlled
+                by the `return_unused_kwargs` keyword parameter.
+
+        Returns:
+            [`CacheConfig`]: The configuration object instantiated from this pretrained model.
+
+        Examples:
+
+        ```python
+        >>> from transformers import CacheConfig
+
+        >>> # Download configuration from huggingface.co and cache.
+        >>> generation_config = CacheConfig.from_pretrained("openai-community/gpt2")
+
+        >>> # E.g. config was saved using *save_pretrained('./test/saved_model/')*
+        >>> generation_config.save_pretrained("./test/saved_model/")
+        >>> generation_config = CacheConfig.from_pretrained("./test/saved_model/")
+
+        >>> # You can also specify configuration names to your cache configuration file
+        >>> generation_config.save_pretrained("./test/saved_model/", config_file_name="my_configuration.json")
+        >>> generation_config = CacheConfig.from_pretrained("./test/saved_model/", "my_configuration.json")
+
+        >>> # If you'd like to try a minor variation to an existing configuration, you can also pass cache
+        >>> # arguments to `.from_pretrained()`. Be mindful that typos and unused arguments will be ignored
+        >>> cache_config, unused_kwargs = CacheConfig.from_pretrained(
+        ...     "openai-community/gpt2", cache_implementation="quantized", quant_nbits=2, quant_group_size=32, foo=False,
+        ... )
+        >>> cache_config.quant_nbits
+        2
+
+        >>> unused_kwargs
+        {'foo': False}
+        ```"""
+        config_file_name = config_file_name if config_file_name is not None else CACHE_CONFIG_NAME
+
+        resume_download = kwargs.pop("resume_download", None)
+        proxies = kwargs.pop("proxies", None)
+        use_auth_token = kwargs.pop("use_auth_token", None)
+        subfolder = kwargs.pop("subfolder", "")
+        from_pipeline = kwargs.pop("_from_pipeline", None)
+        from_auto_class = kwargs.pop("_from_auto", False)
+        commit_hash = kwargs.pop("_commit_hash", None)
+
+        if use_auth_token is not None:
+            warnings.warn(
+                "The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers. Please use `token` instead.",
+                FutureWarning,
+            )
+            if token is not None:
+                raise ValueError(
+                    "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
+                )
+            token = use_auth_token
+
+        user_agent = {"file_type": "config", "from_auto_class": from_auto_class}
+        if from_pipeline is not None:
+            user_agent["using_pipeline"] = from_pipeline
+
+        config_path = os.path.join(pretrained_model_name, config_file_name)
+        config_path = str(config_path)
+
+        is_local = os.path.exists(config_path)
+        if os.path.isfile(os.path.join(subfolder, config_path)):
+            # Special case when config_path is a local file
+            resolved_config_file = config_path
+            is_local = True
+        elif is_remote_url(config_path):
+            configuration_file = config_path
+            resolved_config_file = download_url(config_path)
+        else:
+            configuration_file = config_file_name
+            try:
+                # Load from local folder or from cache or download from model Hub and cache
+                resolved_config_file = cached_file(
+                    pretrained_model_name,
+                    configuration_file,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    proxies=proxies,
+                    resume_download=resume_download,
+                    local_files_only=local_files_only,
+                    token=token,
+                    user_agent=user_agent,
+                    revision=revision,
+                    subfolder=subfolder,
+                    _commit_hash=commit_hash,
+                )
+                commit_hash = extract_commit_hash(resolved_config_file, commit_hash)
+            except EnvironmentError:
+                # Raise any environment error raise by `cached_file`. It will have a helpful error message adapted to
+                # the original exception.
+                raise
+            except Exception:
+                # For any other exception, we throw a generic error.
+                raise EnvironmentError(
+                    f"Can't load the configuration of '{pretrained_model_name}'. If you were trying to load it"
+                    " from 'https://huggingface.co/models', make sure you don't have a local directory with the same"
+                    f" name. Otherwise, make sure '{pretrained_model_name}' is the correct path to a directory"
+                    f" containing a {configuration_file} file"
+                )
+
+        try:
+            # Load config dict
+            config_dict = cls._dict_from_json_file(resolved_config_file)
+            config_dict["_commit_hash"] = commit_hash
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            raise EnvironmentError(
+                f"It looks like the config file at '{resolved_config_file}' is not a valid JSON file."
+            )
+
+        if is_local:
+            logger.info(f"loading configuration file {resolved_config_file}")
+        else:
+            logger.info(f"loading configuration file {configuration_file} from cache at {resolved_config_file}")
+
+        if kwargs.get("return_unused_kwargs") is True:
+            config, unused_kwargs = cls.from_dict(config_dict, **kwargs)
+            config._original_object_hash = hash(config)  # Hash to detect whether the instance was modified
+            return config, unused_kwargs
+        else:
+            config = cls.from_dict(config_dict, **kwargs)
+            config._original_object_hash = hash(config)  # Hash to detect whether the instance was modified
+            return config
