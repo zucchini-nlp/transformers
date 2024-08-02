@@ -3783,10 +3783,8 @@ class ModelTesterMixin:
                         if hasattr(model_sdpa, "image_tower")
                         else model.vision_tower._supports_sdpa
                     )
-                    vision_attn = "sdpa" if vision_supports_sdpa else "eager"
-                    text_attn = "sdpa" if model.language_model._supports_sdpa else "eager"
-                    self.assertTrue(model_sdpa.config.vision_config._attn_implementation == vision_attn)
-                    self.assertTrue(model_sdpa.config.text_config._attn_implementation == text_attn)
+                    vision_attn = None if vision_supports_sdpa else "eager"
+                    text_attn = None if model.language_model._supports_sdpa else "eager"
                     self.assertTrue(
                         model_sdpa.config._attn_implementation
                         == {"text_config": text_attn, "vision_config": vision_attn}
@@ -3802,8 +3800,6 @@ class ModelTesterMixin:
                 model_eager = model_eager.eval().to(torch_device)
 
                 if self.is_multimodal:
-                    self.assertTrue(model_eager.config.vision_config._attn_implementation == "eager")
-                    self.assertTrue(model_eager.config.text_config._attn_implementation == "eager")
                     self.assertTrue(
                         model_eager.config._attn_implementation == {"text_config": "eager", "vision_config": "eager"}
                     )

@@ -1528,28 +1528,12 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, GenerationMixin, PushToHubMix
         if sub_configs:
             attn_implementation_per_subconfig = {}
             for key, sub_config in sub_configs.items():
-                sub_model_cls = MODEL_MAPPING.get(type(sub_config), None)
-                if sub_model_cls is not None:
-                    # User can pass attn_implementation={"vision_config": "sdpa", "text_config": "eager"}
-                    # as well as attn_implementation="sdpa", which means sdpa in all sub-configs
-                    if isinstance(requested_attn_implementation, dict) and key in requested_attn_implementation:
-                        sub_config._attn_implementation = requested_attn_implementation[key]
-                    else:
-                        sub_config._attn_implementation = requested_attn_implementation
-                    sub_model_cls._autoset_attn_implementation(
-                        sub_config,
-                        use_flash_attention_2=use_flash_attention_2,
-                        torch_dtype=torch_dtype,
-                        device_map=device_map,
-                        check_device_map=check_device_map,
-                    )
-                    setattr(config, key, sub_config)
-                attn_implementation_per_subconfig[key] = sub_config._attn_implementation
+                attn_implementation_per_subconfig[key] = requested_attn_implementation if not isinstance(requested_attn_implementation, dict) else requested_attn_implementation.get(key)
 
             # Set the general attn_implementation to a dict where keys are sub-configs
-            requested_attn_implementation = (
-                attn_implementation_per_subconfig if cls._is_composite else requested_attn_implementation
-            )
+            if cls._is_composite:
+                config._attn_implementation = attn_implementation_per_subconfig
+                return config
 
         if use_flash_attention_2:
             logger.warning_once(
