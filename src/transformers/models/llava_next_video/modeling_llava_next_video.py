@@ -31,7 +31,6 @@ from torch import nn
 
 from ... import PreTrainedModel
 from ...activations import ACT2FN
-from ...cache_utils import Cache
 from ...image_processing_utils import select_best_resolution
 from ...modeling_outputs import ModelOutput
 from ...utils import (
@@ -757,6 +756,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel):
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
+        cache_position: Optional[torch.LongTensor] = None,
     ) -> Union[Tuple, LlavaNextVideoCausalLMOutputWithPast]:
         r"""
         Args:
@@ -914,6 +914,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel):
                                 labels=labels,
                                 image_token_index=special_token,
                             )
+                    cache_position = torch.arange(attention_mask.shape[1], device=attention_mask.device)
                 else:
                     # Retrieve the first layer to inspect the logits and mask out the hidden states that are set to 0
                     first_layer_past_key_value = past_key_values[0][0][:, :, :, 0]
@@ -937,6 +938,9 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel):
                     extended_attention_mask[new_batch_index, new_non_attended_tokens] = 0
                     attention_mask = torch.cat((extended_attention_mask, attention_mask[:, -target_length:]), dim=1)
                     position_ids = torch.sum(attention_mask, dim=1).unsqueeze(-1) - 1
+                    cache_position = torch.arange(attention_mask.shape[1], device=attention_mask.device)[
+                        -target_length:
+                    ]
 
             # TODO: @raushan retain only the new behavior after v4.47
             else:
@@ -963,6 +967,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            cache_position=cache_position,
         )
 
         logits = outputs[0]
@@ -1004,60 +1009,29 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextVideoPreTrainedModel):
         pixel_values_videos=None,
         image_sizes=None,
         attention_mask=None,
+        cache_position=None,
         **kwargs,
     ):
-        if past_key_values is not None:
-            if isinstance(past_key_values, Cache):
-                cache_length = past_key_values.get_seq_length()
-                past_length = past_key_values.seen_tokens
-            else:
-                cache_length = past_length = past_key_values[0][0].shape[2]
-
-            # Keep only the unprocessed tokens:
-            # 1 - If the length of the attention_mask exceeds the length of input_ids, then we are in a setting where
-            # some of the inputs are exclusively passed as part of the cache (e.g. when passing input_embeds as
-            # input)
-            if attention_mask is not None and attention_mask.shape[1] > input_ids.shape[1]:
-                input_ids = input_ids[:, -(attention_mask.shape[1] - past_length) :]
-            # 2 - If the past_length is smaller than input_ids', then input_ids holds all input tokens. We can discard
-            # input_ids based on the past_length.
-            elif past_length < input_ids.shape[1]:
-                input_ids = input_ids[:, past_length:]
-
-            # 3 - Otherwise (past_length >= input_ids.shape[1]), let's assume input_ids only has unprocessed tokens.
-            elif self.config.image_token_index in input_ids or self.config.video_token_index in input_ids:
-                input_ids = input_ids[:, input_ids.shape[1] - 1 :]
-
-            # If the cache has seen more tokens than it can hold, then the cache has a size limit. Let's discard the
-            # older attention values, as their corresponding values are not part of the input.
-            if cache_length < past_length and attention_mask is not None:
-                attention_mask = attention_mask[:, -(cache_length + input_ids.shape[1]) :]
-
-        position_ids = kwargs.get("position_ids", None)
-        if attention_mask is not None and position_ids is None:
-            # create position_ids on the fly for batch generation
-            position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
-            if past_key_values:
-                position_ids = position_ids[:, -input_ids.shape[1] :]
-
-        # if `inputs_embeds` are passed, we only want to use them in the 1st generation step
-        if inputs_embeds is not None and past_key_values is None:
-            model_inputs = {"inputs_embeds": inputs_embeds}
-        else:
-            model_inputs = {"input_ids": input_ids}
-
-        model_inputs.update(
-            {
-                "position_ids": position_ids,
-                "past_key_values": past_key_values,
-                "use_cache": kwargs.get("use_cache"),
-                "attention_mask": attention_mask,
-                "pixel_values": pixel_values,
-                "pixel_values_videos": pixel_values_videos,
-                "image_sizes": image_sizes,
-            }
+        # Trigger the new behavior if we have more than image embeddings seq length tokens for images
+        legacy_processing = input_ids is not None and (
+            (input_ids == self.config.image_token_index).sum(1).max() < self.config.image_seq_length
+            or input_ids == self.config.video_token_index.sum(1).max() < self.config.video_seq_length
         )
+
+        model_inputs = self.language_model.prepare_inputs_for_generation(
+            input_ids,
+            past_key_values=past_key_values,
+            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask,
+            cache_position=cache_position,
+            **kwargs,
+        )
+
+        if legacy_processing or cache_position[0] == 0:
+            # If we're in cached decoding stage, pixel values should be None because input ids do not contain special image token anymore
+            # Otherwise we need pixel values to be passed to model
+            model_inputs["pixel_values"] = pixel_values
+            model_inputs["pixel_values_videos"] = pixel_values_videos
         return model_inputs
 
     # Copied from transformers.models.llava.modeling_llava.LlavaForConditionalGeneration._reorder_cache

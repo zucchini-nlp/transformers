@@ -571,6 +571,7 @@ class VideoLlavaForConditionalGeneration(VideoLlavaPreTrainedModel):
                                 labels,
                                 num_frames=frames,
                             )
+                    cache_position = torch.arange(attention_mask.shape[1], device=attention_mask.device)
                 else:
                     # Retrieve the first layer to inspect the logits and mask out the hidden states
                     # that are set to 0
@@ -600,6 +601,9 @@ class VideoLlavaForConditionalGeneration(VideoLlavaPreTrainedModel):
 
                     attention_mask = torch.cat((extended_attention_mask, attention_mask[:, -target_length:]), dim=1)
                     position_ids = torch.sum(attention_mask, dim=1).unsqueeze(-1) - 1
+                    cache_position = torch.arange(attention_mask.shape[1], device=attention_mask.device)[
+                        -target_length:
+                    ]
 
             # TODO: @raushan retain only the new behavior after v4.47
             else:
@@ -685,17 +689,7 @@ class VideoLlavaForConditionalGeneration(VideoLlavaPreTrainedModel):
             **kwargs,
         )
 
-        if legacy_processing:
-            # legacy specific code copied from prev version, we assume that we always have one more new token (assisted decoding doesn't work for VLMs)
-            # if cache_position[0] != 0:
-            #     model_inputs["input_ids"] = model_inputs["input_ids"][:, -1:]
-            #     if "position_ids" in model_inputs:
-            #         model_inputs["position_ids"] = model_inputs["position_ids"][:, -1:]
-
-            model_inputs["pixel_values_images"] = pixel_values_images
-            model_inputs["pixel_values_videos"] = pixel_values_videos
-
-        elif cache_position[0] == 0:
+        if legacy_processing or cache_position[0] == 0:
             # If we're in cached decoding stage, pixel values should be None because input ids do not contain special image token anymore
             # Otherwise we need pixel values to be passed to model
             model_inputs["pixel_values_images"] = pixel_values_images
