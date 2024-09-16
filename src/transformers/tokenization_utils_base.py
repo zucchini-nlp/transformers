@@ -1051,6 +1051,11 @@ class SpecialTokensMixin:
     def _add_tokens(self, new_tokens: Union[List[str], List[AddedToken]], special_tokens: bool = False) -> int:
         raise NotImplementedError
 
+    def _check_token_id(self, token_id):
+        """Helper method to check if token ID is within vocab size."""
+        if not isinstance(token_id, int) or not (0 <= token_id < self.vocab_size):
+            raise ValueError(f"Token ID must be an integer within vocab size 0-{self.vocab_size-1}.")
+
     @property
     def bos_token(self) -> str:
         """
@@ -1306,6 +1311,34 @@ class SpecialTokensMixin:
     def additional_special_tokens_ids(self, values):
         self._additional_special_tokens = [self.convert_ids_to_tokens(value) for value in values]
 
+    # def __setattr__(self, name, value):
+    #     if self.__dict__.get("_special_tokens_map", None) is not None and (name in self._special_tokens_map or f"{name}_id" in self._special_tokens_map):
+    #         if name.endswith("_id"):
+    #             self._check_token_id(value)
+    #             value = self.convert_ids_to_tokens(value)
+    #             name = name[:-3]
+    #         if name != "additional_special_tokens" and not isinstance(value, (str, AddedToken)) and value is not None:
+    #             raise ValueError(f"Cannot set a non-string value as the {name}")
+    #         self._special_tokens_map[name] = value
+    #     else:
+    #         self.__dict__[name] = value
+    
+    # def __getattr__(self, name):
+    #     if self.__dict__.get("_special_tokens_map", None) is not None and (name in self.__dict__["_special_tokens_map"] or f"{name}_id" in self.__dict__["_special_tokens_map"]):
+    #         _special_tokens_map = self.__dict__["_special_tokens_map"]
+    #         if not name.endswith("_id"):
+    #             if _special_tokens_map[name] is None:
+    #                 if self.verbose:
+    #                     logger.error(f"Using {name}, but it is not set yet.")
+    #                 return None
+    #             return _special_tokens_map[name]
+    #         else:
+    #             return self.convert_tokens_to_ids(_special_tokens_map[name])
+    #     else:
+    #         if name in self.__dict__:
+    #             return name
+    #         raise AttributeError
+
     @property
     def special_tokens_map(self) -> Dict[str, Union[str, List[str]]]:
         """
@@ -1315,8 +1348,11 @@ class SpecialTokensMixin:
         Convert potential tokens of `tokenizers.AddedToken` type to string.
         """
         set_attr = {}
+        print(self.__dict__)
         for attr in self.SPECIAL_TOKENS_ATTRIBUTES:
-            attr_value = getattr(self, attr)
+            print(attr)
+            attr_value = self.__dict__[attr]
+            print(attr_value)
             if attr_value:
                 set_attr[attr] = attr_value
         return set_attr
@@ -1559,6 +1595,171 @@ INIT_TOKENIZER_DOCSTRING = r"""
             `split_special_tokens=True`, then `tokenizer.tokenize("<s>")` will be give `['<','s', '>']`.
 """
 
+import functools
+import inspect
+
+class MultiModalTokenizer:
+    IMAGE_SPECIAL_TOKENS_ATTRIBUTES = ["image_token", "boi_token", "eoi_token"]
+
+    def __init__(self, tokenizer, **kwargs):
+        self.base_tokenizer = tokenizer
+        self._image_token = None
+        self._boi_token = None
+        self._eoi_token = None
+        self._special_tokens_multimodal = {key: None for key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES}
+
+        # set special tokens for Image Modality if they are in tokenizer config (i.e. currently in `init_kwargs`)
+        # for key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES:
+        #     value = self.base_tokenizer.init_kwargs.get(key)
+        #     setattr(self.base_tokenizer, key, value)
+        #     setattr(self.base_tokenizer, f"_{key}", value)
+
+        for key, value in self.base_tokenizer.init_kwargs.items():
+            if key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES and isinstance(value, (str, AddedToken)):
+                setattr(self, key, value)
+        #     elif key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES:
+        #         setattr(self.base_tokenizer, key, "rytu")
+        #         setattr(self.base_tokenizer, f"_{key}", "rytu")
+
+    # when a user calls any tokenizer method, we try to get it from the base_tokenizer
+    def __getattr__(self, key):
+        # Check if the attribute is a special token
+        base_attr_or_method = getattr(self.base_tokenizer, key, None)
+        if callable(base_attr_or_method):
+            base_method = getattr(self.base_tokenizer.__class__, key)
+            if inspect.ismethod(base_method):
+                return functools.partial(self._wrap_class_method, base_method)
+            return functools.partial(self._wrap_method, base_method)
+
+        if not hasattr(self.base_tokenizer, key):
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
+        return base_attr_or_method
+
+    def _wrap_method(self, method, *args, **kwargs):
+        return method(self, *args, **kwargs)
+
+    def _wrap_class_method(self, method, *args, **kwargs):
+        return method(*args, **kwargs)
+
+    @property
+    def image_token(self) -> str:
+        """
+        `str`: Image token, to use with Vision-Language Models. Placeholder for image embeddings and
+        will be used to merge image embeds with language-model embeds. Log an error if used while not having been set.
+        """
+        if self._image_token is None:
+            if self.verbose:
+                logger.error("Using image_token, but it is not set yet.")
+            return None
+        return str(self._image_token)
+
+    @property
+    def boi_token(self) -> str:
+        """
+        `str`: BOI token, to use if a Vision-Language Model has a special beginning-of-image token
+        to separate image tokens from language tokens. Log an error if used while not
+        having been set.
+        """
+        if self._boi_token is None:
+            if self.verbose:
+                logger.error("Using boi_token, but it is not set yet.")
+            return None
+        return str(self._boi_token)
+
+    @property
+    def eoi_token(self) -> str:
+        """
+        `str`: EOI token, to use if a Vision-Language Model has a special end-of-image token
+        to separate image tokens from language tokens. Log an error if used while not
+        having been set.
+        """
+        if self._eoi_token is None:
+            if self.verbose:
+                logger.error("Using eoi_token, but it is not set yet.")
+            return None
+        return str(self._eoi_token)
+
+    @image_token.setter
+    def image_token(self, value):
+        if not isinstance(value, (str, AddedToken)) and value is not None:
+            raise ValueError("Cannot set a non-string value as the IMAGE token")
+        self._image_token = value
+        self._special_tokens_multimodal["image_token"] = value
+
+    @boi_token.setter
+    def boi_token(self, value):
+        if not isinstance(value, (str, AddedToken)) and value is not None:
+            raise ValueError("Cannot set a non-string value as the BOI token")
+        self._boi_token = value
+        self._special_tokens_multimodal["boi_token"] = value
+
+    @eoi_token.setter
+    def eoi_token(self, value):
+        if not isinstance(value, (str, AddedToken)) and value is not None:
+            raise ValueError("Cannot set a non-string value as the EOI token")
+        self._eoi_token = value
+        self._special_tokens_multimodal["eoi_token"] = value
+
+    @property
+    def image_token_id(self) -> Optional[int]:
+        """
+        `Optional[int]`: Id of the image token in the vocabulary, used with Vision-Language Models.
+        Placeholder for image embeddings and will be used to merge image embeds with language-model embeds.
+        Returns `None` if the token has not been set.
+        """
+        if self._image_token is None:
+            return None
+        return self.convert_tokens_to_ids(self.image_token)
+
+    @property
+    def boi_token_id(self) -> Optional[int]:
+        """
+        `Optional[int]`: Id of the boi token in the vocabulary, used if a Vision-Language Model has a special
+        beginning-of-image token to separate image tokens from language tokens. Returns `None` if the token has not been set.
+        """
+        if self._boi_token is None:
+            return None
+        return self.convert_tokens_to_ids(self.boi_token)
+
+    @property
+    def eoi_token_id(self) -> Optional[int]:
+        """
+        `Optional[int]`: Id of the eoi token in the vocabulary, used if a Vision-Language Model has a special end-of-image token
+        to separate image tokens from language tokens. Returns `None` if the token has not been set.
+        """
+        if self._eoi_token is None:
+            return None
+        return self.convert_tokens_to_ids(self.eoi_token)
+
+    @image_token_id.setter
+    def image_token_id(self, value):
+        self._check_token_id(value)
+        self._image_token = self.convert_ids_to_tokens(value) if value is not None else None
+
+    @boi_token_id.setter
+    def boi_token_id(self, value):
+        self._check_token_id(value)
+        self._boi_token = self.convert_ids_to_tokens(value) if value is not None else None
+
+    @eoi_token_id.setter
+    def eoi_token_id(self, value):
+        self._check_token_id(value)
+        self._eoi_token = self.convert_ids_to_tokens(value) if value is not None else None
+
+
+def multimodal_tokenizer_decorator(from_pretrained_method):
+    def wrapper(self, *args, **kwargs):
+        base_tokenizer_class = from_pretrained_method(self, *args, **kwargs)
+        if getattr(base_tokenizer_class, "is_multimodal", False):
+            logger.info(
+                "The current tokenizer belongs to a MultiModal model, The loaded tokenizer class will be a `MultiModalTokenizer` instance",
+                "with extra special tokens for the modality supported, e.g. `image_token` or `boi_token`."
+            )
+            base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES = base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES + ["image_token", "boi_token", "eoi_token"]
+            return MultiModalTokenizer(base_tokenizer_class)
+        return base_tokenizer_class
+    return wrapper
+
 
 @add_end_docstrings(INIT_TOKENIZER_DOCSTRING)
 class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
@@ -1589,6 +1790,7 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
         self.init_kwargs = copy.deepcopy(kwargs)
         self.name_or_path = kwargs.pop("name_or_path", "")
         self._processor_class = kwargs.pop("processor_class", None)
+        self.is_multimodal = kwargs.pop("is_multimodal", False)
 
         # For backward compatibility we fallback to set model_max_length from max_len if provided
         model_max_length = kwargs.pop("model_max_length", kwargs.pop("max_len", None))
@@ -1975,6 +2177,7 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
         return chat_template
 
     @classmethod
+    @multimodal_tokenizer_decorator
     def from_pretrained(
         cls,
         pretrained_model_name_or_path: Union[str, os.PathLike],
@@ -2593,6 +2796,7 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
                 tokenizer_config[k] = getattr(self, k)
 
         # Let's make sure we properly save the special tokens.
+        print(self.__class__.__name__)
         tokenizer_config.update(self.special_tokens_map)
 
         if self.chat_template is not None:
@@ -2619,6 +2823,9 @@ class PreTrainedTokenizerBase(SpecialTokensMixin, PushToHubMixin):
 
         # Add tokenizer class to the tokenizer config to be able to reload it with from_pretrained
         tokenizer_class = self.__class__.__name__
+        # Unwrap the MultiModalTokenizer and save only the underlying tokenizer class so it can be loaded back
+        if tokenizer_class == "MultiModalTokenizer":
+            tokenizer_class = self.base_tokenizer.__class__.__name__
         # Remove the Fast at the end unless we have a special `PreTrainedTokenizerFast`
         if tokenizer_class.endswith("Fast") and tokenizer_class != "PreTrainedTokenizerFast":
             tokenizer_class = tokenizer_class[:-4]
