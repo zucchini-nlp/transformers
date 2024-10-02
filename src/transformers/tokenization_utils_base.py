@@ -869,6 +869,8 @@ class SpecialTokensMixin:
         self._pad_token_type_id = 0
         self._additional_special_tokens = []
         self.verbose = verbose
+        self._special_tokens_map = {attr: None for attr in self.SPECIAL_TOKENS_ATTRIBUTES}
+        self._special_tokens_map.update({f"{attr}_id": None for attr in self.SPECIAL_TOKENS_ATTRIBUTES})
 
         # We directly set the hidden value to allow initialization with special tokens
         # which are not yet in the vocabulary. Necessary for serialization/de-serialization
@@ -1051,293 +1053,37 @@ class SpecialTokensMixin:
     def _add_tokens(self, new_tokens: Union[List[str], List[AddedToken]], special_tokens: bool = False) -> int:
         raise NotImplementedError
 
-    def _check_token_id(self, token_id):
-        """Helper method to check if token ID is within vocab size."""
-        if not isinstance(token_id, int) or not (0 <= token_id < self.vocab_size):
-            raise ValueError(f"Token ID must be an integer within vocab size 0-{self.vocab_size-1}.")
+    def __setattr__(self, name, value):
+        if self.__dict__.get("_special_tokens_map", None) is not None and (
+            name in self._special_tokens_map or f"{name}_id" in self._special_tokens_map
+        ):
+            if name.endswith("_id"):
+                self._check_token_id(value)
+                value = self.convert_ids_to_tokens(value)
+                name = name[:-3]
+            if name != "additional_special_tokens" and not isinstance(value, (str, AddedToken)) and value is not None:
+                raise ValueError(f"Cannot set a non-string value as the {name}")
+            self._special_tokens_map[name] = value
+        else:
+            self.__dict__[name] = value
 
-    @property
-    def bos_token(self) -> str:
-        """
-        `str`: Beginning of sentence token. Log an error if used while not having been set.
-        """
-        if self._bos_token is None:
-            if self.verbose:
-                logger.error("Using bos_token, but it is not set yet.")
-            return None
-        return str(self._bos_token)
-
-    @property
-    def eos_token(self) -> str:
-        """
-        `str`: End of sentence token. Log an error if used while not having been set.
-        """
-        if self._eos_token is None:
-            if self.verbose:
-                logger.error("Using eos_token, but it is not set yet.")
-            return None
-        return str(self._eos_token)
-
-    @property
-    def unk_token(self) -> str:
-        """
-        `str`: Unknown token. Log an error if used while not having been set.
-        """
-        if self._unk_token is None:
-            if self.verbose:
-                logger.error("Using unk_token, but it is not set yet.")
-            return None
-        return str(self._unk_token)
-
-    @property
-    def sep_token(self) -> str:
-        """
-        `str`: Separation token, to separate context and query in an input sequence. Log an error if used while not
-        having been set.
-        """
-        if self._sep_token is None:
-            if self.verbose:
-                logger.error("Using sep_token, but it is not set yet.")
-            return None
-        return str(self._sep_token)
-
-    @property
-    def pad_token(self) -> str:
-        """
-        `str`: Padding token. Log an error if used while not having been set.
-        """
-        if self._pad_token is None:
-            if self.verbose:
-                logger.error("Using pad_token, but it is not set yet.")
-            return None
-        return str(self._pad_token)
-
-    @property
-    def cls_token(self) -> str:
-        """
-        `str`: Classification token, to extract a summary of an input sequence leveraging self-attention along the full
-        depth of the model. Log an error if used while not having been set.
-        """
-        if self._cls_token is None:
-            if self.verbose:
-                logger.error("Using cls_token, but it is not set yet.")
-            return None
-        return str(self._cls_token)
-
-    @property
-    def mask_token(self) -> str:
-        """
-        `str`: Mask token, to use when training a model with masked-language modeling. Log an error if used while not
-        having been set.
-        """
-        if self._mask_token is None:
-            if self.verbose:
-                logger.error("Using mask_token, but it is not set yet.")
-            return None
-        return str(self._mask_token)
-
-    @property
-    def additional_special_tokens(self) -> List[str]:
-        """
-        `List[str]`: All the additional special tokens you may want to use. Log an error if used while not having been
-        set.
-        """
-        if self._additional_special_tokens is None:
-            if self.verbose:
-                logger.error("Using additional_special_tokens, but it is not set yet.")
-            return None
-        return [str(tok) for tok in self._additional_special_tokens]
-
-    @bos_token.setter
-    def bos_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the BOS token")
-        self._bos_token = value
-
-    @eos_token.setter
-    def eos_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the EOS token")
-        self._eos_token = value
-
-    @unk_token.setter
-    def unk_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the UNK token")
-        self._unk_token = value
-
-    @sep_token.setter
-    def sep_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the SEP token")
-        self._sep_token = value
-
-    @pad_token.setter
-    def pad_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the PAD token")
-        self._pad_token = value
-
-    @cls_token.setter
-    def cls_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the CLS token")
-        self._cls_token = value
-
-    @mask_token.setter
-    def mask_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the MASK token")
-        self._mask_token = value
-
-    @additional_special_tokens.setter
-    def additional_special_tokens(self, value):
-        self._additional_special_tokens = value if value is not None else None
-
-    @property
-    def bos_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the beginning of sentence token in the vocabulary. Returns `None` if the token has not
-        been set.
-        """
-        if self._bos_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.bos_token)
-
-    @property
-    def eos_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the end of sentence token in the vocabulary. Returns `None` if the token has not been
-        set.
-        """
-        if self._eos_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.eos_token)
-
-    @property
-    def unk_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the unknown token in the vocabulary. Returns `None` if the token has not been set.
-        """
-        if self._unk_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.unk_token)
-
-    @property
-    def sep_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the separation token in the vocabulary, to separate context and query in an input
-        sequence. Returns `None` if the token has not been set.
-        """
-        if self._sep_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.sep_token)
-
-    @property
-    def pad_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the padding token in the vocabulary. Returns `None` if the token has not been set.
-        """
-        if self._pad_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.pad_token)
-
-    @property
-    def pad_token_type_id(self) -> int:
-        """
-        `int`: Id of the padding token type in the vocabulary.
-        """
-        return self._pad_token_type_id
-
-    @property
-    def cls_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the classification token in the vocabulary, to extract a summary of an input sequence
-        leveraging self-attention along the full depth of the model.
-
-        Returns `None` if the token has not been set.
-        """
-        if self._cls_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.cls_token)
-
-    @property
-    def mask_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the mask token in the vocabulary, used when training a model with masked-language
-        modeling. Returns `None` if the token has not been set.
-        """
-        if self._mask_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.mask_token)
-
-    @property
-    def additional_special_tokens_ids(self) -> List[int]:
-        """
-        `List[int]`: Ids of all the additional special tokens in the vocabulary. Log an error if used while not having
-        been set.
-        """
-        return self.convert_tokens_to_ids(self.additional_special_tokens)
-
-    @bos_token_id.setter
-    def bos_token_id(self, value):
-        self._bos_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @eos_token_id.setter
-    def eos_token_id(self, value):
-        self._eos_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @unk_token_id.setter
-    def unk_token_id(self, value):
-        self._unk_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @sep_token_id.setter
-    def sep_token_id(self, value):
-        self._sep_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @pad_token_id.setter
-    def pad_token_id(self, value):
-        self._pad_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @cls_token_id.setter
-    def cls_token_id(self, value):
-        self._cls_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @mask_token_id.setter
-    def mask_token_id(self, value):
-        self._mask_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @additional_special_tokens_ids.setter
-    def additional_special_tokens_ids(self, values):
-        self._additional_special_tokens = [self.convert_ids_to_tokens(value) for value in values]
-
-    # def __setattr__(self, name, value):
-    #     if self.__dict__.get("_special_tokens_map", None) is not None and (name in self._special_tokens_map or f"{name}_id" in self._special_tokens_map):
-    #         if name.endswith("_id"):
-    #             self._check_token_id(value)
-    #             value = self.convert_ids_to_tokens(value)
-    #             name = name[:-3]
-    #         if name != "additional_special_tokens" and not isinstance(value, (str, AddedToken)) and value is not None:
-    #             raise ValueError(f"Cannot set a non-string value as the {name}")
-    #         self._special_tokens_map[name] = value
-    #     else:
-    #         self.__dict__[name] = value
-    
-    # def __getattr__(self, name):
-    #     if self.__dict__.get("_special_tokens_map", None) is not None and (name in self.__dict__["_special_tokens_map"] or f"{name}_id" in self.__dict__["_special_tokens_map"]):
-    #         _special_tokens_map = self.__dict__["_special_tokens_map"]
-    #         if not name.endswith("_id"):
-    #             if _special_tokens_map[name] is None:
-    #                 if self.verbose:
-    #                     logger.error(f"Using {name}, but it is not set yet.")
-    #                 return None
-    #             return _special_tokens_map[name]
-    #         else:
-    #             return self.convert_tokens_to_ids(_special_tokens_map[name])
-    #     else:
-    #         if name in self.__dict__:
-    #             return name
-    #         raise AttributeError
+    def __getattr__(self, name):
+        if self.__dict__.get("_special_tokens_map", None) is not None and (
+            name in self.__dict__["_special_tokens_map"] or f"{name}_id" in self.__dict__["_special_tokens_map"]
+        ):
+            _special_tokens_map = self.__dict__["_special_tokens_map"]
+            if not name.endswith("_id"):
+                if _special_tokens_map[name] is None:
+                    if self.verbose:
+                        logger.error(f"Using {name}, but it is not set yet.")
+                    return None
+                return str(_special_tokens_map[name])
+            else:
+                return self.convert_tokens_to_ids(str(_special_tokens_map[name]))
+        else:
+            if name in self.__dict__:
+                return name
+            raise AttributeError
 
     @property
     def special_tokens_map(self) -> Dict[str, Union[str, List[str]]]:
@@ -1348,11 +1094,8 @@ class SpecialTokensMixin:
         Convert potential tokens of `tokenizers.AddedToken` type to string.
         """
         set_attr = {}
-        print(self.__dict__)
         for attr in self.SPECIAL_TOKENS_ATTRIBUTES:
-            print(attr)
-            attr_value = self.__dict__[attr]
-            print(attr_value)
+            attr_value = self._special_tokens_map[attr]
             if attr_value:
                 set_attr[attr] = attr_value
         return set_attr
@@ -1595,157 +1338,6 @@ INIT_TOKENIZER_DOCSTRING = r"""
             `split_special_tokens=True`, then `tokenizer.tokenize("<s>")` will be give `['<','s', '>']`.
 """
 
-import functools
-import inspect
-
-class MultiModalTokenizer:
-    IMAGE_SPECIAL_TOKENS_ATTRIBUTES = ["image_token", "boi_token", "eoi_token"]
-
-    def __init__(self, tokenizer, **kwargs):
-        self.base_tokenizer = tokenizer
-        self._image_token = None
-        self._boi_token = None
-        self._eoi_token = None
-        self._special_tokens_multimodal = {key: None for key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES}
-
-        # set special tokens for Image Modality if they are in tokenizer config (i.e. currently in `init_kwargs`)
-        # for key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES:
-        #     value = self.base_tokenizer.init_kwargs.get(key)
-        #     setattr(self.base_tokenizer, key, value)
-        #     setattr(self.base_tokenizer, f"_{key}", value)
-
-        for key, value in self.base_tokenizer.init_kwargs.items():
-            if key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES and isinstance(value, (str, AddedToken)):
-                setattr(self, key, value)
-        #     elif key in self.IMAGE_SPECIAL_TOKENS_ATTRIBUTES:
-        #         setattr(self.base_tokenizer, key, "rytu")
-        #         setattr(self.base_tokenizer, f"_{key}", "rytu")
-
-    # when a user calls any tokenizer method, we try to get it from the base_tokenizer
-    def __getattr__(self, key):
-        # Check if the attribute is a special token
-        base_attr_or_method = getattr(self.base_tokenizer, key, None)
-        if callable(base_attr_or_method):
-            base_method = getattr(self.base_tokenizer.__class__, key)
-            if inspect.ismethod(base_method):
-                return functools.partial(self._wrap_class_method, base_method)
-            return functools.partial(self._wrap_method, base_method)
-
-        if not hasattr(self.base_tokenizer, key):
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
-        return base_attr_or_method
-
-    def _wrap_method(self, method, *args, **kwargs):
-        return method(self, *args, **kwargs)
-
-    def _wrap_class_method(self, method, *args, **kwargs):
-        return method(*args, **kwargs)
-
-    @property
-    def image_token(self) -> str:
-        """
-        `str`: Image token, to use with Vision-Language Models. Placeholder for image embeddings and
-        will be used to merge image embeds with language-model embeds. Log an error if used while not having been set.
-        """
-        if self._image_token is None:
-            if self.verbose:
-                logger.error("Using image_token, but it is not set yet.")
-            return None
-        return str(self._image_token)
-
-    @property
-    def boi_token(self) -> str:
-        """
-        `str`: BOI token, to use if a Vision-Language Model has a special beginning-of-image token
-        to separate image tokens from language tokens. Log an error if used while not
-        having been set.
-        """
-        if self._boi_token is None:
-            if self.verbose:
-                logger.error("Using boi_token, but it is not set yet.")
-            return None
-        return str(self._boi_token)
-
-    @property
-    def eoi_token(self) -> str:
-        """
-        `str`: EOI token, to use if a Vision-Language Model has a special end-of-image token
-        to separate image tokens from language tokens. Log an error if used while not
-        having been set.
-        """
-        if self._eoi_token is None:
-            if self.verbose:
-                logger.error("Using eoi_token, but it is not set yet.")
-            return None
-        return str(self._eoi_token)
-
-    @image_token.setter
-    def image_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the IMAGE token")
-        self._image_token = value
-        self._special_tokens_multimodal["image_token"] = value
-
-    @boi_token.setter
-    def boi_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the BOI token")
-        self._boi_token = value
-        self._special_tokens_multimodal["boi_token"] = value
-
-    @eoi_token.setter
-    def eoi_token(self, value):
-        if not isinstance(value, (str, AddedToken)) and value is not None:
-            raise ValueError("Cannot set a non-string value as the EOI token")
-        self._eoi_token = value
-        self._special_tokens_multimodal["eoi_token"] = value
-
-    @property
-    def image_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the image token in the vocabulary, used with Vision-Language Models.
-        Placeholder for image embeddings and will be used to merge image embeds with language-model embeds.
-        Returns `None` if the token has not been set.
-        """
-        if self._image_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.image_token)
-
-    @property
-    def boi_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the boi token in the vocabulary, used if a Vision-Language Model has a special
-        beginning-of-image token to separate image tokens from language tokens. Returns `None` if the token has not been set.
-        """
-        if self._boi_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.boi_token)
-
-    @property
-    def eoi_token_id(self) -> Optional[int]:
-        """
-        `Optional[int]`: Id of the eoi token in the vocabulary, used if a Vision-Language Model has a special end-of-image token
-        to separate image tokens from language tokens. Returns `None` if the token has not been set.
-        """
-        if self._eoi_token is None:
-            return None
-        return self.convert_tokens_to_ids(self.eoi_token)
-
-    @image_token_id.setter
-    def image_token_id(self, value):
-        self._check_token_id(value)
-        self._image_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @boi_token_id.setter
-    def boi_token_id(self, value):
-        self._check_token_id(value)
-        self._boi_token = self.convert_ids_to_tokens(value) if value is not None else None
-
-    @eoi_token_id.setter
-    def eoi_token_id(self, value):
-        self._check_token_id(value)
-        self._eoi_token = self.convert_ids_to_tokens(value) if value is not None else None
-
 
 def multimodal_tokenizer_decorator(from_pretrained_method):
     def wrapper(self, *args, **kwargs):
@@ -1753,11 +1345,32 @@ def multimodal_tokenizer_decorator(from_pretrained_method):
         if getattr(base_tokenizer_class, "is_multimodal", False):
             logger.info(
                 "The current tokenizer belongs to a MultiModal model, The loaded tokenizer class will be a `MultiModalTokenizer` instance",
-                "with extra special tokens for the modality supported, e.g. `image_token` or `boi_token`."
+                "with extra special tokens for the modality supported, e.g. `image_token` or `boi_token`.",
             )
-            base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES = base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES + ["image_token", "boi_token", "eoi_token"]
-            return MultiModalTokenizer(base_tokenizer_class)
+            IMAGE_SPECIAL_TOKENS_ATTRIBUTES = [
+                "image_token",
+                "boi_token",
+                "eoi_token",
+            ]
+            base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES = (
+                base_tokenizer_class.SPECIAL_TOKENS_ATTRIBUTES + IMAGE_SPECIAL_TOKENS_ATTRIBUTES
+            )
+            base_tokenizer_class._special_tokens_map.update(
+                {
+                    "image_token": None,
+                    "boi_token": None,
+                    "eoi_token": None,
+                    "image_token_id": None,
+                    "boi_token_id": None,
+                    "eoi_token_id": None,
+                }
+            )
+            for key, value in base_tokenizer_class.init_kwargs.items():
+                if key in IMAGE_SPECIAL_TOKENS_ATTRIBUTES and isinstance(value, (str, AddedToken)):
+                    base_tokenizer_class._special_tokens_map[key] = value
+            return base_tokenizer_class
         return base_tokenizer_class
+
     return wrapper
 
 
