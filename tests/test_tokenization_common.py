@@ -933,6 +933,7 @@ class TokenizerTesterMixin:
                 tokens = tokenizer.encode(
                     ">>>>|||<||<<|<< aaaaa bbbbbb low cccccccccdddddddd <<<<<|||>|>>>>|> l", add_special_tokens=False
                 )
+                print(tokenizer.special_tokens_map)
 
                 self.assertGreaterEqual(len(tokens), 6)
                 self.assertGreater(tokens[0], tokenizer.vocab_size - 1)

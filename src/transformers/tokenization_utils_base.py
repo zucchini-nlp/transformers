@@ -859,15 +859,7 @@ class SpecialTokensMixin:
     ]
 
     def __init__(self, verbose=False, **kwargs):
-        self._bos_token = None
-        self._eos_token = None
-        self._unk_token = None
-        self._sep_token = None
-        self._pad_token = None
-        self._cls_token = None
-        self._mask_token = None
         self._pad_token_type_id = 0
-        self._additional_special_tokens = []
         self.verbose = verbose
         self._special_tokens_map = {attr: None for attr in self.SPECIAL_TOKENS_ATTRIBUTES}
         self._special_tokens_map.update({f"{attr}_id": None for attr in self.SPECIAL_TOKENS_ATTRIBUTES})
@@ -1053,6 +1045,13 @@ class SpecialTokensMixin:
     def _add_tokens(self, new_tokens: Union[List[str], List[AddedToken]], special_tokens: bool = False) -> int:
         raise NotImplementedError
 
+    @property
+    def pad_token_type_id(self) -> int:
+        """
+        `int`: Id of the padding token type in the vocabulary.
+        """
+        return self._pad_token_type_id
+
     def __setattr__(self, name, value):
         if self.__dict__.get("_special_tokens_map", None) is not None and (
             name in self._special_tokens_map or f"{name}_id" in self._special_tokens_map
@@ -1079,6 +1078,7 @@ class SpecialTokensMixin:
                     return None
                 return str(_special_tokens_map[name])
             else:
+                name = name[:-3]
                 return self.convert_tokens_to_ids(str(_special_tokens_map[name]))
         else:
             if name in self.__dict__:
@@ -1097,7 +1097,7 @@ class SpecialTokensMixin:
         for attr in self.SPECIAL_TOKENS_ATTRIBUTES:
             attr_value = self._special_tokens_map[attr]
             if attr_value:
-                set_attr[attr] = attr_value
+                set_attr[attr] = str(attr_value)
         return set_attr
 
     @property
@@ -1111,7 +1111,7 @@ class SpecialTokensMixin:
         """
         set_attr = {}
         for attr in self.SPECIAL_TOKENS_ATTRIBUTES:
-            attr_value = getattr(self, "_" + attr)
+            attr_value = self._special_tokens_map[attr]
             if attr_value:
                 set_attr[attr] = attr_value
         return set_attr
