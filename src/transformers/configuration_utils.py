@@ -190,6 +190,7 @@ class PretrainedConfig(PushToHubMixin):
     """
 
     model_type: str = ""
+    base_config_key: str = ""
     is_composition: bool = False
     attribute_map: Dict[str, str] = {}
     _auto_class: Optional[str] = None
@@ -542,6 +543,9 @@ class PretrainedConfig(PushToHubMixin):
         cls._set_token_in_kwargs(kwargs, token)
 
         config_dict, kwargs = cls.get_config_dict(pretrained_model_name_or_path, **kwargs)
+        if cls.base_config_key and cls.base_config_key in config_dict:
+            config_dict = config_dict[cls.base_config_key]
+
         if "model_type" in config_dict and hasattr(cls, "model_type") and config_dict["model_type"] != cls.model_type:
             logger.warning(
                 f"You are using a model of type {config_dict['model_type']} to instantiate a model of type "
