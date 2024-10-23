@@ -269,6 +269,9 @@ class CLIPSegConfig(PretrainedConfig):
     ```"""
 
     model_type = "clipseg"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "CLIPSegTextConfig"
+    vision_config_class = "CLIPSegVisionConfig"
 
     def __init__(
         self,

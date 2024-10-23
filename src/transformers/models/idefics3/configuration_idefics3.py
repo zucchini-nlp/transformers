@@ -73,7 +73,7 @@ class Idefics3VisionConfig(PretrainedConfig):
     >>> configuration = model.config
     ```"""
 
-    model_type = "idefics3"
+    model_type = "idefics3_vision"
     base_config_key = "vision_config"
 
     def __init__(
@@ -145,7 +145,9 @@ class Idefics3Config(PretrainedConfig):
     ```"""
 
     model_type = "idefics3"
-    is_composition = True
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "AutoConfig"
+    vision_config_class = "Idefics3VisionConfig"
 
     def __init__(
         self,
@@ -184,4 +186,4 @@ class Idefics3Config(PretrainedConfig):
         self.text_config = text_config
         self.scale_factor = scale_factor
 
-        super().__init__(**kwargs, tie_word_embeddings=tie_word_embeddings)
+        super().__init__(**kwargs, pad_token_id=pad_token_id, tie_word_embeddings=tie_word_embeddings)

@@ -44,6 +44,10 @@ Read more about it [in the release blogpost](https://www.mosaicml.com/blog/mpt-7
 [[autodoc]] MptConfig
     - all
 
+## MptAttentionConfig
+
+[[autodoc]] MptAttentionConfig
+
 ## MptModel
 
 [[autodoc]] MptModel

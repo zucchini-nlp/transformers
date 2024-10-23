@@ -278,6 +278,9 @@ class AltCLIPConfig(PretrainedConfig):
     ```"""
 
     model_type = "altclip"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "AltCLIPTextConfig"
+    vision_config_class = "AltCLIPVisionConfig"
 
     def __init__(
         self, text_config=None, vision_config=None, projection_dim=768, logit_scale_init_value=2.6592, **kwargs

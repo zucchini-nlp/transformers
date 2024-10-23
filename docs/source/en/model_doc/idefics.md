@@ -42,6 +42,14 @@ To train a new IDEFICS model from scratch use the m4 codebase (a link will be pr
 
 [[autodoc]] IdeficsConfig
 
+## IdeficsPerceiverConfig
+
+[[autodoc]] IdeficsPerceiverConfig
+
+## IdeficsVisionConfig
+
+[[autodoc]] IdeficsVisionConfig
+
 ## IdeficsModel
 
 [[autodoc]] IdeficsModel

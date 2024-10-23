@@ -22,7 +22,7 @@ from ...utils import (
 )
 
 
-_import_structure = {"configuration_idefics": ["IdeficsConfig"]}
+_import_structure = {"configuration_idefics": ["IdeficsConfig", "IdeficsPerceiverConfig", "IdeficsVisionConfig"]}
 
 try:
     if not is_vision_available():
@@ -58,7 +58,7 @@ else:
     ]
 
 if TYPE_CHECKING:
-    from .configuration_idefics import IdeficsConfig
+    from .configuration_idefics import IdeficsConfig, IdeficsPerceiverConfig, IdeficsVisionConfig
 
     try:
         if not is_vision_available():

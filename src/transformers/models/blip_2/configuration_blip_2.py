@@ -271,6 +271,10 @@ class Blip2Config(PretrainedConfig):
     ```"""
 
     model_type = "blip-2"
+    sub_configs = ["text_config", "qformer_config", "vision_config"]
+    text_config_class = "AutoConfig"
+    qformer_config_class = "Blip2QFormerConfig"
+    vision_config_class = "Blip2VisionConfig"
 
     def __init__(
         self,

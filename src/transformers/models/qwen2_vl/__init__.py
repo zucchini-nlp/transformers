@@ -17,7 +17,7 @@ from ...utils import OptionalDependencyNotAvailable, _LazyModule, is_torch_avail
 
 
 _import_structure = {
-    "configuration_qwen2_vl": ["Qwen2VLConfig"],
+    "configuration_qwen2_vl": ["Qwen2VLConfig", "Qwen2VLVisionConfig"],
     "processing_qwen2_vl": ["Qwen2VLProcessor"],
 }
 
@@ -44,7 +44,7 @@ else:
 
 
 if TYPE_CHECKING:
-    from .configuration_qwen2_vl import Qwen2VLConfig
+    from .configuration_qwen2_vl import Qwen2VLConfig, Qwen2VLVisionConfig
     from .processing_qwen2_vl import Qwen2VLProcessor
 
     try:

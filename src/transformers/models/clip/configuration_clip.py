@@ -270,6 +270,9 @@ class CLIPConfig(PretrainedConfig):
     ```"""
 
     model_type = "clip"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "CLIPTextConfig"
+    vision_config_class = "CLIPVisionConfig"
 
     def __init__(
         self, text_config=None, vision_config=None, projection_dim=512, logit_scale_init_value=2.6592, **kwargs

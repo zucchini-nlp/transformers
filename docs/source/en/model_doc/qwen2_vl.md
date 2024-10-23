@@ -310,6 +310,10 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
 
 [[autodoc]] Qwen2VLConfig
 
+## Qwen2VLVisionConfig
+
+[[autodoc]] Qwen2VLVisionConfig
+
 ## Qwen2VLImageProcessor
 
 [[autodoc]] Qwen2VLImageProcessor

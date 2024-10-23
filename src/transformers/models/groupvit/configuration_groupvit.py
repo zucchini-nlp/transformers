@@ -257,6 +257,9 @@ class GroupViTConfig(PretrainedConfig):
     """
 
     model_type = "groupvit"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "GroupViTTextConfig"
+    vision_config_class = "GroupViTVisionConfig"
 
     def __init__(
         self,

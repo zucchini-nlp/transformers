@@ -18,7 +18,7 @@ from ...utils import OptionalDependencyNotAvailable, _LazyModule, is_torch_avail
 
 
 _import_structure = {
-    "configuration_mpt": ["MptConfig", "MptOnnxConfig"],
+    "configuration_mpt": ["MptConfig", "MptOnnxConfig", "MptAttentionConfig"],
 }
 
 try:
@@ -37,7 +37,7 @@ else:
     ]
 
 if TYPE_CHECKING:
-    from .configuration_mpt import MptConfig, MptOnnxConfig
+    from .configuration_mpt import MptAttentionConfig, MptConfig, MptOnnxConfig
 
     try:
         if not is_torch_available():

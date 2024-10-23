@@ -51,6 +51,9 @@ This model was contributed by [amyeroberts](https://huggingface.co/amyeroberts) 
 
 [[autodoc]] Idefics3Config
 
+## Idefics3VisionConfig
+
+[[autodoc]] Idefics3VisionConfig
 
 ## Idefics3Model
 

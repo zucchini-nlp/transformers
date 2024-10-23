@@ -268,6 +268,10 @@ class InstructBlipConfig(PretrainedConfig):
     ```"""
 
     model_type = "instructblip"
+    sub_configs = ["text_config", "qformer_config", "vision_config"]
+    text_config_class = "AutoConfig"
+    qformer_config_class = "InstructBlipQFormerConfig"
+    vision_config_class = "InstructBlipVisionConfig"
 
     def __init__(
         self,

@@ -481,9 +481,9 @@ _import_structure = {
     "models.hiera": ["HieraConfig"],
     "models.hubert": ["HubertConfig"],
     "models.ibert": ["IBertConfig"],
-    "models.idefics": ["IdeficsConfig"],
-    "models.idefics2": ["Idefics2Config"],
-    "models.idefics3": ["Idefics3Config"],
+    "models.idefics": ["IdeficsConfig", "IdeficsPerceiverConfig", "IdeficsVisionConfig"],
+    "models.idefics2": ["Idefics2Config", "Idefics2PerceiverConfig", "Idefics2VisionConfig"],
+    "models.idefics3": ["Idefics3Config", "Idefics3VisionConfig"],
     "models.imagegpt": ["ImageGPTConfig"],
     "models.informer": ["InformerConfig"],
     "models.instructblip": [
@@ -502,6 +502,8 @@ _import_structure = {
     "models.jetmoe": ["JetMoeConfig"],
     "models.kosmos2": [
         "Kosmos2Config",
+        "Kosmos2TextConfig",
+        "Kosmos2VisionConfig",
         "Kosmos2Processor",
     ],
     "models.layoutlm": [
@@ -582,6 +584,8 @@ _import_structure = {
     "models.mixtral": ["MixtralConfig"],
     "models.mllama": [
         "MllamaConfig",
+        "MllamaVisionConfig",
+        "MllamaTextConfig",
         "MllamaProcessor",
     ],
     "models.mluke": [],
@@ -601,7 +605,7 @@ _import_structure = {
         "MPNetConfig",
         "MPNetTokenizer",
     ],
-    "models.mpt": ["MptConfig"],
+    "models.mpt": ["MptConfig", "MptAttentionConfig"],
     "models.mra": ["MraConfig"],
     "models.mt5": ["MT5Config"],
     "models.musicgen": [
@@ -691,6 +695,7 @@ _import_structure = {
     "models.qwen2_moe": ["Qwen2MoeConfig"],
     "models.qwen2_vl": [
         "Qwen2VLConfig",
+        "Qwen2VLVisionConfig",
         "Qwen2VLProcessor",
     ],
     "models.rag": ["RagConfig", "RagRetriever", "RagTokenizer"],
@@ -5344,11 +5349,9 @@ if TYPE_CHECKING:
     from .models.hiera import HieraConfig
     from .models.hubert import HubertConfig
     from .models.ibert import IBertConfig
-    from .models.idefics import (
-        IdeficsConfig,
-    )
-    from .models.idefics2 import Idefics2Config
-    from .models.idefics3 import Idefics3Config
+    from .models.idefics import IdeficsConfig, IdeficsPerceiverConfig, IdeficsVisionConfig
+    from .models.idefics2 import Idefics2Config, Idefics2PerceiverConfig, Idefics2VisionConfig
+    from .models.idefics3 import Idefics3Config, Idefics3VisionConfig
     from .models.imagegpt import ImageGPTConfig
     from .models.informer import InformerConfig
     from .models.instructblip import (
@@ -5368,6 +5371,8 @@ if TYPE_CHECKING:
     from .models.kosmos2 import (
         Kosmos2Config,
         Kosmos2Processor,
+        Kosmos2TextConfig,
+        Kosmos2VisionConfig,
     )
     from .models.layoutlm import (
         LayoutLMConfig,
@@ -5455,6 +5460,8 @@ if TYPE_CHECKING:
     from .models.mllama import (
         MllamaConfig,
         MllamaProcessor,
+        MllamaTextConfig,
+        MllamaVisionConfig,
     )
     from .models.mobilebert import (
         MobileBertConfig,
@@ -5480,7 +5487,7 @@ if TYPE_CHECKING:
         MPNetConfig,
         MPNetTokenizer,
     )
-    from .models.mpt import MptConfig
+    from .models.mpt import MptAttentionConfig, MptConfig
     from .models.mra import MraConfig
     from .models.mt5 import MT5Config
     from .models.musicgen import (
@@ -5584,6 +5591,7 @@ if TYPE_CHECKING:
     from .models.qwen2_vl import (
         Qwen2VLConfig,
         Qwen2VLProcessor,
+        Qwen2VLVisionConfig,
     )
     from .models.rag import RagConfig, RagRetriever, RagTokenizer
     from .models.recurrent_gemma import RecurrentGemmaConfig

@@ -305,6 +305,9 @@ class AlignConfig(PretrainedConfig):
     ```"""
 
     model_type = "align"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "AlignTextConfig"
+    vision_config_class = "AlignVisionConfig"
 
     def __init__(
         self,

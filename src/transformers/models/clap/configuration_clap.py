@@ -340,6 +340,9 @@ class ClapConfig(PretrainedConfig):
     ```"""
 
     model_type = "clap"
+    sub_configs = ["text_config", "audio_config"]
+    text_config_class = "ClapTextConfig"
+    audio_config_class = "ClapAudioConfig"
 
     def __init__(
         self,

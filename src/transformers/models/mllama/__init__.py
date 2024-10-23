@@ -22,7 +22,7 @@ from ...utils import (
 
 
 _import_structure = {
-    "configuration_mllama": ["MllamaConfig"],
+    "configuration_mllama": ["MllamaConfig", "MllamaVisionConfig", "MllamaTextConfig"],
     "processing_mllama": ["MllamaProcessor"],
 }
 
@@ -51,7 +51,7 @@ else:
 
 
 if TYPE_CHECKING:
-    from .configuration_mllama import MllamaConfig
+    from .configuration_mllama import MllamaConfig, MllamaTextConfig, MllamaVisionConfig
     from .processing_mllama import MllamaProcessor
 
     try:

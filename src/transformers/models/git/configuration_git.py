@@ -167,6 +167,8 @@ class GitConfig(PretrainedConfig):
     ```"""
 
     model_type = "git"
+    sub_configs = ["vision_config"]
+    vision_config_class = "GitVisionConfig"
 
     def __init__(
         self,

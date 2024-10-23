@@ -241,6 +241,9 @@ class OwlViTConfig(PretrainedConfig):
     """
 
     model_type = "owlvit"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "OwlViTTextConfig"
+    vision_config_class = "OwlViTVisionConfig"
 
     def __init__(
         self,

@@ -173,6 +173,8 @@ class MptConfig(PretrainedConfig):
     """
 
     model_type = "mpt"
+    sub_configs = ["attn_config"]
+    attn_config_class = "MptAttentionConfig"
     attribute_map = {
         "num_attention_heads": "n_heads",
         "hidden_size": "d_model",

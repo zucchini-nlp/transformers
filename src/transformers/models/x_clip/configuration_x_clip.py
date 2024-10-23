@@ -258,6 +258,9 @@ class XCLIPConfig(PretrainedConfig):
     """
 
     model_type = "xclip"
+    sub_configs = ["text_config", "vision_config"]
+    text_config_class = "XCLIPTextConfig"
+    vision_config_class = "XCLIPVisionConfig"
 
     def __init__(
         self,

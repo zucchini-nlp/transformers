@@ -73,7 +73,7 @@ class Idefics2VisionConfig(PretrainedConfig):
     >>> configuration = model.config
     ```"""
 
-    model_type = "idefics2"
+    model_type = "idefics2_vision"
     base_config_key = "vision_config"
 
     def __init__(
@@ -128,7 +128,7 @@ class Idefics2PerceiverConfig(PretrainedConfig):
             The dropout ratio for the attention probabilities.
     """
 
-    model_type = "idefics2"
+    model_type = "idefics2_perceiver"
 
     def __init__(
         self,
@@ -192,7 +192,10 @@ class Idefics2Config(PretrainedConfig):
     ```"""
 
     model_type = "idefics2"
-    is_composition = True
+    sub_configs = ["text_config", "perceiver_config", "vision_config"]
+    text_config_class = "AutoConfig"
+    perceiver_config_class = "Idefics2PerceiverConfig"
+    vision_config_class = "Idefics2VisionConfig"
 
     def __init__(
         self,

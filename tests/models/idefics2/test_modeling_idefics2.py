@@ -183,7 +183,13 @@ class Idefics2ModelTest(ModelTesterMixin, unittest.TestCase):
 
     def setUp(self):
         self.model_tester = Idefics2VisionText2TextModelTester(self)
-        self.config_tester = ConfigTester(self, config_class=Idefics2Config, has_text_modality=False)
+        self.config_tester = ConfigTester(
+            self, config_class=Idefics2Config, has_text_modality=False, common_properties=["image_token_id"]
+        )
+
+    def test_config(self):
+        self.config_tester.run_common_tests()
+        self.config_tester.create_and_test_config_from_and_save_pretrained_composite()
 
     @unittest.skip(reason="input_embeds cannot be passed in without input_ids")
     def test_inputs_embeds():

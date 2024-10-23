@@ -23,7 +23,7 @@ from ...utils import (
 
 
 _import_structure = {
-    "configuration_kosmos2": ["Kosmos2Config"],
+    "configuration_kosmos2": ["Kosmos2Config", "Kosmos2TextConfig", "Kosmos2VisionConfig"],
     "processing_kosmos2": ["Kosmos2Processor"],
 }
 
@@ -41,7 +41,7 @@ else:
 
 
 if TYPE_CHECKING:
-    from .configuration_kosmos2 import Kosmos2Config
+    from .configuration_kosmos2 import Kosmos2Config, Kosmos2TextConfig, Kosmos2VisionConfig
     from .processing_kosmos2 import Kosmos2Processor
 
     try:

@@ -172,6 +172,9 @@ class DbrxConfig(PretrainedConfig):
     """
 
     model_type = "dbrx"
+    sub_configs = ["attn_config", "ffn_config"]
+    attn_config_class = "DbrxAttentionConfig"
+    ffn_config_class = "DbrxFFNConfig"
     attribute_map = {
         "num_attention_heads": "n_heads",
         "hidden_size": "d_model",

@@ -89,6 +89,14 @@ print(processor.decode(output[0], skip_special_tokens=True))
 
 [[autodoc]] MllamaConfig
 
+## MllamaTextConfig
+
+[[autodoc]] MllamaTextConfig
+
+## MllamaVisionConfig
+
+[[autodoc]] MllamaVisionConfig
+
 ## MllamaProcessor
 
 [[autodoc]] MllamaProcessor
