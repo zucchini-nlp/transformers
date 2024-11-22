@@ -124,29 +124,19 @@ class InstructBlipVideoProcessor(ProcessorMixin):
                 **kwargs,
             )
 
-            # if we know how many query tokens, expand text inside processor. We need this hacky manipulation
-            # because BLIP expects image tokens to be at the beginning even before BOS token
-            if self.num_query_tokens is not None and images is not None:
-                text_encoding = {}
-                video_tokens = (
-                    self.video_token.content * self.num_query_tokens * 4
-                )  # InstrucBLIP works with 4 frames only
-                video_token_encoding = self.tokenizer(
-                    [video_tokens] * len(text), add_special_tokens=False, return_tensors=None
-                )
-                for k in _text_encoding:
-                    text_encoding[k] = [
-                        img_encoding + txt_encoding
-                        for img_encoding, txt_encoding in zip(video_token_encoding[k], _text_encoding[k])
-                    ]
-            else:
-                text_encoding = _text_encoding
-                if images is not None:
-                    logger.warning_once(
-                        "Expanding inputs for video tokens in InstructBLIPVideo should be done in processing. "
-                        "Please follow instruction here (https://gist.github.com/zucchini-nlp/65f22892b054dc0d68228af56fbeaac2) to update your InstructBLIPVideo model. "
-                        "Using processors without these attributes in the config is deprecated and will throw an error in v4.47."
-                    )
+            # We need this hacky manipulation because BLIP expects image tokens to be at the beginning even before BOS token
+            text_encoding = {}
+
+            # InstrucBLIP works with 4 frames only
+            video_tokens = self.video_token.content * self.num_query_tokens * 4
+            video_token_encoding = self.tokenizer(
+                [video_tokens] * len(text), add_special_tokens=False, return_tensors=None
+            )
+            for k in _text_encoding:
+                text_encoding[k] = [
+                    img_encoding + txt_encoding
+                    for img_encoding, txt_encoding in zip(video_token_encoding[k], _text_encoding[k])
+                ]
 
             # cast to desired return tensors type after concatenating
             text_encoding = BatchEncoding(text_encoding, tensor_type=return_tensors)

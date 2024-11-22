@@ -1489,21 +1489,8 @@ class InstructBlipVideoForConditionalGeneration(InstructBlipVideoPreTrainedModel
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
 
-        # if the model already has "video_token_index" then the input is expanded to account for image embeds
-        # otherwise we expand manually by concatenating
-        if getattr(self.config, "video_token_index", None) is not None:
-            special_image_mask = (input_ids == self.config.video_token_index).unsqueeze(-1).expand_as(inputs_embeds)
-            inputs_embeds[special_image_mask] = language_model_inputs.flatten()
-        else:
-            logger.warning_once(
-                "Expanding inputs for video tokens in InstructBLIPVideo should be done in processing. "
-                "Please follow instruction here (https://gist.github.com/zucchini-nlp/65f22892b054dc0d68228af56fbeaac2) to update your InstructBLIPVideo model. "
-                "Using processors without these attributes in the config is deprecated and will throw an error in v4.47."
-            )
-            inputs_embeds = torch.cat([language_model_inputs, inputs_embeds.to(language_model_inputs.device)], dim=1)
-            attention_mask = torch.cat(
-                [language_model_attention_mask, attention_mask.to(language_model_attention_mask.device)], dim=1
-            )
+        special_image_mask = (input_ids == self.config.video_token_index).unsqueeze(-1).expand_as(inputs_embeds)
+        inputs_embeds[special_image_mask] = language_model_inputs.flatten()
 
         if self.config.use_decoder_only_language_model:
             outputs = self.language_model(
@@ -1636,51 +1623,13 @@ class InstructBlipVideoForConditionalGeneration(InstructBlipVideoPreTrainedModel
 
         inputs_embeds = self.get_input_embeddings()(input_ids)
 
-        # if the model already has "video_token_index" then the input is expanded to account for image embeds
-        # otherwise we expand manually by concatenating
-        if getattr(self.config, "video_token_index", None) is not None:
-            special_image_mask = (input_ids == self.config.video_token_index).unsqueeze(-1).expand_as(inputs_embeds)
-            inputs_embeds[special_image_mask] = language_model_inputs.flatten()
-        else:
-            logger.warning_once(
-                "Expanding inputs for video tokens in InstructBLIPVideo should be done in processing. "
-                "Please follow instruction here (https://gist.github.com/zucchini-nlp/65f22892b054dc0d68228af56fbeaac2) to update your InstructBLIPVideo model. "
-                "Using processors without these attributes in the config is deprecated and will throw an error in v4.47."
-            )
-            inputs_embeds = torch.cat([language_model_inputs, inputs_embeds.to(language_model_inputs.device)], dim=1)
-            attention_mask = torch.cat(
-                [language_attention_mask, attention_mask.to(language_attention_mask.device)], dim=1
-            )
-
-            # add image_embeds length to max_length, so that the final max_length in counted only on token embeds
-            # -1 is to account for the prepended BOS after `generate.`
-            if not self.language_model.config.is_encoder_decoder:
-                generate_kwargs["max_length"] = (
-                    generate_kwargs.get("max_length", 20) + language_model_inputs.shape[1] - 1
-                )
-                generate_kwargs["min_length"] = generate_kwargs.get("min_length", 0) + language_model_inputs.shape[1]
+        special_image_mask = (input_ids == self.config.video_token_index).unsqueeze(-1).expand_as(inputs_embeds)
+        inputs_embeds[special_image_mask] = language_model_inputs.flatten()
 
         outputs = self.language_model.generate(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             **generate_kwargs,
         )
-
-        # this is a temporary workaround to be consistent with other generation models and
-        # have BOS as the first token, even though under the hood we are calling LM with embeds
-        if not self.language_model.config.is_encoder_decoder:
-            # the InstructBLIP authors used inconsistent tokenizer/model files during training,
-            # with the tokenizer's bos token being set to </s> which has ID=2,
-            # whereas the model's text config has bos token id = 0
-            bos_token_id = (
-                2
-                if self.config.text_config.architectures[0] == "LLaMAForCausalLM"
-                else self.config.text_config.bos_token_id
-            )
-            bos_tokens = torch.LongTensor([[bos_token_id]]).repeat(batch_size, 1).to(image_embeds.device)
-            if not isinstance(outputs, torch.Tensor):
-                outputs.sequences = torch.cat([bos_tokens, outputs.sequences], dim=-1)
-            else:
-                outputs = torch.cat([bos_tokens, outputs], dim=-1)
 
         return outputs

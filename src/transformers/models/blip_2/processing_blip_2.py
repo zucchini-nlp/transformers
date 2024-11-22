@@ -133,31 +133,22 @@ class Blip2Processor(ProcessorMixin):
             _text_encoding = self.tokenizer(text, **output_kwargs["text_kwargs"], return_tensors=None)
             output_kwargs["text_kwargs"]["return_tensors"] = return_tensors
 
-            # if we know how many query tokens, expand text inside processor. We need this hacky manipulation
-            # because BLIP expects image tokens to be at the beginning even before BOS token
-            if self.num_query_tokens is not None:
-                image_tokens = self.image_token.content * self.num_query_tokens
-                image_token_encoding = self.tokenizer(
-                    [image_tokens] * len(text), add_special_tokens=False, return_tensors=None
-                )
-                for k in _text_encoding:
-                    text_encoding[k] = [
-                        img_encoding + txt_encoding
-                        for img_encoding, txt_encoding in zip(image_token_encoding[k], _text_encoding[k])
-                    ]
-            else:
-                text_encoding = _text_encoding
-                logger.warning_once(
-                    "Expanding inputs for image tokens in BLIP-2 should be done in processing. "
-                    "Please follow instruction here (https://gist.github.com/zucchini-nlp/e9f20b054fa322f84ac9311d9ab67042) to update your BLIP-2 model. "
-                    "Using processors without these attributes in the config is deprecated and will throw an error in v4.47."
-                )
+            # We need this hacky manipulation because BLIP expects image tokens to be at the beginning even before BOS token
+            image_tokens = self.image_token.content * self.num_query_tokens
+            image_token_encoding = self.tokenizer(
+                [image_tokens] * len(text), add_special_tokens=False, return_tensors=None
+            )
+            for k in _text_encoding:
+                text_encoding[k] = [
+                    img_encoding + txt_encoding
+                    for img_encoding, txt_encoding in zip(image_token_encoding[k], _text_encoding[k])
+                ]
 
             # cast to desired return tensors type
             encoding.update(BatchEncoding(text_encoding, tensor_type=return_tensors))
+        
         # add pixel_values encoding. If we also have text_encoding, update image encoding and return it.
         # else, return the text encoding.
-
         if images is not None:
             image_encoding = self.image_processor(images, **output_kwargs["images_kwargs"])
             encoding.update(image_encoding)
