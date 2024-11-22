@@ -78,6 +78,10 @@ class Blip2Processor(ProcessorMixin):
         tokenizer.add_tokens([self.image_token], special_tokens=True)
         self.num_query_tokens = num_query_tokens
 
+        # We'll add the BOS manually as it has to be after image tokens
+        tokenizer.add_bos_token = False
+        self.bos_token = tokenizer.bos_token
+
         super().__init__(image_processor, tokenizer)
 
     def __call__(
@@ -115,11 +119,9 @@ class Blip2Processor(ProcessorMixin):
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
+
         # BC for explicit return_tensors
-        if "return_tensors" in output_kwargs["common_kwargs"]:
-            return_tensors = output_kwargs["common_kwargs"].pop("return_tensors", None)
-        else:
-            return_tensors = None
+        return_tensors = output_kwargs["common_kwargs"].pop("return_tensors", None)
         encoding = BatchFeature(tensor_type=return_tensors)
         if text is not None:
             if isinstance(text, str):
@@ -127,26 +129,14 @@ class Blip2Processor(ProcessorMixin):
             elif not isinstance(text, list) and not isinstance(text[0], str):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
 
-            text_encoding = {}
-
-            return_tensors = output_kwargs["text_kwargs"].pop("return_tensors", None)
-            _text_encoding = self.tokenizer(text, **output_kwargs["text_kwargs"], return_tensors=None)
-            output_kwargs["text_kwargs"]["return_tensors"] = return_tensors
-
             # We need this hacky manipulation because BLIP expects image tokens to be at the beginning even before BOS token
             image_tokens = self.image_token.content * self.num_query_tokens
-            image_token_encoding = self.tokenizer(
-                [image_tokens] * len(text), add_special_tokens=False, return_tensors=None
-            )
-            for k in _text_encoding:
-                text_encoding[k] = [
-                    img_encoding + txt_encoding
-                    for img_encoding, txt_encoding in zip(image_token_encoding[k], _text_encoding[k])
-                ]
+            text = [f"{image_tokens}{self.bos_token}{sample}" for sample in text]
+            text_encoding = self.tokenizer(text, **output_kwargs["text_kwargs"])
 
             # cast to desired return tensors type
             encoding.update(BatchEncoding(text_encoding, tensor_type=return_tensors))
-        
+
         # add pixel_values encoding. If we also have text_encoding, update image encoding and return it.
         # else, return the text encoding.
         if images is not None:

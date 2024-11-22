@@ -1454,9 +1454,6 @@ class InstructBlipForConditionalGeneration(InstructBlipPreTrainedModel, Generati
 
         # step 3: use the language model, conditioned on the query outputs and the prompt
         language_model_inputs = self.language_projection(query_output)
-        language_model_attention_mask = torch.ones(
-            language_model_inputs.size()[:-1], dtype=torch.long, device=language_model_inputs.device
-        )
 
         inputs_embeds = self.language_model.get_input_embeddings()(input_ids)
         if attention_mask is None:
@@ -1573,9 +1570,6 @@ class InstructBlipForConditionalGeneration(InstructBlipPreTrainedModel, Generati
         query_output = query_outputs.last_hidden_state[:, : query_tokens.size(1), :]
 
         language_model_inputs = self.language_projection(query_output)
-        language_attention_mask = torch.ones(
-            language_model_inputs.size()[:-1], dtype=torch.long, device=language_model_inputs.device
-        )
 
         if input_ids is None:
             input_ids = (

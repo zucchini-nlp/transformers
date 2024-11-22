@@ -24,7 +24,6 @@ from ...image_utils import VideoInput
 from ...processing_utils import ProcessorMixin
 from ...tokenization_utils_base import (
     AddedToken,
-    BatchEncoding,
     PaddingStrategy,
     PreTokenizedInput,
     TextInput,
@@ -66,6 +65,10 @@ class InstructBlipVideoProcessor(ProcessorMixin):
         self.video_token = AddedToken("<video>", normalized=False, special=True)
         tokenizer.add_tokens([self.video_token], special_tokens=True)
         self.num_query_tokens = num_query_tokens
+
+        # We'll add the BOS manually as it has to be after image tokens
+        tokenizer.add_bos_token = False
+        self.bos_token = tokenizer.bos_token
         super().__init__(image_processor, tokenizer, qformer_tokenizer)
 
     def __call__(
@@ -105,8 +108,13 @@ class InstructBlipVideoProcessor(ProcessorMixin):
             elif not isinstance(text, list) and not isinstance(text[0], str):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
 
-            _text_encoding = self.tokenizer(
-                text=text,
+            # We need this hacky manipulation because BLIP expects image tokens to be at the beginning even before BOS token
+            # InstrucBLIP works with 4 frames only
+            video_tokens = self.video_token.content * self.num_query_tokens * 4
+            text_with_videos = [f"{video_tokens}{self.bos_token}{sample}" for sample in text]
+
+            text_encoding = self.tokenizer(
+                text=text_with_videos,
                 add_special_tokens=add_special_tokens,
                 padding=padding,
                 truncation=truncation,
@@ -124,22 +132,6 @@ class InstructBlipVideoProcessor(ProcessorMixin):
                 **kwargs,
             )
 
-            # We need this hacky manipulation because BLIP expects image tokens to be at the beginning even before BOS token
-            text_encoding = {}
-
-            # InstrucBLIP works with 4 frames only
-            video_tokens = self.video_token.content * self.num_query_tokens * 4
-            video_token_encoding = self.tokenizer(
-                [video_tokens] * len(text), add_special_tokens=False, return_tensors=None
-            )
-            for k in _text_encoding:
-                text_encoding[k] = [
-                    img_encoding + txt_encoding
-                    for img_encoding, txt_encoding in zip(video_token_encoding[k], _text_encoding[k])
-                ]
-
-            # cast to desired return tensors type after concatenating
-            text_encoding = BatchEncoding(text_encoding, tensor_type=return_tensors)
             encoding.update(text_encoding)
             qformer_text_encoding = self.qformer_tokenizer(
                 text=text,
