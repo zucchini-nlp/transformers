@@ -58,10 +58,19 @@ class LlavaProcessor(ProcessorMixin):
             in a chat into a tokenizable string.
         image_token (`str`, *optional*, defaults to `"<image>"`):
             Special token used to denote image location.
+        num_additional_image_tokens (`int`, *optional*, defaults to 0):
+            Number of additional tokens added to the image embeddings, such as CLS (+1). If the backbone has no CLS or other
+            extra tokens appended, no need to set this arg.
     """
 
     attributes = ["image_processor", "tokenizer"]
-    valid_kwargs = ["chat_template", "patch_size", "vision_feature_select_strategy", "image_token"]
+    valid_kwargs = [
+        "chat_template",
+        "patch_size",
+        "vision_feature_select_strategy",
+        "image_token",
+        "num_additional_image_tokens",
+    ]
     image_processor_class = "AutoImageProcessor"
     tokenizer_class = "AutoTokenizer"
 
@@ -73,11 +82,13 @@ class LlavaProcessor(ProcessorMixin):
         vision_feature_select_strategy=None,
         chat_template=None,
         image_token="<image>",  # set the default and let users change if they have peculiar special tokens in rare cases
+        num_additional_image_tokens=0,
         **kwargs,
     ):
         self.patch_size = patch_size
+        self.num_additional_image_tokens = num_additional_image_tokens
         self.vision_feature_select_strategy = vision_feature_select_strategy
-        self.image_token = image_token
+        self.image_token = tokenizer.image_token if hasattr(tokenizer, "image_token") else image_token
         super().__init__(image_processor, tokenizer, chat_template=chat_template)
 
     def __call__(

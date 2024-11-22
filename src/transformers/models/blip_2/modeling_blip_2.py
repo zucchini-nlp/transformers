@@ -1768,11 +1768,12 @@ class Blip2Model(Blip2PreTrainedModel):
                 decoder_attention_mask=decoder_attention_mask,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
+                return_dict=True,  # toggle for easier access to loss/logits below
                 labels=labels,
             )
-            loss = outputs.loss if return_dict else outputs[0]
-            logits = outputs.logits if return_dict else outputs[1]
+            loss = outputs.loss
+            logits = outputs.logits
+            outputs = outputs.to_tuple() if not return_dict else outputs
 
         if not return_dict:
             output = (logits, vision_outputs, query_outputs, outputs)
@@ -1809,6 +1810,12 @@ class Blip2TextModelWithProjection(Blip2PreTrainedModel):
 
         # Initialize weights and apply final processing
         self.post_init()
+
+    def get_input_embeddings(self):
+        return self.embeddings.word_embeddings
+
+    def set_input_embeddings(self, value):
+        self.embeddings.word_embeddings = value
 
     @add_start_docstrings_to_model_forward(BLIP_2_TEXT_WITH_PROJECTION_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=Blip2TextModelOutput, config_class=Blip2Config)
@@ -2218,11 +2225,12 @@ class Blip2ForConditionalGeneration(Blip2PreTrainedModel, GenerationMixin):
                 decoder_attention_mask=decoder_attention_mask,
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
-                return_dict=return_dict,
+                return_dict=True,  # toggle for easier access to loss/logits below
                 labels=labels,
             )
-            loss = outputs.loss if return_dict else outputs[0]
-            logits = outputs.logits if return_dict else outputs[1]
+            loss = outputs.loss
+            logits = outputs.logits
+            outputs = outputs.to_tuple() if not return_dict else outputs
 
         if not return_dict:
             output = (logits, vision_outputs, query_outputs, outputs)
@@ -2292,6 +2300,7 @@ class Blip2ForConditionalGeneration(Blip2PreTrainedModel, GenerationMixin):
         if attention_mask is None:
             attention_mask = torch.ones_like(input_ids)
 
+<<<<<<< HEAD
         special_image_mask = (input_ids == self.config.image_token_index).unsqueeze(-1).expand_as(inputs_embeds)
         inputs_embeds[special_image_mask] = language_model_inputs.flatten()
 
@@ -2301,6 +2310,38 @@ class Blip2ForConditionalGeneration(Blip2PreTrainedModel, GenerationMixin):
             **generate_kwargs,
         )
 
+=======
+        # if the model already has "image_token_index" then the input is expanded to account for image embeds
+        # otherwise we expand manually by concatenating
+        if getattr(self.config, "image_token_index", None) is not None:
+            special_image_mask = (input_ids == self.config.image_token_index).unsqueeze(-1).expand_as(inputs_embeds)
+            inputs_embeds[special_image_mask] = language_model_inputs.flatten()
+        else:
+            logger.warning_once(
+                "Expanding inputs for image tokens in BLIP-2 should be done in processing. "
+                "Please follow instruction here (https://gist.github.com/zucchini-nlp/e9f20b054fa322f84ac9311d9ab67042) to update your BLIP-2 model. "
+                "Using processors without these attributes in the config is deprecated and will throw an error in v4.50."
+            )
+            inputs_embeds = torch.cat([language_model_inputs, inputs_embeds.to(language_model_inputs.device)], dim=1)
+            attention_mask = torch.cat(
+                [language_attention_mask, attention_mask.to(language_attention_mask.device)], dim=1
+            )
+
+            # add image_embeds length to max_length, so that the final max_length in counted only on token embeds
+            # -1 is to account for the prepended BOS after `generate.`
+            # TODO (joao, raushan): refactor `generate` to avoid these operations with VLMs
+            if not self.language_model.config.is_encoder_decoder:
+                generate_kwargs["max_length"] = (
+                    generate_kwargs.get("max_length", 20) + language_model_inputs.shape[1] - 1
+                )
+                generate_kwargs["min_length"] = generate_kwargs.get("min_length", 0) + language_model_inputs.shape[1]
+
+        inputs = {"inputs_embeds": inputs_embeds, "attention_mask": attention_mask}
+        if not self.language_model.config.is_encoder_decoder:
+            inputs["input_ids"] = input_ids
+
+        outputs = self.language_model.generate(**inputs, **generate_kwargs)
+>>>>>>> upstream/main
         return outputs
 
 
@@ -2337,6 +2378,12 @@ class Blip2ForImageTextRetrieval(Blip2PreTrainedModel):
 
         # Initialize weights and apply final processing
         self.post_init()
+
+    def get_input_embeddings(self):
+        return self.embeddings.word_embeddings
+
+    def set_input_embeddings(self, value):
+        self.embeddings.word_embeddings = value
 
     @add_start_docstrings_to_model_forward(BLIP2_IMAGE_TEXT_RETRIEVAL_INPUTS_DOCSTRING)
     @replace_return_docstrings(output_type=Blip2ImageTextMatchingModelOutput, config_class=Blip2Config)
