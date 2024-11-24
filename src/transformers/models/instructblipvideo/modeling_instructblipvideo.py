@@ -1620,10 +1620,10 @@ class InstructBlipVideoForConditionalGeneration(InstructBlipVideoPreTrainedModel
         special_image_mask = (input_ids == self.config.video_token_index).unsqueeze(-1).expand_as(inputs_embeds)
         inputs_embeds[special_image_mask] = language_model_inputs.flatten()
 
-        outputs = self.language_model.generate(
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            **generate_kwargs,
-        )
+        inputs = {"inputs_embeds": inputs_embeds, "attention_mask": attention_mask}
+        if not self.language_model.config.is_encoder_decoder:
+            inputs["input_ids"] = input_ids
+
+        outputs = self.language_model.generate(**inputs, **generate_kwargs)
 
         return outputs
