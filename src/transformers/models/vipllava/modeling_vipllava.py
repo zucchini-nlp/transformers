@@ -463,8 +463,8 @@ class VipLlavaForConditionalGeneration(VipLlavaPreTrainedModel, GenerationMixin)
                 pixel_values=pixel_values, vision_feature_layers=vision_feature_layers
             )
 
-            n_image_tokens = (input_ids == self.config.image_token_index).sum(dim=-1)[0].item()
-            n_image_features = image_features.shape[1]
+            n_image_tokens = (input_ids == self.config.image_token_index).sum().item()
+            n_image_features = image_features.shape[0] * image_features.shape[1]
             if n_image_tokens != n_image_features:
                 raise ValueError(
                     f"Image features and image tokens do not match: tokens: {n_image_tokens}, features {n_image_features}"
