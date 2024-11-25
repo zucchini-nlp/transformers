@@ -127,7 +127,6 @@ class VideoLlavaVisionText2TextModelTester:
         self.num_image_tokens = (vision_config["image_size"] // vision_config["patch_size"]) ** 2
         self.num_video_tokens = (self.num_image_tokens + 1) * self.num_frames
         self.seq_length = seq_length + self.num_image_tokens + self.num_video_tokens
-        self.encoder_seq_length = self.seq_length
 
     def get_config(self):
         return VideoLlavaConfig(

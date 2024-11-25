@@ -77,7 +77,7 @@ class VideoLlavaProcessor(ProcessorMixin):
         image_token="<image>",  # set the default and let users change if they have peculiar special tokens in rare cases
         video_token="<video>",
         chat_template=None,
-        num_additional_image_tokens=0,
+        num_additional_image_tokens=1,
         **kwargs,
     ):
         self.patch_size = patch_size
