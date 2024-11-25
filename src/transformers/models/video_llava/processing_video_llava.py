@@ -51,7 +51,7 @@ class VideoLlavaProcessor(ProcessorMixin):
             Special token used to denote video location.
         chat_template (`str`, *optional*): A Jinja template which will be used to convert lists of messages
             in a chat into a tokenizable string.
-        num_additional_image_tokens (`int`, *optional*, defaults to 0):
+        num_additional_image_tokens (`int`, *optional*, defaults to 1):
             Number of additional tokens added to the image embeddings, such as CLS (+1). If the backbone has no CLS or other
             extra tokens appended, no need to set this arg.
     """
