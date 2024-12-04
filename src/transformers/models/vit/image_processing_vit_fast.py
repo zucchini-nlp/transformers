@@ -157,7 +157,7 @@ class ViTImageProcessorFast(BaseImageProcessorFast):
         elif do_normalize:
             transforms.append(Normalize(image_mean, image_std))
 
-        return Compose(transforms)
+        return torch.nn.Sequential(*transforms)
 
     @functools.lru_cache(maxsize=1)
     def _validate_input_arguments(
@@ -259,11 +259,14 @@ class ViTImageProcessorFast(BaseImageProcessorFast):
         image_mean = tuple(image_mean) if isinstance(image_mean, list) else image_mean
         image_std = tuple(image_std) if isinstance(image_std, list) else image_std
 
-        images = make_list_of_images(images)
-        image_type = get_image_type(images[0])
+        if not isinstance(images, torch.Tensor):
+            images = make_list_of_images(images)
+            image_type = get_image_type(images[0])
 
-        if image_type not in [ImageType.PIL, ImageType.TORCH, ImageType.NUMPY]:
-            raise ValueError(f"Unsupported input image type {image_type}")
+            if image_type not in [ImageType.PIL, ImageType.TORCH, ImageType.NUMPY]:
+                raise ValueError(f"Unsupported input image type {image_type}")
+        else:
+            image_type = ImageType.TORCH
 
         self._validate_input_arguments(
             do_resize=do_resize,
@@ -279,8 +282,8 @@ class ViTImageProcessorFast(BaseImageProcessorFast):
             image_type=image_type,
         )
 
-        if do_convert_rgb:
-            images = [convert_to_rgb(image) for image in images]
+        # if do_convert_rgb:
+        #     images = [convert_to_rgb(image) for image in images]
 
         transforms = self.get_transforms(
             do_resize=do_resize,
@@ -293,7 +296,13 @@ class ViTImageProcessorFast(BaseImageProcessorFast):
             image_std=image_std,
             image_type=image_type,
         )
-        transformed_images = [transforms(image) for image in images]
+        transforms = torch.compile(transforms)
 
-        data = {"pixel_values": torch.stack(transformed_images, dim=0)}
+        if not isinstance(images, torch.Tensor):
+            transformed_images = [transforms(image) for image in images]
+            data = {"pixel_values": torch.stack(transformed_images, dim=0)}
+        else:
+            transformed_images = transforms(images)
+            data = {"pixel_values": transformed_images}
+
         return BatchFeature(data, tensor_type=return_tensors)

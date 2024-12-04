@@ -821,40 +821,43 @@ def _cast_tensor_to_float(x):
     return x.float()
 
 
-class FusedRescaleNormalize:
+class FusedRescaleNormalize(torch.nn.Module):
     """
     Rescale and normalize the input image in one step.
     """
 
     def __init__(self, mean, std, rescale_factor: float = 1.0, inplace: bool = False):
-        self.mean = torch.tensor(mean) * (1.0 / rescale_factor)
-        self.std = torch.tensor(std) * (1.0 / rescale_factor)
+        super().__init__()
+        self.mean = (torch.tensor(mean) * (1.0 / rescale_factor)).tolist()
+        self.std = (torch.tensor(std) * (1.0 / rescale_factor)).tolist()
         self.inplace = inplace
 
-    def __call__(self, image: "torch.Tensor"):
+    def forward(self, image: "torch.Tensor"):
         image = _cast_tensor_to_float(image)
         return F.normalize(image, self.mean, self.std, inplace=self.inplace)
 
 
-class Rescale:
+class Rescale(torch.nn.Module):
     """
     Rescale the input image by rescale factor: image *= rescale_factor.
     """
 
     def __init__(self, rescale_factor: float = 1.0):
+        super().__init__()
         self.rescale_factor = rescale_factor
 
-    def __call__(self, image: "torch.Tensor"):
+    def forward(self, image: "torch.Tensor"):
         image = image * self.rescale_factor
         return image
 
 
-class NumpyToTensor:
+class NumpyToTensor(torch.nn.Module):
     """
     Convert a numpy array to a PyTorch tensor.
     """
 
-    def __call__(self, image: np.ndarray):
+    def forward(self, image: np.ndarray):
+        super().__init__()
         # Same as in PyTorch, we assume incoming numpy images are in HWC format
         # c.f. https://github.com/pytorch/vision/blob/61d97f41bc209e1407dcfbd685d2ee2da9c1cdad/torchvision/transforms/functional.py#L154
         return torch.from_numpy(image.transpose(2, 0, 1)).contiguous()
