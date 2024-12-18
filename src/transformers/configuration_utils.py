@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from packaging import version
 
 from . import __version__
-from .dynamic_module_utils import custom_object_save
+from .dynamic_module_utils import custom_object_save, get_class_from_dynamic_module
 from .modeling_gguf_pytorch_utils import load_gguf_checkpoint
 from .utils import (
     CONFIG_NAME,
@@ -591,6 +591,24 @@ class PretrainedConfig(PushToHubMixin):
         config_dict, kwargs = cls._get_config_dict(pretrained_model_name_or_path, **kwargs)
         if config_dict is None:
             return {}, kwargs
+
+        for sub_name, sub_class in cls.sub_configs.items():
+            sub_dict = config_dict.get(sub_name, {})
+            has_remote_code = "auto_map" in sub_dict and "AutoConfig" in sub_dict["auto_map"]
+
+            if has_remote_code and original_kwargs.get("trust_remote_code"):
+                sub_class_ref = sub_dict["auto_map"]["AutoConfig"]
+                subconfig_class = get_class_from_dynamic_module(
+                    sub_class_ref, pretrained_model_name_or_path, **original_kwargs
+                )
+                sub_config = subconfig_class(**sub_dict)
+                config_dict[sub_name] = sub_config
+                kwargs["trust_remote_code"] = True
+            elif sub_class.__name__ == "AutoConfig":
+                config_dict[sub_name] = sub_class.for_model(**sub_dict)
+            else:
+                config_dict[sub_name] = sub_class(**sub_dict)
+
         if "_commit_hash" in config_dict:
             original_kwargs["_commit_hash"] = config_dict["_commit_hash"]
 
