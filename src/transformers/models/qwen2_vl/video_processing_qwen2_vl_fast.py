@@ -19,17 +19,14 @@
 # limitations under the License.
 """video processor class for Qwen2-VL."""
 
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from ...image_processing_utils import (
     BatchFeature,
 )
 from ...image_utils import (
-    OPENAI_CLIP_MEAN,
-    OPENAI_CLIP_STD,
     ChannelDimension,
     PILImageResampling,
-    SizeDict,
     get_image_size,
 )
 from ...processing_utils import Unpack
@@ -84,40 +81,35 @@ class Qwen2VLFastVideoProcessorInitKwargs(DefaultFastVideoProcessorInitKwargs):
     """,
 )
 class Qwen2VLVideoProcessorFast(BaseVideoProcessorFast):
-    resample = PILImageResampling.BICUBIC
-    size = {"shortest_edge": 56 * 56, "longest_edge": 28 * 28 * 1280}
-    image_mean = OPENAI_CLIP_MEAN
-    image_std = OPENAI_CLIP_STD
-    do_resize = True
-    do_rescale = True
-    do_normalize = True
-    do_convert_rgb = True
-    min_pixels = 56 * 56
-    max_pixels = 28 * 28 * 1280
-    patch_size = 14
-    temporal_patch_size = 2
-    merge_size = 2
-    valid_init_kwargs = Qwen2VLFastVideoProcessorInitKwargs
     model_input_names = ["pixel_values_videos", "video_grid_thw"]
+    extra_kwargs_for_processing = {
+        "min_pixels": 56 * 56,
+        "max_pixels": 28 * 28 * 1280,
+        "patch_size": 14,
+        "temporal_patch_size": 2,
+        "merge_size": 2,
+    }
 
     def __init__(self, **kwargs: Unpack[Qwen2VLFastVideoProcessorInitKwargs]):
         super().__init__(**kwargs)
         self.size = {"shortest_edge": self.min_pixels, "longest_edge": self.max_pixels}
 
-    def _preprocess(
+    def preprocess(
         self,
         videos: List["torch.Tensor"],
-        do_convert_rgb: bool,
-        do_resize: bool,
-        size: SizeDict,
-        interpolation: Optional["F.InterpolationMode"],
-        do_rescale: bool,
-        rescale_factor: float,
-        do_normalize: bool,
-        image_mean: Optional[Union[float, List[float]]],
-        image_std: Optional[Union[float, List[float]]],
-        return_tensors: Optional[Union[str, TensorType]],
-        **kwargs,
+        do_convert_rgb: bool = None,
+        do_resize: bool = None,
+        size: Dict[str, int] = None,
+        resample: Optional[Union["F.InterpolationMode", "PILImageResampling"]] = None,
+        do_rescale: bool = None,
+        rescale_factor: float = None,
+        do_normalize: bool = None,
+        image_mean: Optional[Union[float, List[float]]] = None,
+        image_std: Optional[Union[float, List[float]]] = None,
+        return_tensors: Optional[Union[str, TensorType]] = None,
+        data_format: Optional[ChannelDimension] = ChannelDimension.FIRST,
+        input_data_format: Optional[Union[str, ChannelDimension]] = None,
+        device: Optional["torch.device"] = None,
     ):
         """
         Preprocess a video or batch of videos.
@@ -145,13 +137,32 @@ class Qwen2VLVideoProcessorFast(BaseVideoProcessorFast):
                 Whether to convert the video to RGB.
             return_tensors
         """
+        # Prepare kwargs for preprocessing: convert to tensor, validate and move to device if needed
+        config = self._prepare_process_arguments(
+            do_rescale=do_rescale,
+            rescale_factor=rescale_factor,
+            do_normalize=do_normalize,
+            image_mean=image_mean,
+            image_std=image_std,
+            do_resize=do_resize,
+            size=size,
+            resample=resample,
+            return_tensors=return_tensors,
+            data_format=data_format,
+            device=device,
+        )
+        # Prepare videos by conveting to correctly batched list and move to device
+        videos = self._prepare_input_videos(
+            videos=videos, input_data_format=config.input_data_format, device=config.device
+        )
+
         # Group videos by size for batched resizing
         grouped_videos, grouped_videos_index = group_videos_by_shape(videos)
         resized_videos_grouped = {}
         for shape, stacked_videos in grouped_videos.items():
             height, width = get_image_size(stacked_videos[0], channel_dim=ChannelDimension.FIRST)
             resized_height, resized_width = height, width
-            if do_resize:
+            if config.do_resize:
                 resized_height, resized_width = smart_resize(
                     height,
                     width,
@@ -160,7 +171,9 @@ class Qwen2VLVideoProcessorFast(BaseVideoProcessorFast):
                     max_pixels=self.max_pixels,
                 )
                 stacked_videos = F.resize(
-                    stacked_videos, size=(resized_height, resized_width), interpolation=interpolation
+                    stacked_videos,
+                    size=(resized_height, resized_width),
+                    interpolation=config.interpolation,
                 )
             resized_videos_grouped[shape] = stacked_videos
         resized_videos = reorder_videos(resized_videos_grouped, grouped_videos_index)
@@ -175,7 +188,12 @@ class Qwen2VLVideoProcessorFast(BaseVideoProcessorFast):
 
             # Fused rescale and normalize
             stacked_videos = self.rescale_and_normalize(
-                stacked_videos, do_rescale, rescale_factor, do_normalize, image_mean, image_std
+                stacked_videos,
+                config.do_rescale,
+                config.rescale_factor,
+                config.do_normalize,
+                config.image_mean,
+                config.image_std,
             )
             patches = stacked_videos
 
