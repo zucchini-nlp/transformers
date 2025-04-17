@@ -1824,6 +1824,13 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, PushToHubMixin, PeftAdapterMi
     _supports_attention_backend = False
 
     @property
+    def _supports_sdpa(self):
+        """
+        `Dict[str, torch.Tensor]`: Dummy inputs to do a forward pass in the network.
+        """
+        return self._supports_sdpa or self._supports_attention_backend
+
+    @property
     def dummy_inputs(self) -> Dict[str, torch.Tensor]:
         """
         `Dict[str, torch.Tensor]`: Dummy inputs to do a forward pass in the network.

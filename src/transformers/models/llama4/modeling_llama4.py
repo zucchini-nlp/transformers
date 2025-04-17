@@ -467,9 +467,6 @@ class Llama4PreTrainedModel(PreTrainedModel):
     config_class = Llama4Config
     supports_gradient_checkpointing = True
     _skip_keys_device_placement = ["past_key_values"]
-    _supports_flash_attn_2 = False
-    _supports_sdpa = True
-    _supports_flex_attn = True
     _supports_cache_class = True
     _supports_quantized_cache = True
     _supports_static_cache = True

@@ -248,11 +248,10 @@ class LlavaOnevisionPreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = True
     _no_split_modules = ["LlavaOnevisionVisionAttention"]
     _skip_keys_device_placement = "past_key_values"
-    _supports_flash_attn_2 = True
     _supports_cache_class = True
     _supports_static_cache = True
     _supports_quantized_cache = True
-    _supports_sdpa = True
+    _supports_attention_backend = True
 
     # Copied from transformers.models.llava_next.modeling_llava_next.LlavaNextPreTrainedModel._init_weights with LlavaNext->LlavaOnevision
     def _init_weights(self, module):

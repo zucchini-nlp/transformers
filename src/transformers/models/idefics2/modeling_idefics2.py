@@ -510,8 +510,6 @@ class Idefics2PreTrainedModel(PreTrainedModel):
     supports_gradient_checkpointing = True
     _no_split_modules = ["Idefics2VisionAttention", "Idefics2MLP", "Idefics2PerceiverLayer", "Idefics2DecoderLayer"]
     _skip_keys_device_placement = "past_key_values"
-    _supports_flash_attn_2 = True
-    _supports_sdpa = True
     _supports_flex_attn = True
     _supports_cache_class = True
 

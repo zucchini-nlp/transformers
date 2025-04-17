@@ -664,8 +664,6 @@ class AriaTextPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["AriaTextDecoderLayer", "AriaGroupedExpertsGemm"]
     supports_gradient_checkpointing = True
     _skip_keys_device_placement = "past_key_values"
-    _supports_flash_attn_2 = False
-    _supports_sdpa = True
     _supports_cache_class = True
 
     def _init_weights(self, module):
