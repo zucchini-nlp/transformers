@@ -38,6 +38,7 @@ from .utils import (
     logging,
     requires_backends,
 )
+from .utils.deprecation import deprecate_kwarg
 
 
 if is_vision_available():
@@ -211,7 +212,7 @@ def get_uniform_frame_indices(total_num_frames: int, num_frames: Optional[int] =
     return indices
 
 
-def default_sample_indices_fn(metadata: VideoMetadata, num_frames=None, fps=None, **kwargs):
+def default_sample_indices_fn(metadata: VideoMetadata, num_frames=None, fps=None):
     """
     A default sampling function that replicates the logic used in get_uniform_frame_indices,
     while optionally handling `fps` if `num_frames` is not provided.
@@ -248,8 +249,8 @@ def default_sample_indices_fn(metadata: VideoMetadata, num_frames=None, fps=None
 
 def read_video_opencv(
     video_path: str,
-    sample_indices_fn: Callable,
-    **kwargs,
+    num_frames: int = None,
+    fps: int = None,
 ):
     """
     Decode a video using the OpenCV backend.
@@ -281,7 +282,7 @@ def read_video_opencv(
     metadata = VideoMetadata(
         total_num_frames=int(total_num_frames), fps=float(video_fps), duration=float(duration), video_backend="opencv"
     )
-    indices = sample_indices_fn(metadata=metadata, **kwargs)
+    indices = default_sample_indices_fn(metadata=metadata, num_frames=num_frames, fps=fps)
 
     index = 0
     frames = []
@@ -305,8 +306,8 @@ def read_video_opencv(
 
 def read_video_decord(
     video_path: str,
-    sample_indices_fn: Optional[Callable] = None,
-    **kwargs,
+    num_frames: int = None,
+    fps: int = None,
 ):
     """
     Decode a video using the Decord backend.
@@ -339,7 +340,7 @@ def read_video_decord(
         total_num_frames=int(total_num_frames), fps=float(video_fps), duration=float(duration), video_backend="decord"
     )
 
-    indices = sample_indices_fn(metadata=metadata, **kwargs)
+    indices = default_sample_indices_fn(metadata=metadata, num_frames=num_frames, fps=fps)
 
     frames = vr.get_batch(indices).asnumpy()
     metadata.frames_indices = indices
@@ -348,8 +349,8 @@ def read_video_decord(
 
 def read_video_pyav(
     video_path: str,
-    sample_indices_fn: Callable,
-    **kwargs,
+    num_frames: int = None,
+    fps: int = None,
 ):
     """
     Decode the video with PyAV decoder.
@@ -381,7 +382,7 @@ def read_video_pyav(
     metadata = VideoMetadata(
         total_num_frames=int(total_num_frames), fps=float(video_fps), duration=float(duration), video_backend="pyav"
     )
-    indices = sample_indices_fn(metadata=metadata, **kwargs)
+    indices = default_sample_indices_fn(metadata=metadata, num_frames=num_frames, fps=fps)
 
     frames = []
     container.seek(0)
@@ -399,8 +400,8 @@ def read_video_pyav(
 
 def read_video_torchvision(
     video_path: str,
-    sample_indices_fn: Callable,
-    **kwargs,
+    num_frames: int = None,
+    fps: int = None,
 ):
     """
     Decode the video with torchvision decoder.
@@ -438,7 +439,7 @@ def read_video_torchvision(
         video_backend="torchvision",
     )
 
-    indices = sample_indices_fn(metadata=metadata, **kwargs)
+    indices = default_sample_indices_fn(metadata=metadata, num_frames=num_frames, fps=fps)
 
     video = video[indices].contiguous().numpy()
     metadata.frames_indices = indices
@@ -453,13 +454,17 @@ VIDEO_DECODERS = {
 }
 
 
+@deprecate_kwarg(
+    "sample_indices_fn",
+    version="v4.58.0",
+    additional_message="The argument will not have effect when loading. If you are loading for specific model, use `video_processor.sample_frames()`",
+)
 def load_video(
     video: Union[str, "VideoInput"],
     num_frames: Optional[int] = None,
     fps: Optional[int] = None,
     backend: str = "pyav",
     sample_indices_fn: Optional[Callable] = None,
-    **kwargs,
 ) -> np.array:
     """
     Loads `video` to a numpy array.
@@ -474,16 +479,6 @@ def load_video(
             If not specified and `num_frames==None`, all frames are sampled.
         backend (`str`, *optional*, defaults to `"pyav"`):
             The backend to use when loading the video. Can be any of ["decord", "pyav", "opencv", "torchvision"]. Defaults to "pyav".
-        sample_indices_fn (`Callable`, *optional*):
-            A callable function that will return indices at which the video should be sampled. If the video has to be loaded using
-            by a different sampling technique than provided by `num_frames` or `fps` arguments, one should provide their own `sample_indices_fn`.
-            If not provided, simple uniformt sampling with fps is performed, otherwise `sample_indices_fn` has priority over other args.
-            The function expects at input the all args along with all kwargs passed to `load_video` and should output valid
-            indices at which the video should be sampled. For example:
-
-            Example:
-            def sample_indices_fn(metadata, **kwargs):
-                return np.linspace(0, metadata.total_num_frames - 1, num_frames, dtype=int)
 
     Returns:
         Tuple[`np.array`, Dict]: A tuple containing:
@@ -492,18 +487,8 @@ def load_video(
     """
 
     # If `sample_indices_fn` is given, we can accept any args as those might be needed by custom `sample_indices_fn`
-    if fps is not None and num_frames is not None and sample_indices_fn is None:
-        raise ValueError(
-            "`num_frames`, `fps`, and `sample_indices_fn` are mutually exclusive arguments, please use only one!"
-        )
-
-    # If user didn't pass a sampling function, create one on the fly with default logic
-    if sample_indices_fn is None:
-
-        def sample_indices_fn_func(metadata, **fn_kwargs):
-            return default_sample_indices_fn(metadata, num_frames=num_frames, fps=fps, **fn_kwargs)
-
-        sample_indices_fn = sample_indices_fn_func
+    if fps is not None and num_frames is not None:
+        raise ValueError("`num_frames` and `fps` are mutually exclusive arguments, please use only one!")
 
     if urlparse(video).netloc in ["www.youtube.com", "youtube.com"]:
         if not is_yt_dlp_available():
@@ -549,7 +534,7 @@ def load_video(
         )
 
     video_decoder = VIDEO_DECODERS[backend]
-    video, metadata = video_decoder(file_obj, sample_indices_fn, **kwargs)
+    video, metadata = video_decoder(file_obj, num_frames=num_frames, fps=fps)
     return video, metadata
 
 

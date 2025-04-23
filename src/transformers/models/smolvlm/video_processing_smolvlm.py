@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import List, Optional, Union
 
 import numpy as np
@@ -38,7 +37,7 @@ from ...utils.import_utils import requires
 from ...video_processing_utils import (
     BaseVideoProcessor,
 )
-from ...video_utils import group_videos_by_shape, reorder_videos
+from ...video_utils import VideoMetadata, group_videos_by_shape, reorder_videos
 
 
 if is_vision_available():
@@ -66,66 +65,6 @@ DEFAULT_VIDEO_INTRO = (
 DEFAULT_MEDIA_OUTTRO = "\n\n"
 FRAME_TIMESTAMP_MESSAGE = "\nFrame from {timestamp}:"
 MAX_IMAGE_SIZE = 4096  # 4k resolution as absolute maximum
-
-
-def smolvlm_sample_indices_fn(metadata, max_frames, target_fps, skip_secs=0):
-    """
-    Example sampling function which:
-      - Uses `max_frames` (if provided) or calculates it from `fps` and metadata.
-      - Applies a basic center-skip if fewer frames than available, otherwise
-        optionally skips `skip_secs` from both the start and end.
-      - Uniformly samples the desired number of frames between the start and end indices.
-
-    Args:
-        max_frames (`int`):
-            Maximum number of frames to sample.
-        target_fps (`int`):
-            Target frames to sample per second.
-        metadata (`dict`):
-            Contains video metadata such as "n_frames" and "video_fps".
-        skip_secs (`float`, *optional*, defaults to 1.0):
-            Number of seconds to skip from the start and end if the video is long enough.
-
-    Returns:
-        numpy.ndarray:
-            An array of unique frame indices to sample.
-    """
-
-    total_num_frames = getattr(metadata, "total_num_frames", 0)
-    if total_num_frames <= 0:
-        raise ValueError(f"Invalid total_num_frames={total_num_frames} in metadata.")
-
-    native_fps = getattr(metadata, "fps", 30.0)
-    duration_seconds = getattr(metadata, "duration", 0)
-
-    if duration_seconds <= 0:
-        raise ValueError(f"Invalid duration_seconds={duration_seconds} in metadata.")
-
-    # Step 1) Estimate how many frames we'd sample at `target_fps`, fallback if target_fps <= 0
-    estimated_frames = int(round(target_fps * duration_seconds))
-
-    # Step 2) desired_frames
-    desired_frames = min(estimated_frames, max_frames)
-    if desired_frames < 1:
-        desired_frames = 1
-
-    # Step 3) center skip logic
-    start_idx = 0
-    end_idx = total_num_frames - 1
-
-    if skip_secs > 0 and (duration_seconds - 2 * skip_secs) > (max_frames * target_fps):
-        start_idx = int(skip_secs * native_fps)
-        end_idx = int(total_num_frames - skip_secs * native_fps)
-
-    start_idx = max(0, start_idx)
-    end_idx = min(end_idx, total_num_frames - 1)
-    if start_idx >= end_idx:
-        start_idx, end_idx = 0, total_num_frames - 1
-
-    indices = np.linspace(start_idx, end_idx, desired_frames, dtype=int)
-    indices = np.unique(indices)
-
-    return indices
 
 
 def get_max_height_width(videos: list["torch.Tensor"]) -> List[int]:
@@ -180,13 +119,15 @@ def get_resize_output_image_size(
     return height, width
 
 
-class SmolVLMVideoProcessorInitKwargs(VideosKwargs): ...
+class SmolVLMVideoProcessorInitKwargs(VideosKwargs):
+    max_image_size: dict[str, int] = (None,)
 
 
 @requires(backends=("torchvision",))
 class SmolVLMVideoProcessor(BaseVideoProcessor):
     resample = PILImageResampling.LANCZOS
     size = {"longest_edge": 4 * 364}
+    max_image_size = {"longest_edge": 364}
     image_mean = IMAGENET_STANDARD_MEAN
     image_std = IMAGENET_STANDARD_STD
     do_resize = True
@@ -199,6 +140,11 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
 
     def __init__(self, **kwargs: Unpack[SmolVLMVideoProcessorInitKwargs]):
         super().__init__(**kwargs)
+        # For BC pop values from `config.video_sampling`
+        self.num_frames = kwargs["video_sampling"]["max_frames"]
+        self.video_fps = kwargs["video_sampling"]["fps"]
+        self.size = kwargs["video_sampling"]["video_size"]
+        _ = kwargs.pop("size", None)
 
     def resize(
         self,
@@ -240,7 +186,13 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
             new_size = (size.height, size.width)
         else:
             raise ValueError(f"Size must contain 'height' and 'width' keys, or 'longest_edge' key. Got {size}.")
-        return F.resize(video, new_size, interpolation=interpolation, antialias=antialias)
+
+        video = F.resize(video, new_size, interpolation=interpolation, antialias=antialias)
+
+        # resize again to match image processor when `do_image_splitting=False`. Frames have to be squared to `max_image_size`
+        max_size = self.max_image_size["longest_edge"], self.max_image_size["longest_edge"]
+        video = F.resize(video, max_size, interpolation=interpolation, antialias=antialias)
+        return video
 
     def pad(
         self,
@@ -280,6 +232,73 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
 
         return video, pixel_mask
 
+    def sample_frames(
+        self,
+        video: "torch.Tensor",
+        metadata,
+        num_frames: int = None,
+        video_fps: int = None,
+        skip_secs: Optional[int] = 0,
+    ):
+        """
+        Example sampling function which:
+        - Uses `max_frames` (if provided) or calculates it from `fps` and metadata.
+        - Applies a basic center-skip if fewer frames than available, otherwise
+            optionally skips `skip_secs` from both the start and end.
+        - Uniformly samples the desired number of frames between the start and end indices.
+
+        Args:
+            video (`torch.Tensor`):
+                Video that need to be sampled.
+            max_frames (`int`):
+                Maximum number of frames to sample.
+            target_fps (`int`):
+                Target frames to sample per second.
+            skip_secs (`float`, *optional*, defaults to 1.0):
+                Number of seconds to skip from the start and end if the video is long enough.
+
+        Returns:
+            torch.Tensor:
+                Sampled video frames.
+        """
+        num_frames = num_frames if num_frames is not None else self.num_frames
+        video_fps = video_fps if video_fps is not None else self.video_fps
+
+        total_num_frames = video.shape[0]
+
+        # Step 1) Estimate how many frames we'd sample at `target_fps`, fallback if target_fps <= 0
+        estimated_frames = int(round(video_fps * metadata.duration))
+
+        # Step 2) desired_frames
+        desired_frames = min(estimated_frames, num_frames)
+        if desired_frames < 1:
+            desired_frames = 1
+
+        # Step 3) center skip logic
+        start_idx = 0
+        end_idx = total_num_frames - 1
+
+        if skip_secs > 0 and (metadata.duration - 2 * skip_secs) > (num_frames * video_fps):
+            start_idx = int(skip_secs * metadata.fps)
+            end_idx = int(total_num_frames - skip_secs * metadata.fps)
+
+        start_idx = max(0, start_idx)
+        end_idx = min(end_idx, total_num_frames - 1)
+        if start_idx >= end_idx:
+            start_idx, end_idx = 0, total_num_frames - 1
+
+        indices = np.linspace(start_idx, end_idx, desired_frames, dtype=int)
+        indices = np.unique(indices)
+        video = video[indices].contiguous()
+
+        timestamps = []
+        for idx in indices:
+            sec = idx / metadata.fps
+            mm = int(sec // 60)
+            ss = int(sec % 60)
+            timestamps.append([mm, ss])
+        return video, timestamps, int(metadata.duration)
+
     def _preprocess(
         self,
         videos: List["torch.Tensor"],
@@ -293,11 +312,24 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         do_pad: bool,
         image_mean: Optional[Union[float, List[float]]],
         image_std: Optional[Union[float, List[float]]],
+        video_metadata: Union[List[List[VideoMetadata]], List[List[dict]]],
+        video_fps: Optional[int] = None,
+        num_frames: Optional[int] = None,
+        skip_secs: Optional[int] = 0,
         return_tensors: Optional[Union[str, TensorType]] = None,
         **kwargs,
     ):
         # Group videos by size for batched resizing
-        grouped_videos, grouped_videos_index = group_videos_by_shape(videos)
+        batch_metadata = [metadata for batch_list in video_metadata for metadata in batch_list]
+        processed_videos = []
+        timestamps_list, durations_list = [], []
+        for video, metadata in zip(videos, batch_metadata):
+            video, timestamps, duration = self.sample_frames(video, metadata, num_frames, video_fps, skip_secs)
+            timestamps_list.append(timestamps)
+            durations_list.append(duration)
+            processed_videos.append(video)
+
+        grouped_videos, grouped_videos_index = group_videos_by_shape(processed_videos)
         resized_videos_grouped = {}
         for shape, stacked_videos in grouped_videos.items():
             if do_convert_rgb:
@@ -332,7 +364,7 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
             pixel_attention_mask = reorder_videos(processed_padded_mask_grouped, grouped_videos_index)
 
         processed_videos = torch.stack(processed_videos, dim=0) if return_tensors else processed_videos
-        data = {"pixel_values": processed_videos}
+        data = {"pixel_values": processed_videos, "timestamps": timestamps_list, "durations": durations_list}
 
         if do_pad:
             data["pixel_attention_mask"] = (

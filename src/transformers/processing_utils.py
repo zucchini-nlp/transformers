@@ -257,6 +257,9 @@ class VideosKwargs(TypedDict, total=False):
     data_format: Optional[ChannelDimension]
     input_data_format: Optional[Union[str, ChannelDimension]]
     device: Optional[str]
+    video_metadata: Optional[int]
+    video_fps: Optional[int]
+    num_frames: Optional[int]
 
 
 class AudioKwargs(TypedDict, total=False):
@@ -421,9 +424,7 @@ class ChatTemplateLoadKwargs(TypedDict, total=False):
                 return np.linspace(start_idx, end_idx, num_frames, dtype=int)
     """
 
-    num_frames: Optional[int] = None
     video_load_backend: Optional[str] = "pyav"
-    video_fps: Optional[int] = None
     sampling_rate: Optional[int] = 16_000
     load_audio_from_video: Optional[bool] = False
 
@@ -1344,40 +1345,6 @@ class ProcessorMixin(PushToHubMixin):
             )
         return {arg_name: arg_value for arg_value, arg_name in zip(args, self.optional_call_args)}
 
-    def _process_messages_for_chat_template(
-        self,
-        conversation: List[List[Dict[str, str]]],
-        batch_images: List[ImageInput],
-        batch_videos: List[VideoInput],
-        batch_video_metadata: List[List[Dict[str, any]]],
-        **mm_load_kwargs: Unpack[ChatTemplateLoadKwargs],
-    ):
-        """
-        Used within `apply_chat_template` when a model has a special way to process conversation history. For example,
-        video models might want to specify in the prompt the duration of video or which frame indices at which timestamps
-        were sampled. This information cannot be accessed before the video is loaded.
-
-        For most models it is a no-op, and must be overridden by model processors which require special processing.
-
-        Args:
-            conversation (`List[Dict, str, str]`):
-                The conversation to process. Always comes in batched format.
-            batch_images (`List[List[ImageInput]]`):
-                Batch of images that were loaded from url/path defined in the conversation. The images
-                are ordered in the same way as in the conversation. Comes in nested list format, one list of `PIL` images
-                per batch.
-            batch_videos (`List[List[ImageInput]]`):
-                Batch of videos that were loaded from url/path defined in the conversation. The videos
-                are ordered in the samm way as in the conversation. Comes in nested list format, one list of 4D video arrays
-                per batch.
-            batch_video_metadata (`List[List[Dict[[str, any]]]]`):
-                Batch of metadata returned from loading videos. That includes video fps, duration and total number of framer in original video.
-                Metadata are ordered in the same way as `batch_videos`. Comes in nested list format, one list of 4D video arrays
-                per batch.
-
-        """
-        return conversation
-
     def apply_chat_template(
         self,
         conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
@@ -1510,14 +1477,7 @@ class ProcessorMixin(PushToHubMixin):
                                 "If your model uses this metadata during processing, please load the whole video and let the model sample frames instead."
                             )
                         else:
-                            # TODO: raushan, should be `self.video_processor.load_video_for_model` when API is added
-                            video, metadata = self._load_video_for_model(
-                                fname,
-                                num_frames=mm_load_kwargs.get("num_frames", None),
-                                fps=mm_load_kwargs.get("video_fps", None),
-                                backend=mm_load_kwargs["video_load_backend"],
-                                **kwargs,
-                            )
+                            video, metadata = load_video(fname, backend=mm_load_kwargs["video_load_backend"],)
                         videos.append(video)
                         video_metadata.append(metadata)
 
@@ -1528,15 +1488,6 @@ class ProcessorMixin(PushToHubMixin):
                 if videos:
                     batch_videos.append(videos)
                     batch_video_metadata.append(video_metadata)
-
-            # Process conversation with video/image information if needed. Then convert into a prompt using Jinja template
-            conversations = self._process_messages_for_chat_template(
-                conversations,
-                batch_images=batch_images,
-                batch_videos=batch_videos,
-                batch_video_metadata=batch_video_metadata,
-                **processed_kwargs["mm_load_kwargs"],
-            )
 
         prompt = self.tokenizer.apply_chat_template(
             conversations,
@@ -1565,6 +1516,7 @@ class ProcessorMixin(PushToHubMixin):
                 images=batch_images if batch_images else None,
                 videos=batch_videos if batch_videos else None,
                 audio=batch_audios if batch_audios else None,
+                video_metadata=batch_video_metadata,
                 **kwargs,
             )
             if return_dict:
@@ -1572,38 +1524,6 @@ class ProcessorMixin(PushToHubMixin):
             else:
                 return out["input_ids"]
         return prompt
-
-    # TODO: raushan, has to be public method under `VideoProcessorBase` when API is added
-    # Keep private so we can simply remove when needed
-    def _load_video_for_model(
-        self,
-        video: Union[str, "VideoInput"],
-        num_frames: Optional[int] = None,
-        fps: Optional[int] = None,
-        backend: str = "opencv",
-        **kwargs,
-    ) -> np.array:
-        """
-        Loads `video` to a numpy array.
-
-        Args:
-            video (`str` or `VideoInput`):
-                The video to convert to the numpy array format. Can be a link to video or local path.
-            num_frames (`int`, *optional*):
-                Number of frames to sample uniformly. If not passed, the whole video is loaded.
-            fps (`int`, *optional*):
-                Number of frames to sample per second. Should be passed only when `num_frames=None`.
-                If not specified and `num_frames==None`, all frames are sampled.
-            backend (`str`, *optional*, defaults to `"opencv"`):
-                The backend to use when loading the video. Can be any of ["decord", "pyav", "opencv", "torchvision"]. Defaults to "opencv".
-
-        Returns:
-            Tuple[`np.array`, Dict]: A tuple containing:
-                - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
-                - Metadata dictionary.
-        """
-        video, metadata = load_video(video, num_frames, fps=fps, backend=backend)
-        return video, metadata
 
     def post_process_image_text_to_text(self, generated_outputs, skip_special_tokens=True, **kwargs):
         """
