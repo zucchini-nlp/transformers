@@ -159,6 +159,9 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     rescale_factor = 1 / 255
     do_normalize = None
     do_convert_rgb = None
+    video_fps = None
+    num_frames = None
+    video_metadata = None
     valid_kwargs = VideosKwargs
     model_input_names = ["pixel_values_videos"]
 
@@ -220,6 +223,9 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         alpha = video[..., 3, :, :] / 255.0
         video = (1 - alpha[..., None, :, :]) * 255 + alpha[..., None, :, :] * video[..., :3, :, :]
         return video
+
+    def sample_frames(self, video, **kwargs):
+        pass  # make the default version here
 
     def _prepare_input_videos(
         self,
@@ -293,8 +299,18 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         do_normalize: bool,
         image_mean: Optional[Union[float, List[float]]],
         image_std: Optional[Union[float, List[float]]],
+        video_fps=None,
+        num_frames=None,
+        video_metadata=None,
         return_tensors: Optional[Union[str, TensorType]] = None,
     ) -> BatchFeature:
+        # Sample video frames
+        batch_metadata = [metadata for batch_list in video_metadata for metadata in batch_list]
+        videos = [
+            self.sample_frames(video, metadata, num_frames, video_fps)
+            for video, metadata in zip(videos, batch_metadata)
+        ]
+
         # Group videos by size for batched resizing
         grouped_videos, grouped_videos_index = group_videos_by_shape(videos)
         resized_videos_grouped = {}
