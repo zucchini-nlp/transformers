@@ -1510,8 +1510,7 @@ class ProcessorMixin(PushToHubMixin):
                                 "If your model uses this metadata during processing, please load the whole video and let the model sample frames instead."
                             )
                         else:
-                            # TODO: raushan, should be `self.video_processor.load_video_for_model` when API is added
-                            video, metadata = self._load_video_for_model(
+                            video, metadata = self.video_processor.load_video_for_model(
                                 fname,
                                 num_frames=mm_load_kwargs.get("num_frames", None),
                                 fps=mm_load_kwargs.get("video_fps", None),

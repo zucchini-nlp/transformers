@@ -38,7 +38,7 @@ from ...utils.import_utils import requires
 from ...video_processing_utils import (
     BaseVideoProcessor,
 )
-from ...video_utils import group_videos_by_shape, reorder_videos
+from ...video_utils import VideoInput, group_videos_by_shape, load_video, reorder_videos
 
 
 if is_vision_available():
@@ -66,7 +66,6 @@ DEFAULT_VIDEO_INTRO = (
 DEFAULT_MEDIA_OUTTRO = "\n\n"
 FRAME_TIMESTAMP_MESSAGE = "\nFrame from {timestamp}:"
 MAX_IMAGE_SIZE = 4096  # 4k resolution as absolute maximum
-
 
 
 def get_max_height_width(videos: list["torch.Tensor"]) -> List[int]:
@@ -140,6 +139,8 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
 
     def __init__(self, **kwargs: Unpack[SmolVLMVideoProcessorInitKwargs]):
         super().__init__(**kwargs)
+        self.default_max_frames = kwargs["video_sampling"]["max_frames"]
+        self.default_fps = kwargs["video_sampling"]["fps"]
 
     def resize(
         self,
@@ -314,6 +315,37 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         max_frames = self.default_max_frames if num_frames is None else num_frames
         target_fps = self.default_fps if fps is None else fps
 
+        def sample_indices_fn_func(metadata, **fn_kwargs):
+            return self.sample_indices_fn(
+                metadata, max_frames=max_frames, target_fps=target_fps, skip_secs=skip_secs, **fn_kwargs
+            )
+
+        video, metadata = load_video(video, backend=backend, sample_indices_fn=sample_indices_fn_func)
+        return video, metadata
+
+    def sample_indices_fn(self, metadata, max_frames, target_fps, skip_secs=0):
+        """
+        Example sampling function which:
+        - Uses `max_frames` (if provided) or calculates it from `fps` and metadata.
+        - Applies a basic center-skip if fewer frames than available, otherwise
+            optionally skips `skip_secs` from both the start and end.
+        - Uniformly samples the desired number of frames between the start and end indices.
+
+        Args:
+            max_frames (`int`):
+                Maximum number of frames to sample.
+            target_fps (`int`):
+                Target frames to sample per second.
+            metadata (`dict`):
+                Contains video metadata such as "n_frames" and "video_fps".
+            skip_secs (`float`, *optional*, defaults to 1.0):
+                Number of seconds to skip from the start and end if the video is long enough.
+
+        Returns:
+            numpy.ndarray:
+                An array of unique frame indices to sample.
+        """
+
         total_num_frames = getattr(metadata, "total_num_frames", 0)
         if total_num_frames <= 0:
             raise ValueError(f"Invalid total_num_frames={total_num_frames} in metadata.")
@@ -348,8 +380,7 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
         indices = np.linspace(start_idx, end_idx, desired_frames, dtype=int)
         indices = np.unique(indices)
 
-        video, metadata = load_video(video, backend=backend, sample_indices_fn=sample_indices_fn_func)
-        return video, metadata
+        return indices
 
 
 __all__ = ["SmolVLMVideoProcessor"]

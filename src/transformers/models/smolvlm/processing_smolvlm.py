@@ -20,14 +20,12 @@ import copy
 from datetime import timedelta
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-import numpy as np
-
 from ...feature_extraction_utils import BatchFeature
 from ...image_utils import ImageInput, make_nested_list_of_images
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import BatchEncoding, TextInput
 from ...utils import is_num2words_available, is_vision_available, logging
-from ...video_utils import VideoInput, load_video, make_batched_videos
+from ...video_utils import VideoInput, make_batched_videos
 
 
 if is_vision_available():
@@ -35,7 +33,6 @@ if is_vision_available():
         DEFAULT_MEDIA_OUTTRO,
         DEFAULT_VIDEO_INTRO,
         FRAME_TIMESTAMP_MESSAGE,
-        smolvlm_sample_indices_fn,
     )
 
 if TYPE_CHECKING:
@@ -168,8 +165,6 @@ class SmolVLMProcessor(ProcessorMixin):
         self.do_image_splitting = image_processor.do_image_splitting
         self.do_video_splitting = video_processor.video_sampling.get("do_image_splitting", False)
 
-        self.default_max_frames = video_processor.video_sampling["max_frames"]
-        self.default_fps = video_processor.video_sampling["fps"]
         # Matches one or more occurrences of <row_x_col_y> tags (where x and y are digits, optionally surrounded by newline characters
         # self._regex_to_remove_extra_special_tokens = re.compile(r"(<row_\d+_col_\d+>\n?)+")
 
