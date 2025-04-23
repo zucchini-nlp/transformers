@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 from collections.abc import Iterable
 from functools import lru_cache, partial
 from typing import Any, Optional, TypedDict, Union
@@ -40,7 +41,6 @@ from .image_utils import (
     get_image_type,
     infer_channel_dimension_format,
     make_flat_list_of_images,
-    validate_kwargs,
     validate_preprocess_arguments,
 )
 from .processing_utils import Unpack
@@ -667,66 +667,28 @@ class BaseImageProcessorFast(BaseImageProcessor):
         )
 
     @add_start_docstrings(BASE_IMAGE_PROCESSOR_FAST_DOCSTRING_PREPROCESS)
-    def preprocess(self, images: ImageInput, **kwargs: Unpack[DefaultFastImageProcessorKwargs]) -> BatchFeature:
-        validate_kwargs(captured_kwargs=kwargs.keys(), valid_processor_keys=self.valid_kwargs.__annotations__.keys())
-        # Set default kwargs from self. This ensures that if a kwarg is not provided
-        # by the user, it gets its default value from the instance, or is set to None.
-        for kwarg_name in self.valid_kwargs.__annotations__:
-            kwargs.setdefault(kwarg_name, getattr(self, kwarg_name, None))
+    def preprocess(
+        self, images: ImageInput, return_tensors=None, **kwargs: Unpack[DefaultFastImageProcessorKwargs]
+    ) -> BatchFeature:
+        config = copy.deepcopy(self.config)
+        unused_kwargs = config.update(**kwargs)
+        logger.warning(f"These kwargs are not used: {unused_kwargs}")
 
-        # Extract parameters that are only used for preparing the input images
-        do_convert_rgb = kwargs.pop("do_convert_rgb")
-        input_data_format = kwargs.pop("input_data_format")
-        device = kwargs.pop("device")
         # Prepare input images
         images = self._prepare_input_images(
-            images=images, do_convert_rgb=do_convert_rgb, input_data_format=input_data_format, device=device
+            images=images,
+            do_convert_rgb=config.do_convert_rgb,
+            input_data_format=config.input_data_format,
+            device=config.device,
         )
 
-        # Update kwargs that need further processing before being validated
-        kwargs = self._further_process_kwargs(**kwargs)
-
-        # Validate kwargs
-        self._validate_preprocess_kwargs(**kwargs)
-
-        # torch resize uses interpolation instead of resample
-        resample = kwargs.pop("resample")
-
-        # Check if resample is an int before checking if it's an instance of PILImageResampling
-        # because if pillow < 9.1.0, resample is an int and PILImageResampling is a module.
-        # Checking PILImageResampling will fail with error `TypeError: isinstance() arg 2 must be a type or tuple of types`.
-        kwargs["interpolation"] = (
-            pil_torch_interpolation_mapping[resample] if isinstance(resample, (int, PILImageResampling)) else resample
-        )
-
-        # Pop kwargs that are not needed in _preprocess
-        kwargs.pop("default_to_square")
-        kwargs.pop("data_format")
-
-        return self._preprocess(images=images, **kwargs)
-
-    def _preprocess(
-        self,
-        images: list["torch.Tensor"],
-        do_resize: bool,
-        size: SizeDict,
-        interpolation: Optional["F.InterpolationMode"],
-        do_center_crop: bool,
-        crop_size: SizeDict,
-        do_rescale: bool,
-        rescale_factor: float,
-        do_normalize: bool,
-        image_mean: Optional[Union[float, list[float]]],
-        image_std: Optional[Union[float, list[float]]],
-        return_tensors: Optional[Union[str, TensorType]],
-        **kwargs,
-    ) -> BatchFeature:
-        # Group images by size for batched resizing
         grouped_images, grouped_images_index = group_images_by_shape(images)
         resized_images_grouped = {}
         for shape, stacked_images in grouped_images.items():
-            if do_resize:
-                stacked_images = self.resize(image=stacked_images, size=size, interpolation=interpolation)
+            if config.do_resize:
+                stacked_images = self.resize(
+                    image=stacked_images, size=config.size, interpolation=config.interpolation
+                )
             resized_images_grouped[shape] = stacked_images
         resized_images = reorder_images(resized_images_grouped, grouped_images_index)
 
@@ -735,11 +697,16 @@ class BaseImageProcessorFast(BaseImageProcessor):
         grouped_images, grouped_images_index = group_images_by_shape(resized_images)
         processed_images_grouped = {}
         for shape, stacked_images in grouped_images.items():
-            if do_center_crop:
-                stacked_images = self.center_crop(stacked_images, crop_size)
+            if config.do_center_crop:
+                stacked_images = self.center_crop(stacked_images, config.crop_size)
             # Fused rescale and normalize
             stacked_images = self.rescale_and_normalize(
-                stacked_images, do_rescale, rescale_factor, do_normalize, image_mean, image_std
+                stacked_images,
+                config.do_rescale,
+                config.rescale_factor,
+                config.do_normalize,
+                config.image_mean,
+                config.image_std,
             )
             processed_images_grouped[shape] = stacked_images
 

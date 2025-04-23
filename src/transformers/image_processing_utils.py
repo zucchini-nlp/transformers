@@ -12,18 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
+import json
 import math
 from collections.abc import Iterable
-from typing import Optional, Union
+from dataclasses import dataclass
+from typing import Any, Optional, Union
 
 import numpy as np
 
 from .image_processing_base import BatchFeature, ImageProcessingMixin
 from .image_transforms import center_crop, normalize, rescale
-from .image_utils import ChannelDimension, get_image_size
-from .utils import logging
+from .image_utils import ChannelDimension, SizeDict, get_image_size, validate_preprocess_arguments
+from .utils import is_torch_available, is_torchvision_available, is_vision_available, logging
 from .utils.import_utils import requires
 
+
+if is_torch_available():
+    pass
+
+if is_torchvision_available():
+    from .image_utils import pil_torch_interpolation_mapping
+else:
+    pil_torch_interpolation_mapping = None
+
+if is_vision_available():
+    from .image_utils import PILImageResampling
 
 logger = logging.get_logger(__name__)
 
@@ -32,6 +46,153 @@ INIT_SERVICE_KWARGS = [
     "processor_class",
     "image_processor_type",
 ]
+
+
+@dataclass
+class ImageProcessorConfig:
+    def __init__(
+        self,
+        do_resize: Optional[bool],
+        size: Optional[dict[str, int]],
+        size_divisor: Optional[int],
+        crop_size: Optional[dict[str, int]],
+        resample: Optional[Union["PILImageResampling", int]],
+        do_rescale: Optional[bool],
+        rescale_factor: Optional[float],
+        do_normalize: Optional[bool],
+        image_mean: Optional[Union[float, list[float]]],
+        image_std: Optional[Union[float, list[float]]],
+        do_pad: Optional[bool],
+        pad_size: Optional[dict[str, int]],
+        do_center_crop: Optional[bool],
+        default_to_square: Optional[bool],
+        data_format: Optional[ChannelDimension],
+        input_data_format: Optional[Union[str, ChannelDimension]],
+        device: Optional[str],
+    ):
+        self.do_resize = do_resize
+        self.size = size
+        self.size_divisor = size_divisor
+        self.crop_size = crop_size
+        self.resample = resample
+        self.do_rescale = do_rescale
+        self.rescale_factor = rescale_factor
+        self.do_normalize = do_normalize
+        self.image_mean = image_mean
+        self.image_std = image_std
+        self.do_pad = do_pad
+        self.pad_size = pad_size
+        self.do_center_crop = do_center_crop
+        self.default_to_square = default_to_square
+        self.data_format = data_format
+        self.input_data_format = input_data_format
+        self.device = device
+
+        self.post_init()
+        self.validate()
+
+    def post_init(self):
+        if self.size is not None:
+            self.size = SizeDict(**get_size_dict(size=self.size, default_to_square=self.default_to_square))
+        if self.crop_size is not None:
+            self.crop_size = SizeDict(**get_size_dict(self.crop_size, param_name="crop_size"))
+
+        if isinstance(self.image_mean, list):
+            self.image_mean = tuple(self.image_mean)
+        if isinstance(self.image_std, list):
+            self.image_std = tuple(self.image_std)
+
+        self.interpolation = (
+            pil_torch_interpolation_mapping[self.resample]
+            if isinstance(self.resample, (int, PILImageResampling))
+            else self.resample
+        )
+
+        if self.do_rescale and self.do_normalize:
+            # Fused rescale and normalize
+            self.image_mean = np.array(self.image_mean) * (1.0 / self.rescale_factor)
+            self.image_std = np.array(self.image_std) * (1.0 / self.rescale_factor)
+            self.do_rescale = False
+
+    def validate(self):
+        validate_preprocess_arguments(
+            do_rescale=self.do_rescale,
+            rescale_factor=self.rescale_factor,
+            do_normalize=self.do_normalize,
+            image_mean=self.image_mean,
+            image_std=self.image_std,
+            do_pad=self.do_pad,
+            size_divisibility=self.size_divisibility,
+            do_center_crop=self.do_center_crop,
+            crop_size=self.crop_size,
+            do_resize=self.do_resize,
+            size=self.size,
+            resample=self.resample,
+        )
+
+    @classmethod
+    def from_dict(cls, config_dict, **kwargs):
+        """
+        Constructs a BaseWatermarkingConfig instance from a dictionary of parameters.
+
+        Args:
+            config_dict (Dict[str, Any]): Dictionary containing configuration parameters.
+            **kwargs: Additional keyword arguments to override dictionary values.
+
+        Returns:
+            BaseWatermarkingConfig: Instance of BaseWatermarkingConfig constructed from the dictionary.
+        """
+        config = cls(**config_dict)
+        to_remove = []
+        for key, value in kwargs.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+                to_remove.append(key)
+        for key in to_remove:
+            kwargs.pop(key, None)
+        return config
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary.
+
+        Returns:
+            Dict[str, Any]: Dictionary of all the attributes that make up this configuration instance.
+        """
+        output = copy.deepcopy(self.__dict__)
+        return output
+
+    def __iter__(self):
+        for attr, value in copy.deepcopy(self.__dict__).items():
+            yield attr, value
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} {self.to_json_string()}"
+
+    def to_json_string(self):
+        """
+        Serializes this instance to a JSON formatted string.
+
+        Returns:
+            str: JSON formatted string representing the configuration instance.
+        """
+        return json.dumps(self.__dict__, indent=2) + "\n"
+
+    def update(self, **kwargs):
+        """
+        Update the configuration attributes with new values.
+
+        Args:
+            **kwargs: Keyword arguments representing configuration attributes and their new values.
+        """
+        unused_kwargs = {}
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                unused_kwargs[key] = value
+        self.validate()
+        return unused_kwargs
 
 
 @requires(backends=("vision",))
