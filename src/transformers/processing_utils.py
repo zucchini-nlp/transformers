@@ -1345,40 +1345,6 @@ class ProcessorMixin(PushToHubMixin):
             )
         return {arg_name: arg_value for arg_value, arg_name in zip(args, self.optional_call_args)}
 
-    def _process_messages_for_chat_template(
-        self,
-        conversation: List[List[Dict[str, str]]],
-        batch_images: List[ImageInput],
-        batch_videos: List[VideoInput],
-        batch_video_metadata: List[List[Dict[str, any]]],
-        **mm_load_kwargs: Unpack[ChatTemplateLoadKwargs],
-    ):
-        """
-        Used within `apply_chat_template` when a model has a special way to process conversation history. For example,
-        video models might want to specify in the prompt the duration of video or which frame indices at which timestamps
-        were sampled. This information cannot be accessed before the video is loaded.
-
-        For most models it is a no-op, and must be overridden by model processors which require special processing.
-
-        Args:
-            conversation (`List[Dict, str, str]`):
-                The conversation to process. Always comes in batched format.
-            batch_images (`List[List[ImageInput]]`):
-                Batch of images that were loaded from url/path defined in the conversation. The images
-                are ordered in the same way as in the conversation. Comes in nested list format, one list of `PIL` images
-                per batch.
-            batch_videos (`List[List[ImageInput]]`):
-                Batch of videos that were loaded from url/path defined in the conversation. The videos
-                are ordered in the samm way as in the conversation. Comes in nested list format, one list of 4D video arrays
-                per batch.
-            batch_video_metadata (`List[List[Dict[[str, any]]]]`):
-                Batch of metadata returned from loading videos. That includes video fps, duration and total number of framer in original video.
-                Metadata are ordered in the same way as `batch_videos`. Comes in nested list format, one list of 4D video arrays
-                per batch.
-
-        """
-        return conversation
-
     def apply_chat_template(
         self,
         conversation: Union[list[dict[str, str]], list[list[dict[str, str]]]],
@@ -1511,11 +1477,7 @@ class ProcessorMixin(PushToHubMixin):
                                 "If your model uses this metadata during processing, please load the whole video and let the model sample frames instead."
                             )
                         else:
-                            # TODO: raushan, should be `self.video_processor.load_video_for_model` when API is added
-                            video, metadata = load_video(
-                                fname,
-                                backend=mm_load_kwargs["video_load_backend"],
-                            )
+                            video, metadata = load_video(fname, backend=mm_load_kwargs["video_load_backend"],)
                         videos.append(video)
                         video_metadata.append(metadata)
 
