@@ -68,65 +68,6 @@ FRAME_TIMESTAMP_MESSAGE = "\nFrame from {timestamp}:"
 MAX_IMAGE_SIZE = 4096  # 4k resolution as absolute maximum
 
 
-def smolvlm_sample_indices_fn(metadata, max_frames, target_fps, skip_secs=0):
-    """
-    Example sampling function which:
-      - Uses `max_frames` (if provided) or calculates it from `fps` and metadata.
-      - Applies a basic center-skip if fewer frames than available, otherwise
-        optionally skips `skip_secs` from both the start and end.
-      - Uniformly samples the desired number of frames between the start and end indices.
-
-    Args:
-        max_frames (`int`):
-            Maximum number of frames to sample.
-        target_fps (`int`):
-            Target frames to sample per second.
-        metadata (`dict`):
-            Contains video metadata such as "n_frames" and "video_fps".
-        skip_secs (`float`, *optional*, defaults to 1.0):
-            Number of seconds to skip from the start and end if the video is long enough.
-
-    Returns:
-        numpy.ndarray:
-            An array of unique frame indices to sample.
-    """
-
-    total_num_frames = getattr(metadata, "total_num_frames", 0)
-    if total_num_frames <= 0:
-        raise ValueError(f"Invalid total_num_frames={total_num_frames} in metadata.")
-
-    native_fps = getattr(metadata, "fps", 30.0)
-    duration_seconds = getattr(metadata, "duration", 0)
-
-    if duration_seconds <= 0:
-        raise ValueError(f"Invalid duration_seconds={duration_seconds} in metadata.")
-
-    # Step 1) Estimate how many frames we'd sample at `target_fps`, fallback if target_fps <= 0
-    estimated_frames = int(round(target_fps * duration_seconds))
-
-    # Step 2) desired_frames
-    desired_frames = min(estimated_frames, max_frames)
-    if desired_frames < 1:
-        desired_frames = 1
-
-    # Step 3) center skip logic
-    start_idx = 0
-    end_idx = total_num_frames - 1
-
-    if skip_secs > 0 and (duration_seconds - 2 * skip_secs) > (max_frames * target_fps):
-        start_idx = int(skip_secs * native_fps)
-        end_idx = int(total_num_frames - skip_secs * native_fps)
-
-    start_idx = max(0, start_idx)
-    end_idx = min(end_idx, total_num_frames - 1)
-    if start_idx >= end_idx:
-        start_idx, end_idx = 0, total_num_frames - 1
-
-    indices = np.linspace(start_idx, end_idx, desired_frames, dtype=int)
-    indices = np.unique(indices)
-
-    return indices
-
 
 def get_max_height_width(videos: list["torch.Tensor"]) -> List[int]:
     """
@@ -341,6 +282,74 @@ class SmolVLMVideoProcessor(BaseVideoProcessor):
                 else pixel_attention_mask
             )
         return BatchFeature(data, tensor_type=return_tensors)
+
+    def load_video_for_model(
+        self,
+        video: Union[str, "VideoInput"],
+        num_frames: Optional[int] = None,
+        fps: Optional[int] = None,
+        backend: str = "opencv",
+        skip_secs: int = 0.0,
+        **kwargs,
+    ) -> np.array:
+        """
+        Loads `video` to a numpy array.
+
+        Args:
+            video (`str` or `VideoInput`):
+                The video to convert to the numpy array format. Can be a link to video or local path.
+            num_frames (`int`, *optional*):
+                Number of frames to sample uniformly. If not passed, the whole video is loaded.
+            fps (`int`, *optional*):
+                Number of frames to sample per second. Should be passed only when `num_frames=None`.
+                If not specified and `num_frames==None`, all frames are sampled.
+            backend (`str`, *optional*, defaults to `"opencv"`):
+                The backend to use when loading the video. Can be any of ["decord", "pyav", "opencv", "torchvision"]. Defaults to "opencv".
+
+        Returns:
+            Tuple[`np.array`, Dict]: A tuple containing:
+                - Numpy array of frames in RGB (shape: [num_frames, height, width, 3]).
+                - Metadata dictionary.
+        """
+        max_frames = self.default_max_frames if num_frames is None else num_frames
+        target_fps = self.default_fps if fps is None else fps
+
+        total_num_frames = getattr(metadata, "total_num_frames", 0)
+        if total_num_frames <= 0:
+            raise ValueError(f"Invalid total_num_frames={total_num_frames} in metadata.")
+
+        native_fps = getattr(metadata, "fps", 30.0)
+        duration_seconds = getattr(metadata, "duration", 0)
+
+        if duration_seconds <= 0:
+            raise ValueError(f"Invalid duration_seconds={duration_seconds} in metadata.")
+
+        # Step 1) Estimate how many frames we'd sample at `target_fps`, fallback if target_fps <= 0
+        estimated_frames = int(round(target_fps * duration_seconds))
+
+        # Step 2) desired_frames
+        desired_frames = min(estimated_frames, max_frames)
+        if desired_frames < 1:
+            desired_frames = 1
+
+        # Step 3) center skip logic
+        start_idx = 0
+        end_idx = total_num_frames - 1
+
+        if skip_secs > 0 and (duration_seconds - 2 * skip_secs) > (max_frames * target_fps):
+            start_idx = int(skip_secs * native_fps)
+            end_idx = int(total_num_frames - skip_secs * native_fps)
+
+        start_idx = max(0, start_idx)
+        end_idx = min(end_idx, total_num_frames - 1)
+        if start_idx >= end_idx:
+            start_idx, end_idx = 0, total_num_frames - 1
+
+        indices = np.linspace(start_idx, end_idx, desired_frames, dtype=int)
+        indices = np.unique(indices)
+
+        video, metadata = load_video(video, backend=backend, sample_indices_fn=sample_indices_fn_func)
+        return video, metadata
 
 
 __all__ = ["SmolVLMVideoProcessor"]
