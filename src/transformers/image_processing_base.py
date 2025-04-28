@@ -91,6 +91,16 @@ class ImageProcessingMixin(PushToHubMixin):
                 logger.error(f"Can't set {key} with value {value} for {self}")
                 raise err
 
+    def __getattr__(self, key):
+        # Return key from config if exists for BC
+        if hasattr(self.__dict__.get("config", {}), key):
+            return getattr(self.__dict__["config"], key)
+
+        if key not in self.__dict__:
+            raise AttributeError(f"{self.__class__.__name__} has no attribute {key}")
+        else:
+            return super().__getattr__(key)
+
     def _set_processor_class(self, processor_class: str):
         """Sets processor class as an attribute."""
         self._processor_class = processor_class
@@ -427,6 +437,9 @@ class ImageProcessingMixin(PushToHubMixin):
             if hasattr(image_processor, key):
                 setattr(image_processor, key, value)
                 to_remove.append(key)
+            if hasattr(image_processor, "config") and hasattr(image_processor.config, key):
+                setattr(image_processor.config, key, value)
+                to_remove.append(key)
         for key in to_remove:
             kwargs.pop(key, None)
 
@@ -444,6 +457,11 @@ class ImageProcessingMixin(PushToHubMixin):
             `Dict[str, Any]`: Dictionary of all the attributes that make up this image processor instance.
         """
         output = copy.deepcopy(self.__dict__)
+        for key, value in output.items():
+            if key == "config" and not isinstance(value, dict):
+                output.update(value.to_dict())
+                del output[key]
+                break
         output["image_processor_type"] = self.__class__.__name__
 
         return output

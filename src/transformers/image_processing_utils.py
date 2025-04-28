@@ -23,7 +23,7 @@ import numpy as np
 
 from .image_processing_base import BatchFeature, ImageProcessingMixin
 from .image_transforms import center_crop, normalize, rescale
-from .image_utils import ChannelDimension, SizeDict, get_image_size, validate_preprocess_arguments
+from .image_utils import ChannelDimension, get_image_size, validate_preprocess_arguments
 from .utils import is_torch_available, is_torchvision_available, is_vision_available, logging
 from .utils.import_utils import requires
 
@@ -50,52 +50,34 @@ INIT_SERVICE_KWARGS = [
 
 @dataclass
 class ImageProcessorConfig:
-    def __init__(
-        self,
-        do_resize: Optional[bool],
-        size: Optional[dict[str, int]],
-        size_divisor: Optional[int],
-        crop_size: Optional[dict[str, int]],
-        resample: Optional[Union["PILImageResampling", int]],
-        do_rescale: Optional[bool],
-        rescale_factor: Optional[float],
-        do_normalize: Optional[bool],
-        image_mean: Optional[Union[float, list[float]]],
-        image_std: Optional[Union[float, list[float]]],
-        do_pad: Optional[bool],
-        pad_size: Optional[dict[str, int]],
-        do_center_crop: Optional[bool],
-        default_to_square: Optional[bool],
-        data_format: Optional[ChannelDimension],
-        input_data_format: Optional[Union[str, ChannelDimension]],
-        device: Optional[str],
-    ):
-        self.do_resize = do_resize
-        self.size = size
-        self.size_divisor = size_divisor
-        self.crop_size = crop_size
-        self.resample = resample
-        self.do_rescale = do_rescale
-        self.rescale_factor = rescale_factor
-        self.do_normalize = do_normalize
-        self.image_mean = image_mean
-        self.image_std = image_std
-        self.do_pad = do_pad
-        self.pad_size = pad_size
-        self.do_center_crop = do_center_crop
-        self.default_to_square = default_to_square
-        self.data_format = data_format
-        self.input_data_format = input_data_format
-        self.device = device
+    def __init__(self, **kwargs):
+        self.do_resize = kwargs.pop("do_resize", None)
+        self.size = kwargs.pop("size", None)
+        self.size_divisor = kwargs.pop("size_divisor", None)
+        self.crop_size = kwargs.pop("crop_size", None)
+        self.resample = kwargs.pop("resample", None)
+        self.do_rescale = kwargs.pop("do_rescale", None)
+        self.rescale_factor = kwargs.pop("rescale_factor", None)
+        self.do_convert_rgb = kwargs.pop("do_convert_rgb", None)
+        self.do_normalize = kwargs.pop("do_normalize", None)
+        self.image_mean = kwargs.pop("image_mean", None)
+        self.image_std = kwargs.pop("image_std", None)
+        self.do_pad = kwargs.pop("do_pad", None)
+        self.pad_size = kwargs.pop("pad_size", None)
+        self.do_center_crop = kwargs.pop("do_center_crop", None)
+        self.default_to_square = kwargs.pop("default_to_square", None)
+        self.data_format = kwargs.pop("data_format", None)
+        self.input_data_format = kwargs.pop("input_data_format", None)
+        self.device = kwargs.pop("device", None)
 
         self.post_init()
         self.validate()
 
     def post_init(self):
         if self.size is not None:
-            self.size = SizeDict(**get_size_dict(size=self.size, default_to_square=self.default_to_square))
+            self.size = get_size_dict(size=self.size, default_to_square=self.default_to_square)
         if self.crop_size is not None:
-            self.crop_size = SizeDict(**get_size_dict(self.crop_size, param_name="crop_size"))
+            self.crop_size = get_size_dict(self.crop_size, param_name="crop_size")
 
         if isinstance(self.image_mean, list):
             self.image_mean = tuple(self.image_mean)
@@ -110,9 +92,11 @@ class ImageProcessorConfig:
 
         if self.do_rescale and self.do_normalize:
             # Fused rescale and normalize
-            self.image_mean = np.array(self.image_mean) * (1.0 / self.rescale_factor)
-            self.image_std = np.array(self.image_std) * (1.0 / self.rescale_factor)
-            self.do_rescale = False
+            self.fused_image_mean = np.array(self.image_mean) * (1.0 / self.rescale_factor)
+            self.fused_image_std = np.array(self.image_std) * (1.0 / self.rescale_factor)
+        else:
+            self.fused_image_std = self.image_std
+            self.fused_image_mean = self.image_mean
 
     def validate(self):
         validate_preprocess_arguments(
@@ -122,13 +106,21 @@ class ImageProcessorConfig:
             image_mean=self.image_mean,
             image_std=self.image_std,
             do_pad=self.do_pad,
-            size_divisibility=self.size_divisibility,
+            size_divisibility=self.size_divisor,
             do_center_crop=self.do_center_crop,
             crop_size=self.crop_size,
             do_resize=self.do_resize,
             size=self.size,
             resample=self.resample,
         )
+
+    def filter_out_unused_kwargs(self, kwargs: dict):
+        """
+        Filter out the unused kwargs from the kwargs dictionary.
+        """
+        for key in self.__dict__.keys():
+            kwargs.pop(key, None)
+        return kwargs
 
     @classmethod
     def from_dict(cls, config_dict, **kwargs):
@@ -160,6 +152,23 @@ class ImageProcessorConfig:
             Dict[str, Any]: Dictionary of all the attributes that make up this configuration instance.
         """
         output = copy.deepcopy(self.__dict__)
+
+        unused_kwargs = []
+        for key, value in output.items():
+            if isinstance(value, np.ndarray):
+                output[key] = value.tolist()
+            elif isinstance(value, tuple):
+                output[key] = list(value)
+            elif value is None:
+                unused_kwargs.append(key)
+
+        for key in unused_kwargs:
+            _ = output.pop(key)
+
+        # Save only resample and non-fused mean/std
+        output.pop("interpolation", None)
+        output.pop("fused_image_mean", None)
+        output.pop("fused_image_std", None)
         return output
 
     def __iter__(self):
@@ -191,7 +200,9 @@ class ImageProcessorConfig:
                 setattr(self, key, value)
             else:
                 unused_kwargs[key] = value
+
         self.validate()
+        self.post_init()
         return unused_kwargs
 
 

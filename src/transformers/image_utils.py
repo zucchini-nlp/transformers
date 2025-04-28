@@ -1354,3 +1354,6 @@ class SizeDict:
         if hasattr(self, key):
             return getattr(self, key)
         raise KeyError(f"Key {key} not found in SizeDict.")
+
+    def __contains__(self, key):
+        return hasattr(self, key) and self.key is not None

@@ -14,7 +14,7 @@
 
 import copy
 from collections.abc import Iterable
-from functools import lru_cache, partial
+from functools import partial
 from typing import Any, Optional, TypedDict, Union
 
 import numpy as np
@@ -22,7 +22,7 @@ import numpy as np
 from .image_processing_utils import (
     BaseImageProcessor,
     BatchFeature,
-    get_size_dict,
+    ImageProcessorConfig,
 )
 from .image_transforms import (
     convert_to_rgb,
@@ -35,15 +35,12 @@ from .image_utils import (
     ChannelDimension,
     ImageInput,
     ImageType,
-    SizeDict,
     get_image_size,
     get_image_size_for_max_height_width,
     get_image_type,
     infer_channel_dimension_format,
     make_flat_list_of_images,
-    validate_preprocess_arguments,
 )
-from .processing_utils import Unpack
 from .utils import (
     TensorType,
     add_start_docstrings,
@@ -72,49 +69,6 @@ else:
     pil_torch_interpolation_mapping = None
 
 logger = logging.get_logger(__name__)
-
-
-@lru_cache(maxsize=10)
-def validate_fast_preprocess_arguments(
-    do_rescale: Optional[bool] = None,
-    rescale_factor: Optional[float] = None,
-    do_normalize: Optional[bool] = None,
-    image_mean: Optional[Union[float, list[float]]] = None,
-    image_std: Optional[Union[float, list[float]]] = None,
-    do_pad: Optional[bool] = None,
-    size_divisibility: Optional[int] = None,
-    do_center_crop: Optional[bool] = None,
-    crop_size: Optional[SizeDict] = None,
-    do_resize: Optional[bool] = None,
-    size: Optional[SizeDict] = None,
-    resample: Optional["PILImageResampling"] = None,
-    return_tensors: Optional[Union[str, TensorType]] = None,
-    data_format: Optional[ChannelDimension] = ChannelDimension.FIRST,
-):
-    """
-    Checks validity of typically used arguments in an `ImageProcessorFast` `preprocess` method.
-    Raises `ValueError` if arguments incompatibility is caught.
-    """
-    validate_preprocess_arguments(
-        do_rescale=do_rescale,
-        rescale_factor=rescale_factor,
-        do_normalize=do_normalize,
-        image_mean=image_mean,
-        image_std=image_std,
-        do_pad=do_pad,
-        size_divisibility=size_divisibility,
-        do_center_crop=do_center_crop,
-        crop_size=crop_size,
-        do_resize=do_resize,
-        size=size,
-        resample=resample,
-    )
-    # Extra checks for ImageProcessorFast
-    if return_tensors is not None and return_tensors != "pt":
-        raise ValueError("Only returning PyTorch tensors is currently supported.")
-
-    if data_format != ChannelDimension.FIRST:
-        raise ValueError("Only channel first data format is currently supported.")
 
 
 def safe_squeeze(tensor: "torch.Tensor", axis: Optional[int] = None) -> "torch.Tensor":
@@ -292,51 +246,16 @@ BASE_IMAGE_PROCESSOR_FAST_DOCSTRING_PREPROCESS = r"""
     BASE_IMAGE_PROCESSOR_FAST_DOCSTRING,
 )
 class BaseImageProcessorFast(BaseImageProcessor):
-    resample = None
-    image_mean = None
-    image_std = None
-    size = None
-    default_to_square = True
-    crop_size = None
-    do_resize = None
-    do_center_crop = None
-    do_rescale = None
-    rescale_factor = 1 / 255
-    do_normalize = None
-    do_convert_rgb = None
-    return_tensors = None
-    data_format = ChannelDimension.FIRST
-    input_data_format = None
-    device = None
     model_input_names = ["pixel_values"]
-    valid_kwargs = DefaultFastImageProcessorKwargs
-    unused_kwargs = None
 
-    def __init__(
-        self,
-        **kwargs: Unpack[DefaultFastImageProcessorKwargs],
-    ) -> None:
+    def __init__(self, config: ImageProcessorConfig, **kwargs) -> None:
         super().__init__(**kwargs)
-        kwargs = self.filter_out_unused_kwargs(kwargs)
-        size = kwargs.pop("size", self.size)
-        self.size = (
-            get_size_dict(size=size, default_to_square=kwargs.pop("default_to_square", self.default_to_square))
-            if size is not None
-            else None
-        )
-        crop_size = kwargs.pop("crop_size", self.crop_size)
-        self.crop_size = get_size_dict(crop_size, param_name="crop_size") if crop_size is not None else None
-        for key in self.valid_kwargs.__annotations__.keys():
-            kwarg = kwargs.pop(key, None)
-            if kwarg is not None:
-                setattr(self, key, kwarg)
-            else:
-                setattr(self, key, getattr(self, key, None))
+        self.config = config
 
     def resize(
         self,
         image: "torch.Tensor",
-        size: SizeDict,
+        size: dict[str, int],
         interpolation: "F.InterpolationMode" = None,
         antialias: bool = True,
         **kwargs,
@@ -347,7 +266,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
         Args:
             image (`torch.Tensor`):
                 Image to resize.
-            size (`SizeDict`):
+            size (`Dict[str, int]`):
                 Dictionary in the format `{"height": int, "width": int}` specifying the size of the output image.
             resample (`InterpolationMode`, *optional*, defaults to `InterpolationMode.BILINEAR`):
                 `InterpolationMode` filter to use when resizing the image e.g. `InterpolationMode.BICUBIC`.
@@ -356,25 +275,25 @@ class BaseImageProcessorFast(BaseImageProcessor):
             `torch.Tensor`: The resized image.
         """
         interpolation = interpolation if interpolation is not None else F.InterpolationMode.BILINEAR
-        if size.shortest_edge and size.longest_edge:
+        if "shortest_edge" in size and "longest_edge" in size:
             # Resize the image so that the shortest edge or the longest edge is of the given size
             # while maintaining the aspect ratio of the original image.
             new_size = get_size_with_aspect_ratio(
                 image.size()[-2:],
-                size.shortest_edge,
-                size.longest_edge,
+                size["shortest_edge"],
+                size["longest_edge"],
             )
-        elif size.shortest_edge:
+        elif "shortest_edge" in size:
             new_size = get_resize_output_image_size(
                 image,
-                size=size.shortest_edge,
+                size=size["shortest_edge"],
                 default_to_square=False,
                 input_data_format=ChannelDimension.FIRST,
             )
-        elif size.max_height and size.max_width:
-            new_size = get_image_size_for_max_height_width(image.size()[-2:], size.max_height, size.max_width)
-        elif size.height and size.width:
-            new_size = (size.height, size.width)
+        elif "max_height" in size and "max_width" in size:
+            new_size = get_image_size_for_max_height_width(image.size()[-2:], size["max_height"], size["max_width"])
+        elif "height" in size and "width" in size:
+            new_size = (size["height"], size["width"])
         else:
             raise ValueError(
                 "Size must contain 'height' and 'width' keys, or 'max_height' and 'max_width', or 'shortest_edge' key. Got"
@@ -425,23 +344,6 @@ class BaseImageProcessorFast(BaseImageProcessor):
         """
         return F.normalize(image, mean, std)
 
-    @lru_cache(maxsize=10)
-    def _fuse_mean_std_and_rescale_factor(
-        self,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, list[float]]] = None,
-        image_std: Optional[Union[float, list[float]]] = None,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        device: Optional["torch.device"] = None,
-    ) -> tuple:
-        if do_rescale and do_normalize:
-            # Fused rescale and normalize
-            image_mean = torch.tensor(image_mean, device=device) * (1.0 / rescale_factor)
-            image_std = torch.tensor(image_std, device=device) * (1.0 / rescale_factor)
-            do_rescale = False
-        return image_mean, image_std, do_rescale
-
     def rescale_and_normalize(
         self,
         images: "torch.Tensor",
@@ -454,14 +356,6 @@ class BaseImageProcessorFast(BaseImageProcessor):
         """
         Rescale and normalize images.
         """
-        image_mean, image_std, do_rescale = self._fuse_mean_std_and_rescale_factor(
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            device=images.device,
-        )
         # if/elif as we use fused rescale and normalize if both are set to True
         if do_normalize:
             images = self.normalize(images.to(dtype=torch.float32), image_mean, image_std)
@@ -489,7 +383,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
         Returns:
             `torch.Tensor`: The center cropped image.
         """
-        if size.height is None or size.width is None:
+        if "height" not in size or "width" not in size:
             raise ValueError(f"The size dictionary must have keys 'height' and 'width'. Got {size.keys()}")
         return F.center_crop(image, (size["height"], size["width"]))
 
@@ -508,19 +402,6 @@ class BaseImageProcessorFast(BaseImageProcessor):
             ImageInput: The converted image.
         """
         return convert_to_rgb(image)
-
-    def filter_out_unused_kwargs(self, kwargs: dict):
-        """
-        Filter out the unused kwargs from the kwargs dictionary.
-        """
-        if self.unused_kwargs is None:
-            return kwargs
-
-        for kwarg_name in self.unused_kwargs:
-            if kwarg_name in kwargs:
-                logger.warning_once(f"This processor does not use the `{kwarg_name}` parameter. It will be ignored.")
-                kwargs.pop(kwarg_name)
-        return kwargs
 
     def _prepare_images_structure(
         self,
@@ -596,83 +477,18 @@ class BaseImageProcessorFast(BaseImageProcessor):
 
         return processed_images
 
-    def _further_process_kwargs(
-        self,
-        size: Optional[SizeDict] = None,
-        crop_size: Optional[SizeDict] = None,
-        default_to_square: Optional[bool] = None,
-        image_mean: Optional[Union[float, list[float]]] = None,
-        image_std: Optional[Union[float, list[float]]] = None,
-        data_format: Optional[ChannelDimension] = None,
-        **kwargs,
-    ) -> dict:
-        """
-        Update kwargs that need further processing before being validated
-        Can be overridden by subclasses to customize the processing of kwargs.
-        """
-        if kwargs is None:
-            kwargs = {}
-        if size is not None:
-            size = SizeDict(**get_size_dict(size=size, default_to_square=default_to_square))
-        if crop_size is not None:
-            crop_size = SizeDict(**get_size_dict(crop_size, param_name="crop_size"))
-        if isinstance(image_mean, list):
-            image_mean = tuple(image_mean)
-        if isinstance(image_std, list):
-            image_std = tuple(image_std)
-        if data_format is None:
-            data_format = ChannelDimension.FIRST
-
-        kwargs["size"] = size
-        kwargs["crop_size"] = crop_size
-        kwargs["default_to_square"] = default_to_square
-        kwargs["image_mean"] = image_mean
-        kwargs["image_std"] = image_std
-        kwargs["data_format"] = data_format
-
-        return kwargs
-
-    def _validate_preprocess_kwargs(
-        self,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, tuple[float]]] = None,
-        image_std: Optional[Union[float, tuple[float]]] = None,
-        do_resize: Optional[bool] = None,
-        size: Optional[SizeDict] = None,
-        do_center_crop: Optional[bool] = None,
-        crop_size: Optional[SizeDict] = None,
-        resample: Optional[Union["PILImageResampling", "F.InterpolationMode"]] = None,
-        return_tensors: Optional[Union[str, TensorType]] = None,
-        data_format: Optional[ChannelDimension] = None,
-        **kwargs,
-    ):
-        """
-        validate the kwargs for the preprocess method.
-        """
-        validate_fast_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_resize=do_resize,
-            size=size,
-            do_center_crop=do_center_crop,
-            crop_size=crop_size,
-            resample=resample,
-            return_tensors=return_tensors,
-            data_format=data_format,
-        )
-
     @add_start_docstrings(BASE_IMAGE_PROCESSOR_FAST_DOCSTRING_PREPROCESS)
-    def preprocess(
-        self, images: ImageInput, return_tensors=None, **kwargs: Unpack[DefaultFastImageProcessorKwargs]
-    ) -> BatchFeature:
+    def preprocess(self, images: ImageInput, return_tensors=None, **kwargs) -> BatchFeature:
         config = copy.deepcopy(self.config)
         unused_kwargs = config.update(**kwargs)
-        logger.warning(f"These kwargs are not used: {unused_kwargs}")
+        logger.warning(f"Some kwargs are not used in `__call__`: {unused_kwargs.keys()}")
+
+        # Extra checks for only Fast Image Processor
+        if return_tensors is not None and return_tensors != "pt":
+            raise ValueError("Only returning PyTorch tensors is currently supported.")
+
+        if config.data_format is not None and config.data_format != ChannelDimension.FIRST:
+            raise ValueError("Only channel first data format is currently supported.")
 
         # Prepare input images
         images = self._prepare_input_images(
@@ -705,8 +521,8 @@ class BaseImageProcessorFast(BaseImageProcessor):
                 config.do_rescale,
                 config.rescale_factor,
                 config.do_normalize,
-                config.image_mean,
-                config.image_std,
+                config.fused_image_mean,
+                config.fused_image_std,
             )
             processed_images_grouped[shape] = stacked_images
 
@@ -718,6 +534,9 @@ class BaseImageProcessorFast(BaseImageProcessor):
     def to_dict(self):
         encoder_dict = super().to_dict()
         encoder_dict.pop("_valid_processor_keys", None)
+        for key, value in encoder_dict.items():
+            if isinstance(value, torch.Tensor):
+                encoder_dict[key] = value.tolist()
         return encoder_dict
 
 

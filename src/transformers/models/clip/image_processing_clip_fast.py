@@ -34,21 +34,22 @@ class CLIPImageProcessorConfig(ImageProcessorConfig):
         do_rescale=True,
         do_normalize=True,
         do_convert_rgb=True,
+        rescale_factor=1 / 255,
         **kwargs,
     ):
         super().__init__(
-            self,
-            resample,
-            image_mean,
-            image_std,
-            size,
-            default_to_square,
-            crop_size,
-            do_resize,
-            do_center_crop,
-            do_rescale,
-            do_normalize,
-            do_convert_rgb,
+            resample=resample,
+            image_mean=image_mean,
+            image_std=image_std,
+            size=size,
+            default_to_square=default_to_square,
+            crop_size=crop_size,
+            do_resize=do_resize,
+            do_center_crop=do_center_crop,
+            do_rescale=do_rescale,
+            do_normalize=do_normalize,
+            do_convert_rgb=do_convert_rgb,
+            rescale_factor=rescale_factor,
             **kwargs,
         )
 
@@ -59,7 +60,10 @@ class CLIPImageProcessorConfig(ImageProcessorConfig):
 )
 class CLIPImageProcessorFast(BaseImageProcessorFast):
     def __init__(self, **kwargs):
-        self.config = CLIPImageProcessorConfig(**kwargs)
+        config = CLIPImageProcessorConfig(**kwargs)
+        kwargs = config.filter_out_unused_kwargs(kwargs)
+
+        super().__init__(config, **kwargs)
 
 
 __all__ = ["CLIPImageProcessorFast"]
