@@ -19,11 +19,13 @@
 # limitations under the License.
 """Image processor class for Qwen2-VL."""
 
+import copy
 import math
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 
+from ...image_processing_base import ImageProcessorConfig
 from ...image_processing_utils import BaseImageProcessor, BatchFeature
 from ...image_transforms import (
     convert_to_rgb,
@@ -45,12 +47,51 @@ from ...image_utils import (
     make_list_of_images,
     to_numpy_array,
     valid_images,
-    validate_preprocess_arguments,
 )
-from ...utils import TensorType, logging
+from ...utils import logging
 
 
 logger = logging.get_logger(__name__)
+
+
+class Qwen2VLImageProcessorConfig(ImageProcessorConfig):
+    def __init__(
+        self,
+        resample=PILImageResampling.BICUBIC,
+        image_mean=OPENAI_CLIP_MEAN,
+        image_std=OPENAI_CLIP_STD,
+        size={"shortest_edge": 56 * 56, "longest_edge": 28 * 28 * 1280},
+        default_to_square=False,
+        do_resize=True,
+        do_rescale=True,
+        do_normalize=True,
+        rescale_factor=1 / 255,
+        do_convert_rgb=True,
+        min_pixels=None,
+        max_pixels=None,
+        patch_size=14,
+        temporal_patch_size=2,
+        merge_size=2,
+        **kwargs,
+    ):
+        super().__init__(
+            resample=resample,
+            image_mean=image_mean,
+            image_std=image_std,
+            size=size,
+            default_to_square=default_to_square,
+            do_resize=do_resize,
+            do_rescale=do_rescale,
+            do_normalize=do_normalize,
+            do_convert_rgb=do_convert_rgb,
+            rescale_factor=rescale_factor,
+            **kwargs,
+        )
+        self.min_pixels = min_pixels
+        self.max_pixels = max_pixels
+        self.patch_size = patch_size
+        self.temporal_patch_size = temporal_patch_size
+        self.merge_size = merge_size
 
 
 def smart_resize(
@@ -121,68 +162,25 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
 
     model_input_names = ["pixel_values", "image_grid_thw", "pixel_values_videos", "video_grid_thw"]
 
-    def __init__(
-        self,
-        do_resize: bool = True,
-        size: Dict[str, int] = None,
-        resample: PILImageResampling = PILImageResampling.BICUBIC,
-        do_rescale: bool = True,
-        rescale_factor: Union[int, float] = 1 / 255,
-        do_normalize: bool = True,
-        image_mean: Optional[Union[float, List[float]]] = None,
-        image_std: Optional[Union[float, List[float]]] = None,
-        do_convert_rgb: bool = True,
-        min_pixels: Optional[int] = None,
-        max_pixels: Optional[int] = None,
-        patch_size: int = 14,
-        temporal_patch_size: int = 2,
-        merge_size: int = 2,
-        **kwargs,
-    ) -> None:
-        super().__init__(**kwargs)
-        if size is not None and ("shortest_edge" not in size or "longest_edge" not in size):
+    def __init__(self, **kwargs) -> None:
+        config = Qwen2VLImageProcessorConfig(**kwargs)
+        kwargs = config.filter_out_unused_kwargs(kwargs)
+
+        if config.size is not None and ("shortest_edge" not in config.size or "longest_edge" not in config.size):
             raise ValueError("size must contain 'shortest_edge' and 'longest_edge' keys.")
-        else:
-            size = {"shortest_edge": 56 * 56, "longest_edge": 28 * 28 * 1280}
+
         # backward compatibility: override size with min_pixels and max_pixels if they are provided
-        if min_pixels is not None:
-            size["shortest_edge"] = min_pixels
-        if max_pixels is not None:
-            size["longest_edge"] = max_pixels
-        self.min_pixels = size["shortest_edge"]
-        self.max_pixels = size["longest_edge"]
-        self.size = size
+        if config.min_pixels is not None:
+            config.size["shortest_edge"] = config.min_pixels
+        if config.max_pixels is not None:
+            config.size["longest_edge"] = config.max_pixels
 
-        self.do_resize = do_resize
-        self.resample = resample
-        self.do_rescale = do_rescale
-        self.rescale_factor = rescale_factor
-        self.do_normalize = do_normalize
-        self.image_mean = image_mean if image_mean is not None else OPENAI_CLIP_MEAN
-        self.image_std = image_std if image_std is not None else OPENAI_CLIP_STD
-
-        self.patch_size = patch_size
-        self.temporal_patch_size = temporal_patch_size
-        self.merge_size = merge_size
-        self.do_convert_rgb = do_convert_rgb
+        super().__init__(config, **kwargs)
 
     def _preprocess(
         self,
         images: Union[ImageInput, VideoInput],
-        do_resize: Optional[bool] = None,
-        size: Dict[str, int] = None,
-        resample: PILImageResampling = None,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, List[float]]] = None,
-        image_std: Optional[Union[float, List[float]]] = None,
-        patch_size: Optional[int] = None,
-        temporal_patch_size: Optional[int] = None,
-        merge_size: Optional[int] = None,
-        do_convert_rgb: Optional[bool] = None,
-        data_format: Optional[ChannelDimension] = ChannelDimension.FIRST,
-        input_data_format: Optional[Union[str, ChannelDimension]] = None,
+        config: Qwen2VLImageProcessorConfig,
     ):
         """
         Preprocess an image or batch of images. Copy of the `preprocess` method from `CLIPImageProcessor`.
@@ -190,110 +188,80 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
         Args:
             images (`ImageInput`):
                 Image or batch of images to preprocess. Expects pixel values ranging from 0 to 255. If pixel values range from 0 to 1, set `do_rescale=False`.
-            vision_info (`List[Dict]`, *optional*):
-                Optional list of dictionaries containing additional information about vision inputs.
-            do_resize (`bool`, *optional*, defaults to `self.do_resize`):
-                Whether to resize the image.
-            size (`Dict[str, int]`, *optional*, defaults to `self.size`):
-                Size of the image after resizing. `shortest_edge` and `longest_edge` keys must be present.
-            resample (`PILImageResampling`, *optional*, defaults to `self.resample`):
-                Resampling filter to use if resizing the image. This can be one of the `PILImageResampling` enums.
-            do_rescale (`bool`, *optional*, defaults to `self.do_rescale`):
-                Whether to rescale the image.
-            rescale_factor (`float`, *optional*, defaults to `self.rescale_factor`):
-                Scale factor to use if rescaling the image.
-            do_normalize (`bool`, *optional*, defaults to `self.do_normalize`):
-                Whether to normalize the image.
-            image_mean (`float` or `List[float]`, *optional*, defaults to `self.image_mean`):
-                Mean to use if normalizing the image. Can be a float or a list of floats corresponding to the number of channels in the image.
-            image_std (`float` or `List[float]`, *optional*, defaults to `self.image_std`):
-                Standard deviation to use if normalizing the image. Can be a float or a list of floats corresponding to the number of channels in the image.
-            patch_size (`int`, *optional*, defaults to `self.patch_size`):
-                The spacial patch size of the vision encoder.
-            temporal_patch_size (`int`, *optional*, defaults to `self.temporal_patch_size`):
-                The temporal patch size of the vision encoder.
-            merge_size (`int`, *optional*, defaults to `self.merge_size`):
-                The merge size of the vision encoder to llm encoder.
-            do_convert_rgb (`bool`, *optional*, defaults to `self.do_convert_rgb`):
-                Whether to convert the image to RGB.
-            data_format (`ChannelDimension`, *optional*, defaults to `ChannelDimension.FIRST`):
-                The channel dimension format for the output image. Can be one of:
-                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
-                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
-                - Unset: Use the channel dimension format of the input image.
-            input_data_format (`ChannelDimension` or `str`, *optional*):
-                The channel dimension format for the input image. Can be one of:
-                - `"channels_first"` or `ChannelDimension.FIRST`: image in (num_channels, height, width) format.
-                - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
-                - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.   - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
         """
         images = make_list_of_images(images)
 
-        if do_convert_rgb:
+        if config.do_convert_rgb:
             images = [convert_to_rgb(image) for image in images]
 
         # All transformations expect numpy arrays.
         images = [to_numpy_array(image) for image in images]
 
-        if do_rescale and is_scaled_image(images[0]):
+        if config.do_rescale and is_scaled_image(images[0]):
             logger.warning_once(
                 "It looks like you are trying to rescale already rescaled images. If the input"
                 " images have pixel values between 0 and 1, set `do_rescale=False` to avoid rescaling them again."
             )
-        if input_data_format is None:
+        if config.input_data_format is None:
             # We assume that all images have the same channel dimension format.
-            input_data_format = infer_channel_dimension_format(images[0])
+            config.input_data_format = infer_channel_dimension_format(images[0])
 
-        height, width = get_image_size(images[0], channel_dim=input_data_format)
+        height, width = get_image_size(images[0], channel_dim=config.input_data_format)
         resized_height, resized_width = height, width
         processed_images = []
         for image in images:
-            if do_resize:
+            if config.do_resize:
                 resized_height, resized_width = smart_resize(
                     height,
                     width,
-                    factor=patch_size * merge_size,
-                    min_pixels=size["shortest_edge"],
-                    max_pixels=size["longest_edge"],
+                    factor=config.patch_size * config.merge_size,
+                    min_pixels=config.size["shortest_edge"],
+                    max_pixels=config.size["longest_edge"],
                 )
                 image = resize(
-                    image, size=(resized_height, resized_width), resample=resample, input_data_format=input_data_format
+                    image,
+                    size=(resized_height, resized_width),
+                    resample=config.resample,
+                    input_data_format=config.input_data_format,
                 )
 
-            if do_rescale:
-                image = self.rescale(image, scale=rescale_factor, input_data_format=input_data_format)
+            if config.do_rescale:
+                image = self.rescale(image, scale=config.rescale_factor, input_data_format=config.input_data_format)
 
-            if do_normalize:
+            if config.do_normalize:
                 image = self.normalize(
-                    image=image, mean=image_mean, std=image_std, input_data_format=input_data_format
+                    image=image,
+                    mean=config.image_mean,
+                    std=config.image_std,
+                    input_data_format=config.input_data_format,
                 )
 
-            image = to_channel_dimension_format(image, data_format, input_channel_dim=input_data_format)
+            image = to_channel_dimension_format(image, config.data_format, input_channel_dim=config.input_data_format)
             processed_images.append(image)
 
         patches = np.array(processed_images)
-        if data_format == ChannelDimension.LAST:
+        if config.data_format == ChannelDimension.LAST:
             patches = patches.transpose(0, 3, 1, 2)
-        if patches.shape[0] % temporal_patch_size != 0:
-            repeats = np.repeat(patches[-1][np.newaxis], temporal_patch_size - 1, axis=0)
+        if patches.shape[0] % config.temporal_patch_size != 0:
+            repeats = np.repeat(patches[-1][np.newaxis], config.temporal_patch_size - 1, axis=0)
             patches = np.concatenate([patches, repeats], axis=0)
         channel = patches.shape[1]
-        grid_t = patches.shape[0] // temporal_patch_size
-        grid_h, grid_w = resized_height // patch_size, resized_width // patch_size
+        grid_t = patches.shape[0] // config.temporal_patch_size
+        grid_h, grid_w = resized_height // config.patch_size, resized_width // config.patch_size
         patches = patches.reshape(
             grid_t,
-            temporal_patch_size,
+            config.temporal_patch_size,
             channel,
-            grid_h // merge_size,
-            merge_size,
-            patch_size,
-            grid_w // merge_size,
-            merge_size,
-            patch_size,
+            grid_h // config.merge_size,
+            config.merge_size,
+            config.patch_size,
+            grid_w // config.merge_size,
+            config.merge_size,
+            config.patch_size,
         )
         patches = patches.transpose(0, 3, 6, 4, 7, 2, 1, 5, 8)
         flatten_patches = patches.reshape(
-            grid_t * grid_h * grid_w, channel * temporal_patch_size * patch_size * patch_size
+            grid_t * grid_h * grid_w, channel * config.temporal_patch_size * config.patch_size * config.patch_size
         )
 
         return flatten_patches, (grid_t, grid_h, grid_w)
@@ -302,23 +270,9 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
         self,
         images: ImageInput,
         videos: VideoInput = None,
-        do_resize: Optional[bool] = None,
-        size: Dict[str, int] = None,
-        min_pixels: Optional[int] = None,
-        max_pixels: Optional[int] = None,
-        resample: PILImageResampling = None,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, List[float]]] = None,
-        image_std: Optional[Union[float, List[float]]] = None,
-        patch_size: Optional[int] = None,
-        temporal_patch_size: Optional[int] = None,
-        merge_size: Optional[int] = None,
-        do_convert_rgb: Optional[bool] = None,
-        return_tensors: Optional[Union[str, TensorType]] = None,
         data_format: Optional[ChannelDimension] = ChannelDimension.FIRST,
-        input_data_format: Optional[Union[str, ChannelDimension]] = None,
+        return_tensors=None,
+        **kwargs,
     ):
         """
         Args:
@@ -379,31 +333,13 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
                 - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
 
         """
-        min_pixels = min_pixels if min_pixels is not None else self.min_pixels
-        max_pixels = max_pixels if max_pixels is not None else self.max_pixels
+        config = copy.deepcopy(self.config)
+        unused_kwargs = config.update(data_format=data_format, **kwargs)
+        logger.warning(f"Some kwargs are not used in `__call__`: {unused_kwargs.keys()}")
 
-        if size is not None:
-            if "shortest_edge" not in size or "longest_edge" not in size:
-                raise ValueError("size must contain 'shortest_edge' and 'longest_edge' keys.")
-            min_pixels = size["shortest_edge"]
-        elif min_pixels is not None and max_pixels is not None:
+        if config.min_pixels is not None and config.max_pixels is not None:
             # backward compatibility: override size with min_pixels and max_pixels if they are provided
-            size = {"shortest_edge": min_pixels, "longest_edge": max_pixels}
-        else:
-            size = {**self.size}
-
-        do_resize = do_resize if do_resize is not None else self.do_resize
-
-        resample = resample if resample is not None else self.resample
-        do_rescale = do_rescale if do_rescale is not None else self.do_rescale
-        rescale_factor = rescale_factor if rescale_factor is not None else self.rescale_factor
-        do_normalize = do_normalize if do_normalize is not None else self.do_normalize
-        image_mean = image_mean if image_mean is not None else self.image_mean
-        image_std = image_std if image_std is not None else self.image_std
-        patch_size = patch_size if patch_size is not None else self.patch_size
-        temporal_patch_size = temporal_patch_size if temporal_patch_size is not None else self.temporal_patch_size
-        merge_size = merge_size if merge_size is not None else self.merge_size
-        do_convert_rgb = do_convert_rgb if do_convert_rgb is not None else self.do_convert_rgb
+            config.size = {"shortest_edge": config.min_pixels, "longest_edge": config.max_pixels}
 
         if images is not None:
             images = make_flat_list_of_images(images)
@@ -416,36 +352,10 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
                 "torch.Tensor, tf.Tensor or jax.ndarray."
             )
 
-        validate_preprocess_arguments(
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_resize=do_resize,
-            size=size,
-            resample=resample,
-        )
-
         if images is not None:
             pixel_values, vision_grid_thws = [], []
             for image in images:
-                patches, image_grid_thw = self._preprocess(
-                    image,
-                    do_resize=do_resize,
-                    size=size,
-                    resample=resample,
-                    do_rescale=do_rescale,
-                    rescale_factor=rescale_factor,
-                    do_normalize=do_normalize,
-                    image_mean=image_mean,
-                    image_std=image_std,
-                    patch_size=patch_size,
-                    temporal_patch_size=temporal_patch_size,
-                    merge_size=merge_size,
-                    data_format=data_format,
-                    do_convert_rgb=do_convert_rgb,
-                    input_data_format=input_data_format,
-                )
+                patches, image_grid_thw = self._preprocess(image, config)
                 pixel_values.extend(patches)
                 vision_grid_thws.append(image_grid_thw)
             pixel_values = np.array(pixel_values)
@@ -455,23 +365,7 @@ class Qwen2VLImageProcessor(BaseImageProcessor):
         if videos is not None:
             pixel_values, vision_grid_thws = [], []
             for images in videos:
-                patches, video_grid_thw = self._preprocess(
-                    images,
-                    do_resize=do_resize,
-                    size=size,
-                    resample=resample,
-                    do_rescale=do_rescale,
-                    rescale_factor=rescale_factor,
-                    do_normalize=do_normalize,
-                    image_mean=image_mean,
-                    image_std=image_std,
-                    patch_size=patch_size,
-                    temporal_patch_size=temporal_patch_size,
-                    merge_size=merge_size,
-                    data_format=data_format,
-                    do_convert_rgb=do_convert_rgb,
-                    input_data_format=input_data_format,
-                )
+                patches, video_grid_thw = self._preprocess(images, config)
                 pixel_values.extend(patches)
                 vision_grid_thws.append(video_grid_thw)
             pixel_values = np.array(pixel_values)

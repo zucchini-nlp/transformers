@@ -21,7 +21,7 @@
 
 import copy
 
-from ...image_processing_utils import BatchFeature, ImageProcessorConfig
+from ...image_processing_utils import BatchFeature
 from ...image_processing_utils_fast import (
     BASE_IMAGE_PROCESSOR_FAST_DOCSTRING,
     BaseImageProcessorFast,
@@ -29,11 +29,8 @@ from ...image_processing_utils_fast import (
     reorder_images,
 )
 from ...image_utils import (
-    OPENAI_CLIP_MEAN,
-    OPENAI_CLIP_STD,
     ChannelDimension,
     ImageInput,
-    PILImageResampling,
     VideoInput,
     get_image_size,
     make_batched_videos,
@@ -47,7 +44,7 @@ from ...utils import (
     is_torchvision_v2_available,
     logging,
 )
-from .image_processing_qwen2_vl import smart_resize
+from .image_processing_qwen2_vl import Qwen2VLImageProcessorConfig, smart_resize
 
 
 if is_torch_available():
@@ -61,46 +58,6 @@ if is_torchvision_available():
         from torchvision.transforms import functional as F
 
 logger = logging.get_logger(__name__)
-
-
-class Qwen2VLImageProcessorConfig(ImageProcessorConfig):
-    def __init__(
-        self,
-        resample=PILImageResampling.BICUBIC,
-        image_mean=OPENAI_CLIP_MEAN,
-        image_std=OPENAI_CLIP_STD,
-        size={"shortest_edge": 56 * 56, "longest_edge": 28 * 28 * 1280},
-        default_to_square=False,
-        do_resize=True,
-        do_rescale=True,
-        do_normalize=True,
-        rescale_factor=1 / 255,
-        do_convert_rgb=True,
-        min_pixels=None,
-        max_pixels=None,
-        patch_size=14,
-        temporal_patch_size=2,
-        merge_size=2,
-        **kwargs,
-    ):
-        super().__init__(
-            resample=resample,
-            image_mean=image_mean,
-            image_std=image_std,
-            size=size,
-            default_to_square=default_to_square,
-            do_resize=do_resize,
-            do_rescale=do_rescale,
-            do_normalize=do_normalize,
-            do_convert_rgb=do_convert_rgb,
-            rescale_factor=rescale_factor,
-            **kwargs,
-        )
-        self.min_pixels = min_pixels
-        self.max_pixels = max_pixels
-        self.patch_size = patch_size
-        self.temporal_patch_size = temporal_patch_size
-        self.merge_size = merge_size
 
 
 @add_start_docstrings(

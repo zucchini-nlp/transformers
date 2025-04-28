@@ -17,6 +17,7 @@ import copy
 import json
 import os
 import warnings
+from dataclasses import dataclass
 from io import BytesIO
 from typing import Any, Optional, TypeVar, Union
 
@@ -25,6 +26,12 @@ import requests
 
 from .dynamic_module_utils import custom_object_save
 from .feature_extraction_utils import BatchFeature as BaseBatchFeature
+from .image_utils import (
+    PILImageResampling,
+    get_size_dict,
+    pil_torch_interpolation_mapping,
+    validate_preprocess_arguments,
+)
 from .utils import (
     IMAGE_PROCESSOR_NAME,
     PushToHubMixin,
@@ -48,6 +55,164 @@ ImageProcessorType = TypeVar("ImageProcessorType", bound="ImageProcessingMixin")
 
 
 logger = logging.get_logger(__name__)
+
+
+@dataclass
+class ImageProcessorConfig:
+    def __init__(self, **kwargs):
+        self.do_resize = kwargs.pop("do_resize", None)
+        self.size = kwargs.pop("size", None)
+        self.size_divisor = kwargs.pop("size_divisor", None)
+        self.crop_size = kwargs.pop("crop_size", None)
+        self.resample = kwargs.pop("resample", None)
+        self.do_rescale = kwargs.pop("do_rescale", None)
+        self.rescale_factor = kwargs.pop("rescale_factor", None)
+        self.do_convert_rgb = kwargs.pop("do_convert_rgb", None)
+        self.do_normalize = kwargs.pop("do_normalize", None)
+        self.image_mean = kwargs.pop("image_mean", None)
+        self.image_std = kwargs.pop("image_std", None)
+        self.do_pad = kwargs.pop("do_pad", None)
+        self.pad_size = kwargs.pop("pad_size", None)
+        self.do_center_crop = kwargs.pop("do_center_crop", None)
+        self.default_to_square = kwargs.pop("default_to_square", None)
+        self.data_format = kwargs.pop("data_format", None)
+        self.input_data_format = kwargs.pop("input_data_format", None)
+        self.device = kwargs.pop("device", None)
+
+        self.post_init()
+        self.validate()
+
+    def post_init(self):
+        if self.size is not None:
+            self.size = get_size_dict(size=self.size, default_to_square=self.default_to_square)
+        if self.crop_size is not None:
+            self.crop_size = get_size_dict(self.crop_size, param_name="crop_size")
+
+        if isinstance(self.image_mean, list):
+            self.image_mean = tuple(self.image_mean)
+        if isinstance(self.image_std, list):
+            self.image_std = tuple(self.image_std)
+
+        self.interpolation = (
+            pil_torch_interpolation_mapping[self.resample]
+            if isinstance(self.resample, (int, PILImageResampling))
+            else self.resample
+        )
+
+        if self.do_rescale and self.do_normalize:
+            # Fused rescale and normalize
+            self.fused_image_mean = np.array(self.image_mean) * (1.0 / self.rescale_factor)
+            self.fused_image_std = np.array(self.image_std) * (1.0 / self.rescale_factor)
+        else:
+            self.fused_image_std = self.image_std
+            self.fused_image_mean = self.image_mean
+
+    def validate(self):
+        validate_preprocess_arguments(
+            do_rescale=self.do_rescale,
+            rescale_factor=self.rescale_factor,
+            do_normalize=self.do_normalize,
+            image_mean=self.image_mean,
+            image_std=self.image_std,
+            do_pad=self.do_pad,
+            size_divisibility=self.size_divisor,
+            do_center_crop=self.do_center_crop,
+            crop_size=self.crop_size,
+            do_resize=self.do_resize,
+            size=self.size,
+            resample=self.resample,
+        )
+
+    def filter_out_unused_kwargs(self, kwargs: dict):
+        """
+        Filter out the unused kwargs from the kwargs dictionary.
+        """
+        for key in self.__dict__.keys():
+            kwargs.pop(key, None)
+        return kwargs
+
+    @classmethod
+    def from_dict(cls, config_dict, **kwargs):
+        """
+        Constructs a BaseWatermarkingConfig instance from a dictionary of parameters.
+
+        Args:
+            config_dict (Dict[str, Any]): Dictionary containing configuration parameters.
+            **kwargs: Additional keyword arguments to override dictionary values.
+
+        Returns:
+            BaseWatermarkingConfig: Instance of BaseWatermarkingConfig constructed from the dictionary.
+        """
+        config = cls(**config_dict)
+        to_remove = []
+        for key, value in kwargs.items():
+            if hasattr(config, key):
+                setattr(config, key, value)
+                to_remove.append(key)
+        for key in to_remove:
+            kwargs.pop(key, None)
+        return config
+
+    def to_dict(self) -> dict[str, Any]:
+        """
+        Serializes this instance to a Python dictionary.
+
+        Returns:
+            Dict[str, Any]: Dictionary of all the attributes that make up this configuration instance.
+        """
+        output = copy.deepcopy(self.__dict__)
+
+        unused_kwargs = []
+        for key, value in output.items():
+            if isinstance(value, np.ndarray):
+                output[key] = value.tolist()
+            elif isinstance(value, tuple):
+                output[key] = list(value)
+            elif value is None:
+                unused_kwargs.append(key)
+
+        for key in unused_kwargs:
+            _ = output.pop(key)
+
+        # Save only resample and non-fused mean/std
+        output.pop("interpolation", None)
+        output.pop("fused_image_mean", None)
+        output.pop("fused_image_std", None)
+        return output
+
+    def __iter__(self):
+        for attr, value in copy.deepcopy(self.__dict__).items():
+            yield attr, value
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} {self.to_json_string()}"
+
+    def to_json_string(self):
+        """
+        Serializes this instance to a JSON formatted string.
+
+        Returns:
+            str: JSON formatted string representing the configuration instance.
+        """
+        return json.dumps(self.__dict__, indent=2) + "\n"
+
+    def update(self, **kwargs):
+        """
+        Update the configuration attributes with new values.
+
+        Args:
+            **kwargs: Keyword arguments representing configuration attributes and their new values.
+        """
+        unused_kwargs = {}
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                unused_kwargs[key] = value
+
+        self.validate()
+        self.post_init()
+        return unused_kwargs
 
 
 # TODO: Move BatchFeature to be imported by both image_processing_utils and image_processing_utils
@@ -76,13 +241,14 @@ class ImageProcessingMixin(PushToHubMixin):
 
     _auto_class = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, config: ImageProcessorConfig, **kwargs):
         """Set elements of `kwargs` as attributes."""
         # This key was saved while we still used `XXXFeatureExtractor` for image processing. Now we use
         # `XXXImageProcessor`, this attribute and its value are misleading.
         kwargs.pop("feature_extractor_type", None)
         # Pop "processor_class" as it should be saved as private attribute
         self._processor_class = kwargs.pop("processor_class", None)
+        self.config = config
         # Additional attributes without default values
         for key, value in kwargs.items():
             try:
@@ -457,11 +623,11 @@ class ImageProcessingMixin(PushToHubMixin):
             `Dict[str, Any]`: Dictionary of all the attributes that make up this image processor instance.
         """
         output = copy.deepcopy(self.__dict__)
-        for key, value in output.items():
-            if key == "config" and not isinstance(value, dict):
-                output.update(value.to_dict())
-                del output[key]
-                break
+
+        # dispatch config keys as processor attributes for BC
+        if "config" in output:
+            output.update(output["config"].to_dict())
+            del output["config"]
         output["image_processor_type"] = self.__class__.__name__
 
         return output

@@ -19,10 +19,10 @@ from typing import Any, Optional, TypedDict, Union
 
 import numpy as np
 
+from .image_processing_base import ImageProcessorConfig
 from .image_processing_utils import (
     BaseImageProcessor,
     BatchFeature,
-    ImageProcessorConfig,
 )
 from .image_transforms import (
     convert_to_rgb,
@@ -249,7 +249,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
     model_input_names = ["pixel_values"]
 
     def __init__(self, config: ImageProcessorConfig, **kwargs) -> None:
-        super().__init__(**kwargs)
+        super().__init__(config, **kwargs)
         self.config = config
 
     def resize(

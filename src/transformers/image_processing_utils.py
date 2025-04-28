@@ -12,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
-import json
 import math
 from collections.abc import Iterable
-from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 
-from .image_processing_base import BatchFeature, ImageProcessingMixin
+from .image_processing_base import BatchFeature, ImageProcessingMixin, ImageProcessorConfig
 from .image_transforms import center_crop, normalize, rescale
-from .image_utils import ChannelDimension, get_image_size, validate_preprocess_arguments
+from .image_utils import ChannelDimension, get_image_size, get_size_dict
 from .utils import is_torch_available, is_torchvision_available, is_vision_available, logging
 from .utils.import_utils import requires
 
@@ -37,7 +34,7 @@ else:
     pil_torch_interpolation_mapping = None
 
 if is_vision_available():
-    from .image_utils import PILImageResampling
+    pass
 
 logger = logging.get_logger(__name__)
 
@@ -48,168 +45,10 @@ INIT_SERVICE_KWARGS = [
 ]
 
 
-@dataclass
-class ImageProcessorConfig:
-    def __init__(self, **kwargs):
-        self.do_resize = kwargs.pop("do_resize", None)
-        self.size = kwargs.pop("size", None)
-        self.size_divisor = kwargs.pop("size_divisor", None)
-        self.crop_size = kwargs.pop("crop_size", None)
-        self.resample = kwargs.pop("resample", None)
-        self.do_rescale = kwargs.pop("do_rescale", None)
-        self.rescale_factor = kwargs.pop("rescale_factor", None)
-        self.do_convert_rgb = kwargs.pop("do_convert_rgb", None)
-        self.do_normalize = kwargs.pop("do_normalize", None)
-        self.image_mean = kwargs.pop("image_mean", None)
-        self.image_std = kwargs.pop("image_std", None)
-        self.do_pad = kwargs.pop("do_pad", None)
-        self.pad_size = kwargs.pop("pad_size", None)
-        self.do_center_crop = kwargs.pop("do_center_crop", None)
-        self.default_to_square = kwargs.pop("default_to_square", None)
-        self.data_format = kwargs.pop("data_format", None)
-        self.input_data_format = kwargs.pop("input_data_format", None)
-        self.device = kwargs.pop("device", None)
-
-        self.post_init()
-        self.validate()
-
-    def post_init(self):
-        if self.size is not None:
-            self.size = get_size_dict(size=self.size, default_to_square=self.default_to_square)
-        if self.crop_size is not None:
-            self.crop_size = get_size_dict(self.crop_size, param_name="crop_size")
-
-        if isinstance(self.image_mean, list):
-            self.image_mean = tuple(self.image_mean)
-        if isinstance(self.image_std, list):
-            self.image_std = tuple(self.image_std)
-
-        self.interpolation = (
-            pil_torch_interpolation_mapping[self.resample]
-            if isinstance(self.resample, (int, PILImageResampling))
-            else self.resample
-        )
-
-        if self.do_rescale and self.do_normalize:
-            # Fused rescale and normalize
-            self.fused_image_mean = np.array(self.image_mean) * (1.0 / self.rescale_factor)
-            self.fused_image_std = np.array(self.image_std) * (1.0 / self.rescale_factor)
-        else:
-            self.fused_image_std = self.image_std
-            self.fused_image_mean = self.image_mean
-
-    def validate(self):
-        validate_preprocess_arguments(
-            do_rescale=self.do_rescale,
-            rescale_factor=self.rescale_factor,
-            do_normalize=self.do_normalize,
-            image_mean=self.image_mean,
-            image_std=self.image_std,
-            do_pad=self.do_pad,
-            size_divisibility=self.size_divisor,
-            do_center_crop=self.do_center_crop,
-            crop_size=self.crop_size,
-            do_resize=self.do_resize,
-            size=self.size,
-            resample=self.resample,
-        )
-
-    def filter_out_unused_kwargs(self, kwargs: dict):
-        """
-        Filter out the unused kwargs from the kwargs dictionary.
-        """
-        for key in self.__dict__.keys():
-            kwargs.pop(key, None)
-        return kwargs
-
-    @classmethod
-    def from_dict(cls, config_dict, **kwargs):
-        """
-        Constructs a BaseWatermarkingConfig instance from a dictionary of parameters.
-
-        Args:
-            config_dict (Dict[str, Any]): Dictionary containing configuration parameters.
-            **kwargs: Additional keyword arguments to override dictionary values.
-
-        Returns:
-            BaseWatermarkingConfig: Instance of BaseWatermarkingConfig constructed from the dictionary.
-        """
-        config = cls(**config_dict)
-        to_remove = []
-        for key, value in kwargs.items():
-            if hasattr(config, key):
-                setattr(config, key, value)
-                to_remove.append(key)
-        for key in to_remove:
-            kwargs.pop(key, None)
-        return config
-
-    def to_dict(self) -> dict[str, Any]:
-        """
-        Serializes this instance to a Python dictionary.
-
-        Returns:
-            Dict[str, Any]: Dictionary of all the attributes that make up this configuration instance.
-        """
-        output = copy.deepcopy(self.__dict__)
-
-        unused_kwargs = []
-        for key, value in output.items():
-            if isinstance(value, np.ndarray):
-                output[key] = value.tolist()
-            elif isinstance(value, tuple):
-                output[key] = list(value)
-            elif value is None:
-                unused_kwargs.append(key)
-
-        for key in unused_kwargs:
-            _ = output.pop(key)
-
-        # Save only resample and non-fused mean/std
-        output.pop("interpolation", None)
-        output.pop("fused_image_mean", None)
-        output.pop("fused_image_std", None)
-        return output
-
-    def __iter__(self):
-        for attr, value in copy.deepcopy(self.__dict__).items():
-            yield attr, value
-
-    def __repr__(self):
-        return f"{self.__class__.__name__} {self.to_json_string()}"
-
-    def to_json_string(self):
-        """
-        Serializes this instance to a JSON formatted string.
-
-        Returns:
-            str: JSON formatted string representing the configuration instance.
-        """
-        return json.dumps(self.__dict__, indent=2) + "\n"
-
-    def update(self, **kwargs):
-        """
-        Update the configuration attributes with new values.
-
-        Args:
-            **kwargs: Keyword arguments representing configuration attributes and their new values.
-        """
-        unused_kwargs = {}
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            else:
-                unused_kwargs[key] = value
-
-        self.validate()
-        self.post_init()
-        return unused_kwargs
-
-
 @requires(backends=("vision",))
 class BaseImageProcessor(ImageProcessingMixin):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, config: ImageProcessorConfig, **kwargs):
+        super().__init__(config, **kwargs)
 
     def __call__(self, images, **kwargs) -> BatchFeature:
         """Preprocess an image or a batch of images."""
@@ -330,98 +169,6 @@ class BaseImageProcessor(ImageProcessingMixin):
         encoder_dict = super().to_dict()
         encoder_dict.pop("_valid_processor_keys", None)
         return encoder_dict
-
-
-VALID_SIZE_DICT_KEYS = (
-    {"height", "width"},
-    {"shortest_edge"},
-    {"shortest_edge", "longest_edge"},
-    {"longest_edge"},
-    {"max_height", "max_width"},
-)
-
-
-def is_valid_size_dict(size_dict):
-    if not isinstance(size_dict, dict):
-        return False
-
-    size_dict_keys = set(size_dict.keys())
-    for allowed_keys in VALID_SIZE_DICT_KEYS:
-        if size_dict_keys == allowed_keys:
-            return True
-    return False
-
-
-def convert_to_size_dict(
-    size, max_size: Optional[int] = None, default_to_square: bool = True, height_width_order: bool = True
-):
-    # By default, if size is an int we assume it represents a tuple of (size, size).
-    if isinstance(size, int) and default_to_square:
-        if max_size is not None:
-            raise ValueError("Cannot specify both size as an int, with default_to_square=True and max_size")
-        return {"height": size, "width": size}
-    # In other configs, if size is an int and default_to_square is False, size represents the length of
-    # the shortest edge after resizing.
-    elif isinstance(size, int) and not default_to_square:
-        size_dict = {"shortest_edge": size}
-        if max_size is not None:
-            size_dict["longest_edge"] = max_size
-        return size_dict
-    # Otherwise, if size is a tuple it's either (height, width) or (width, height)
-    elif isinstance(size, (tuple, list)) and height_width_order:
-        return {"height": size[0], "width": size[1]}
-    elif isinstance(size, (tuple, list)) and not height_width_order:
-        return {"height": size[1], "width": size[0]}
-    elif size is None and max_size is not None:
-        if default_to_square:
-            raise ValueError("Cannot specify both default_to_square=True and max_size")
-        return {"longest_edge": max_size}
-
-    raise ValueError(f"Could not convert size input to size dict: {size}")
-
-
-def get_size_dict(
-    size: Union[int, Iterable[int], dict[str, int]] = None,
-    max_size: Optional[int] = None,
-    height_width_order: bool = True,
-    default_to_square: bool = True,
-    param_name="size",
-) -> dict:
-    """
-    Converts the old size parameter in the config into the new dict expected in the config. This is to ensure backwards
-    compatibility with the old image processor configs and removes ambiguity over whether the tuple is in (height,
-    width) or (width, height) format.
-
-    - If `size` is tuple, it is converted to `{"height": size[0], "width": size[1]}` or `{"height": size[1], "width":
-    size[0]}` if `height_width_order` is `False`.
-    - If `size` is an int, and `default_to_square` is `True`, it is converted to `{"height": size, "width": size}`.
-    - If `size` is an int and `default_to_square` is False, it is converted to `{"shortest_edge": size}`. If `max_size`
-      is set, it is added to the dict as `{"longest_edge": max_size}`.
-
-    Args:
-        size (`Union[int, Iterable[int], Dict[str, int]]`, *optional*):
-            The `size` parameter to be cast into a size dictionary.
-        max_size (`Optional[int]`, *optional*):
-            The `max_size` parameter to be cast into a size dictionary.
-        height_width_order (`bool`, *optional*, defaults to `True`):
-            If `size` is a tuple, whether it's in (height, width) or (width, height) order.
-        default_to_square (`bool`, *optional*, defaults to `True`):
-            If `size` is an int, whether to default to a square image or not.
-    """
-    if not isinstance(size, dict):
-        size_dict = convert_to_size_dict(size, max_size, default_to_square, height_width_order)
-        logger.info(
-            f"{param_name} should be a dictionary on of the following set of keys: {VALID_SIZE_DICT_KEYS}, got {size}."
-            f" Converted to {size_dict}.",
-        )
-    else:
-        size_dict = size
-
-    if not is_valid_size_dict(size_dict):
-        raise ValueError(
-            f"{param_name} must have one of the following set of keys: {VALID_SIZE_DICT_KEYS}, got {size_dict.keys()}"
-        )
-    return size_dict
 
 
 def select_best_resolution(original_size: tuple, possible_resolutions: list) -> tuple:
