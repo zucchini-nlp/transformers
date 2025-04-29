@@ -14,11 +14,12 @@
 # limitations under the License.
 """Image processor class for CLIP."""
 
-from typing import Dict, List, Optional, Union
+import copy
+from typing import Dict, Optional, Union
 
 import numpy as np
 
-from ...image_processing_utils import BaseImageProcessor, BatchFeature, get_size_dict
+from ...image_processing_utils import BaseImageProcessor, BatchFeature, ImageProcessorConfig
 from ...image_transforms import (
     convert_to_rgb,
     get_resize_output_image_size,
@@ -36,8 +37,6 @@ from ...image_utils import (
     make_flat_list_of_images,
     to_numpy_array,
     valid_images,
-    validate_kwargs,
-    validate_preprocess_arguments,
 )
 from ...utils import TensorType, is_vision_available, logging
 from ...utils.import_utils import requires
@@ -48,6 +47,40 @@ logger = logging.get_logger(__name__)
 
 if is_vision_available():
     import PIL
+
+
+class CLIPImageProcessorConfig(ImageProcessorConfig):
+    def __init__(
+        self,
+        resample=PILImageResampling.BICUBIC,
+        image_mean=OPENAI_CLIP_MEAN,
+        image_std=OPENAI_CLIP_STD,
+        size={"shortest_edge": 224},
+        default_to_square=False,
+        crop_size={"height": 224, "width": 224},
+        do_resize=True,
+        do_center_crop=True,
+        do_rescale=True,
+        do_normalize=True,
+        do_convert_rgb=True,
+        rescale_factor=1 / 255,
+        **kwargs,
+    ):
+        super().__init__(
+            resample=resample,
+            image_mean=image_mean,
+            image_std=image_std,
+            size=size,
+            default_to_square=default_to_square,
+            crop_size=crop_size,
+            do_resize=do_resize,
+            do_center_crop=do_center_crop,
+            do_rescale=do_rescale,
+            do_normalize=do_normalize,
+            do_convert_rgb=do_convert_rgb,
+            rescale_factor=rescale_factor,
+            **kwargs,
+        )
 
 
 @requires(backends=("vision",))
@@ -92,63 +125,19 @@ class CLIPImageProcessor(BaseImageProcessor):
 
     model_input_names = ["pixel_values"]
 
-    def __init__(
-        self,
-        do_resize: bool = True,
-        size: Dict[str, int] = None,
-        resample: PILImageResampling = PILImageResampling.BICUBIC,
-        do_center_crop: bool = True,
-        crop_size: Dict[str, int] = None,
-        do_rescale: bool = True,
-        rescale_factor: Union[int, float] = 1 / 255,
-        do_normalize: bool = True,
-        image_mean: Optional[Union[float, List[float]]] = None,
-        image_std: Optional[Union[float, List[float]]] = None,
-        do_convert_rgb: bool = True,
-        **kwargs,
-    ) -> None:
-        super().__init__(**kwargs)
-        size = size if size is not None else {"shortest_edge": 224}
-        size = get_size_dict(size, default_to_square=False)
-        crop_size = crop_size if crop_size is not None else {"height": 224, "width": 224}
-        crop_size = get_size_dict(crop_size, default_to_square=True, param_name="crop_size")
-
-        self.do_resize = do_resize
-        self.size = size
-        self.resample = resample
-        self.do_center_crop = do_center_crop
-        self.crop_size = crop_size
-        self.do_rescale = do_rescale
-        self.rescale_factor = rescale_factor
-        self.do_normalize = do_normalize
-        self.image_mean = image_mean if image_mean is not None else OPENAI_CLIP_MEAN
-        self.image_std = image_std if image_std is not None else OPENAI_CLIP_STD
-        self.do_convert_rgb = do_convert_rgb
-        self._valid_processor_keys = [
-            "images",
-            "do_resize",
-            "size",
-            "resample",
-            "do_center_crop",
-            "crop_size",
-            "do_rescale",
-            "rescale_factor",
-            "do_normalize",
-            "image_mean",
-            "image_std",
-            "do_convert_rgb",
-            "return_tensors",
-            "data_format",
-            "input_data_format",
-        ]
+    def __init__(self, **kwargs) -> None:
+        config = CLIPImageProcessorConfig(**kwargs)
+        kwargs = config.filter_out_unused_kwargs(kwargs)
 
         # for backwards compatibility of KOSMOS-2
         if "use_square_size" in kwargs and kwargs["use_square_size"]:
-            self.size = {"height": size["shortest_edge"], "width": size["shortest_edge"]}
+            config.size = {"height": config.size["shortest_edge"], "width": config.size["shortest_edge"]}
             # Let's remove `use_square_size` (as it is removed from #27690), so the future Kosmos-2 image processors
             # won't have this attr. being saved. (otherwise, it will enter this if branch while there is no more
             # `shortest_edge` key.
-            delattr(self, "use_square_size")
+            kwargs.pop("use_square_size")
+
+        super().__init__(config, **kwargs)
 
     def resize(
         self,
@@ -202,20 +191,8 @@ class CLIPImageProcessor(BaseImageProcessor):
     def preprocess(
         self,
         images: ImageInput,
-        do_resize: Optional[bool] = None,
-        size: Dict[str, int] = None,
-        resample: PILImageResampling = None,
-        do_center_crop: Optional[bool] = None,
-        crop_size: Optional[int] = None,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, List[float]]] = None,
-        image_std: Optional[Union[float, List[float]]] = None,
-        do_convert_rgb: Optional[bool] = None,
         return_tensors: Optional[Union[str, TensorType]] = None,
         data_format: Optional[ChannelDimension] = ChannelDimension.FIRST,
-        input_data_format: Optional[Union[str, ChannelDimension]] = None,
         **kwargs,
     ) -> PIL.Image.Image:
         """
@@ -269,21 +246,9 @@ class CLIPImageProcessor(BaseImageProcessor):
                 - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
                 - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
         """
-        do_resize = do_resize if do_resize is not None else self.do_resize
-        size = size if size is not None else self.size
-        size = get_size_dict(size, param_name="size", default_to_square=False)
-        resample = resample if resample is not None else self.resample
-        do_center_crop = do_center_crop if do_center_crop is not None else self.do_center_crop
-        crop_size = crop_size if crop_size is not None else self.crop_size
-        crop_size = get_size_dict(crop_size, param_name="crop_size", default_to_square=True)
-        do_rescale = do_rescale if do_rescale is not None else self.do_rescale
-        rescale_factor = rescale_factor if rescale_factor is not None else self.rescale_factor
-        do_normalize = do_normalize if do_normalize is not None else self.do_normalize
-        image_mean = image_mean if image_mean is not None else self.image_mean
-        image_std = image_std if image_std is not None else self.image_std
-        do_convert_rgb = do_convert_rgb if do_convert_rgb is not None else self.do_convert_rgb
-
-        validate_kwargs(captured_kwargs=kwargs.keys(), valid_processor_keys=self._valid_processor_keys)
+        config = copy.deepcopy(self.config)
+        unused_kwargs = config.update(data_format=data_format, **kwargs)
+        logger.warning(f"Some kwargs are not used in `__call__`: {unused_kwargs.keys()}")
 
         images = make_flat_list_of_images(images)
 
@@ -292,54 +257,51 @@ class CLIPImageProcessor(BaseImageProcessor):
                 "Invalid image type. Must be of type PIL.Image.Image, numpy.ndarray, "
                 "torch.Tensor, tf.Tensor or jax.ndarray."
             )
-        validate_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_center_crop=do_center_crop,
-            crop_size=crop_size,
-            do_resize=do_resize,
-            size=size,
-            resample=resample,
-        )
 
-        if do_convert_rgb:
+        if config.do_convert_rgb:
             images = [convert_to_rgb(image) for image in images]
 
         # All transformations expect numpy arrays.
         images = [to_numpy_array(image) for image in images]
 
-        if do_rescale and is_scaled_image(images[0]):
+        if config.do_rescale and is_scaled_image(images[0]):
             logger.warning_once(
                 "It looks like you are trying to rescale already rescaled images. If the input"
                 " images have pixel values between 0 and 1, set `do_rescale=False` to avoid rescaling them again."
             )
 
-        if input_data_format is None:
+        if config.input_data_format is None:
             # We assume that all images have the same channel dimension format.
-            input_data_format = infer_channel_dimension_format(images[0])
+            config.input_data_format = infer_channel_dimension_format(images[0])
 
         all_images = []
         for image in images:
-            if do_resize:
-                image = self.resize(image=image, size=size, resample=resample, input_data_format=input_data_format)
+            if config.do_resize:
+                image = self.resize(
+                    image=image, size=config.size, resample=config.resample, input_data_format=config.input_data_format
+                )
 
-            if do_center_crop:
-                image = self.center_crop(image=image, size=crop_size, input_data_format=input_data_format)
+            if config.do_center_crop:
+                image = self.center_crop(
+                    image=image, size=config.crop_size, input_data_format=config.input_data_format
+                )
 
-            if do_rescale:
-                image = self.rescale(image=image, scale=rescale_factor, input_data_format=input_data_format)
+            if config.do_rescale:
+                image = self.rescale(
+                    image=image, scale=config.rescale_factor, input_data_format=config.input_data_format
+                )
 
-            if do_normalize:
+            if config.do_normalize:
                 image = self.normalize(
-                    image=image, mean=image_mean, std=image_std, input_data_format=input_data_format
+                    image=image,
+                    mean=config.image_mean,
+                    std=config.image_std,
+                    input_data_format=config.input_data_format,
                 )
 
             all_images.append(image)
         images = [
-            to_channel_dimension_format(image, data_format, input_channel_dim=input_data_format)
+            to_channel_dimension_format(image, config.data_format, input_channel_dim=config.input_data_format)
             for image in all_images
         ]
 

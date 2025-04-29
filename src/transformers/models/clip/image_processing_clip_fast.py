@@ -14,44 +14,9 @@
 # limitations under the License.
 """Fast Image processor class for CLIP."""
 
-from ...image_processing_utils import ImageProcessorConfig
 from ...image_processing_utils_fast import BASE_IMAGE_PROCESSOR_FAST_DOCSTRING, BaseImageProcessorFast
-from ...image_utils import OPENAI_CLIP_MEAN, OPENAI_CLIP_STD, PILImageResampling
 from ...utils import add_start_docstrings
-
-
-class CLIPImageProcessorConfig(ImageProcessorConfig):
-    def __init__(
-        self,
-        resample=PILImageResampling.BICUBIC,
-        image_mean=OPENAI_CLIP_MEAN,
-        image_std=OPENAI_CLIP_STD,
-        size={"shortest_edge": 224},
-        default_to_square=False,
-        crop_size={"height": 224, "width": 224},
-        do_resize=True,
-        do_center_crop=True,
-        do_rescale=True,
-        do_normalize=True,
-        do_convert_rgb=True,
-        rescale_factor=1 / 255,
-        **kwargs,
-    ):
-        super().__init__(
-            resample=resample,
-            image_mean=image_mean,
-            image_std=image_std,
-            size=size,
-            default_to_square=default_to_square,
-            crop_size=crop_size,
-            do_resize=do_resize,
-            do_center_crop=do_center_crop,
-            do_rescale=do_rescale,
-            do_normalize=do_normalize,
-            do_convert_rgb=do_convert_rgb,
-            rescale_factor=rescale_factor,
-            **kwargs,
-        )
+from .image_processing_clip import CLIPImageProcessorConfig
 
 
 @add_start_docstrings(
