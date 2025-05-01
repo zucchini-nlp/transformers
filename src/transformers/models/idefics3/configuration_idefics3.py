@@ -145,6 +145,9 @@ class Idefics3Config(PretrainedConfig):
     ```"""
 
     model_type = "idefics3"
+    attribute_map = {
+        "image_token_index": "image_token_id",
+    }
     sub_configs = {"text_config": AutoConfig, "vision_config": Idefics3VisionConfig}
 
     def __init__(

@@ -166,6 +166,10 @@ class Qwen2VLTextConfig(PretrainedConfig):
     model_type = "qwen2_vl_text"
     base_config_key = "text_config"
     keys_to_ignore_at_inference = ["past_key_values"]
+    attribute_map = {
+        "image_token_index": "image_token_id",
+        "video_token_index": "video_token_id",
+    }
     # Default tensor parallel plan for base model `Qwen2VL`
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
@@ -228,6 +232,7 @@ class Qwen2VLTextConfig(PretrainedConfig):
         self.rope_theta = rope_theta
         self.attention_dropout = attention_dropout
         self.rope_scaling = rope_scaling
+        self.image_seq_length = 1225
 
         # Validate the correctness of rotary position embeddings parameters
         # BC: if there is a 'type' field, move it to 'rope_type'.

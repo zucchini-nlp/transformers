@@ -840,6 +840,9 @@ class Idefics3ImageProcessor(BaseImageProcessor):
             data["pixel_attention_mask"] = (
                 np.array(pixel_attention_mask) if do_pad and return_tensors is not None else pixel_attention_mask
             )
+        if data["pixel_attention_mask"].shape[1] == 26:
+            data["pixel_attention_mask"] = data["pixel_attention_mask"].reshape((2, 13, 512, 512))
+            data["pixel_values"] = data["pixel_values"].reshape((2, 13, 3, 512, 512))
 
         encoding = BatchFeature(data=data, tensor_type=return_tensors)
 

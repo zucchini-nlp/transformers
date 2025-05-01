@@ -532,6 +532,7 @@ class Idefics3PreTrainedModel(PreTrainedModel):
     _supports_sdpa = True
     _supports_flex_attn = True
     _supports_cache_class = True
+    _supports_attention_backend = True
 
     def _init_weights(self, module):
         std = getattr(self.config, "initializer_range", self.config.get_text_config().initializer_range)
@@ -791,6 +792,48 @@ class Idefics3Model(Idefics3PreTrainedModel):
     def set_input_embeddings(self, value):
         self.text_model.set_input_embeddings(value)
 
+    def get_image_features(
+        self,
+        pixel_values: torch.Tensor,
+        pixel_attention_mask: Optional[torch.Tensor] = None,
+    ):
+        batch_size, num_images, num_channels, height, width = pixel_values.shape
+        pixel_values = pixel_values.to(dtype=self.dtype)  # fp16 compatibility
+        pixel_values = pixel_values.view(batch_size * num_images, *pixel_values.shape[2:])
+
+        # Remove padding images - padding images are full 0.
+        nb_values_per_image = pixel_values.shape[1:].numel()
+        real_images_inds = (pixel_values == 0.0).sum(dim=(-1, -2, -3)) != nb_values_per_image
+        pixel_values = pixel_values[real_images_inds].contiguous()
+
+        # Handle the vision attention mask
+        if pixel_attention_mask is None:
+            pixel_attention_mask = torch.ones(
+                size=(pixel_values.size(0), pixel_values.size(2), pixel_values.size(3)),
+                dtype=torch.bool,
+                device=pixel_values.device,
+            )
+        else:
+            # Remove padding images from the mask
+            pixel_attention_mask = pixel_attention_mask.view(batch_size * num_images, *pixel_attention_mask.shape[2:])
+            pixel_attention_mask = pixel_attention_mask[real_images_inds].contiguous()
+
+        patch_size = self.config.vision_config.patch_size
+        patches_subgrid = pixel_attention_mask.unfold(dimension=1, size=patch_size, step=patch_size)
+        patches_subgrid = patches_subgrid.unfold(dimension=2, size=patch_size, step=patch_size)
+        patch_attention_mask = (patches_subgrid.sum(dim=(-1, -2)) > 0).bool()
+
+        # Get sequence from the vision encoder
+        image_hidden_states = self.vision_model(
+            pixel_values=pixel_values,
+            patch_attention_mask=patch_attention_mask,
+        ).last_hidden_state
+
+        # Modality projection & resampling
+        image_hidden_states = self.connector(image_hidden_states)
+        image_hidden_states = image_hidden_states.reshape(batch_size, -1, image_hidden_states.shape[-1])
+        return image_hidden_states
+
     def inputs_merger(
         self,
         input_ids: torch.LongTensor,
@@ -843,6 +886,7 @@ class Idefics3Model(Idefics3PreTrainedModel):
         output_hidden_states: Optional[bool] = None,
         cache_position: Optional[torch.LongTensor] = None,
         return_dict: Optional[bool] = None,
+        **kwargs,
     ) -> Union[Tuple, Idefics3BaseModelOutputWithPast]:
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -871,8 +915,8 @@ class Idefics3Model(Idefics3PreTrainedModel):
                 past_key_values = DynamicCache()
             past_seen_tokens = past_key_values.get_seq_length()
 
-        if inputs_embeds is not None and input_ids is None and past_seen_tokens == 0:
-            raise ValueError("When first calling the model, if input_embeds are passed, input_ids should not be None.")
+        if inputs_embeds is not None and pixel_values is not None and past_seen_tokens == 0:
+            raise ValueError("When first calling the model, if input_embeds are passed, pixel_values should be None.")
 
         if inputs_embeds is None:
             inputs_embeds = self.text_model.get_input_embeddings()(input_ids).to(self.device)
@@ -940,6 +984,7 @@ class Idefics3Model(Idefics3PreTrainedModel):
             output_hidden_states=output_hidden_states,
             cache_position=cache_position,
             return_dict=return_dict,
+            **kwargs,
         )
 
         if not return_dict:
