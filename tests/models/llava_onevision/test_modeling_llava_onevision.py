@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,6 +25,7 @@ from transformers import (
     AutoProcessor,
     LlavaOnevisionConfig,
     LlavaOnevisionForConditionalGeneration,
+    LlavaOnevisionModel,
     is_torch_available,
     is_vision_available,
 )
@@ -173,6 +175,39 @@ class LlavaOnevisionVisionText2TextModelTester:
         }
         return config, inputs_dict
 
+    def create_and_check_llava_onevision_model_fp16_forward(
+        self, config, input_ids, pixel_values, attention_mask, image_sizes
+    ):
+        model = LlavaOnevisionForConditionalGeneration(config=config)
+        model.to(torch_device)
+        model.half()
+        model.eval()
+        logits = model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            image_sizes=image_sizes,
+            pixel_values=pixel_values.to(torch.bfloat16),
+            return_dict=True,
+        )["logits"]
+        self.parent.assertFalse(torch.isnan(logits).any().item())
+
+    def create_and_check_llava_onevision_model_fp16_autocast_forward(
+        self, config, input_ids, pixel_values, attention_mask, image_sizes
+    ):
+        config.torch_dtype = torch.float16
+        model = LlavaOnevisionForConditionalGeneration(config=config)
+        model.to(torch_device)
+        model.eval()
+        with torch.autocast(device_type="cuda", dtype=torch.float16):
+            logits = model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                image_sizes=image_sizes,
+                pixel_values=pixel_values.to(torch.bfloat16),
+                return_dict=True,
+            )["logits"]
+        self.parent.assertFalse(torch.isnan(logits).any().item())
+
 
 @require_torch
 class LlavaOnevisionForConditionalGenerationModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCase):
@@ -180,7 +215,14 @@ class LlavaOnevisionForConditionalGenerationModelTest(ModelTesterMixin, Generati
     Model tester for `LlavaOnevisionForConditionalGeneration`.
     """
 
-    all_model_classes = (LlavaOnevisionForConditionalGeneration,) if is_torch_available() else ()
+    all_model_classes = (
+        (
+            LlavaOnevisionModel,
+            LlavaOnevisionForConditionalGeneration,
+        )
+        if is_torch_available()
+        else ()
+    )
     pipeline_model_mapping = (
         {"image-text-to-text": LlavaOnevisionForConditionalGeneration} if is_torch_available() else {}
     )
@@ -281,7 +323,8 @@ class LlavaOnevisionForConditionalGenerationModelTest(ModelTesterMixin, Generati
             model = model_class(config).to(torch_device)
             # We should have the right number of input features,
             # and should be able to run a forward pass without exploding
-            assert model.multi_modal_projector.linear_1.in_features == expected_features
+            base_model = getattr(model, "model", model)
+            assert base_model.multi_modal_projector.linear_1.in_features == expected_features
             model(**input_dict)
 
     @unittest.skip(
@@ -302,10 +345,34 @@ class LlavaOnevisionForConditionalGenerationModelTest(ModelTesterMixin, Generati
     def test_training_gradient_checkpointing_use_reentrant_false(self):
         pass
 
+    @unittest.skip("FlashAttention only support fp16 and bf16 data type")
+    def test_flash_attn_2_fp32_ln(self):
+        pass
+
     @unittest.skip(
         "VLMs need lots of steps to prepare images/mask correctly to get pad-free inputs. Can be tested as part of LLM test"
     )
     def test_flash_attention_2_padding_matches_padding_free_with_position_ids(self):
+        pass
+
+    @unittest.skip("LLaVA OneVision has dynamic control flow in unpadding")
+    def test_generate_compile_model_forward(self):
+        pass
+
+    @unittest.skip("LLaVA vision backbone doesn't support Flex attention yet")
+    def test_flex_attention_with_grads(self):
+        pass
+
+    @unittest.skip("LLaVA uses `image_newline` which is not compatible with offloading")
+    def test_cpu_offload(self):
+        pass
+
+    @unittest.skip("LLaVA uses `image_newline` which is not compatible with offloading")
+    def test_disk_offload_bin(self):
+        pass
+
+    @unittest.skip("LLaVA uses `image_newline` which is not compatible with offloading")
+    def test_disk_offload_safetensors(self):
         pass
 
 

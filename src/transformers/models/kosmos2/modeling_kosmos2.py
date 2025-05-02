@@ -1805,7 +1805,6 @@ class Kosmos2Model(Kosmos2PreTrainedModel):
         self.text_model.model.embed_tokens = value
 
     @add_start_docstrings_to_model_forward(KOSMOS2_INPUTS_DOCSTRING)
-    @replace_return_docstrings(output_type=Kosmos2ModelOutput, config_class=_CONFIG_FOR_DOC)
     def forward(
         self,
         pixel_values: Optional[torch.Tensor] = None,
@@ -1823,39 +1822,6 @@ class Kosmos2Model(Kosmos2PreTrainedModel):
         interpolate_pos_encoding: bool = False,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, Kosmos2ModelOutput]:
-        r"""
-        Returns:
-
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import requests
-        >>> from transformers import AutoProcessor, Kosmos2Model
-
-        >>> model = Kosmos2Model.from_pretrained("microsoft/kosmos-2-patch14-224")
-        >>> processor = AutoProcessor.from_pretrained("microsoft/kosmos-2-patch14-224")
-
-        >>> url = "https://huggingface.co/microsoft/kosmos-2-patch14-224/resolve/main/snowman.jpg"
-        >>> image = Image.open(requests.get(url, stream=True).raw)
-
-        >>> text = (
-        ...     "<grounding> An image of<phrase> a snowman</phrase><object><patch_index_0044><patch_index_0863>"
-        ...     "</object> warming himself by<phrase> a fire</phrase><object><patch_index_0005><patch_index_0911>"
-        ...     "</object>"
-        ... )
-
-        >>> inputs = processor(text=text, images=image, return_tensors="pt", add_eos_token=True)
-
-        >>> last_hidden_state = model(
-        ...     pixel_values=inputs["pixel_values"],
-        ...     input_ids=inputs["input_ids"],
-        ...     attention_mask=inputs["attention_mask"],
-        ...     image_embeds_position_mask=inputs["image_embeds_position_mask"],
-        ... ).last_hidden_state
-        >>> list(last_hidden_state.shape)
-        [1, 91, 2048]
-        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
