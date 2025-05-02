@@ -187,6 +187,39 @@ class LlavaNextVideoVisionText2TextModelTester:
         }
         return config, inputs_dict
 
+    def prepare_config_and_inputs_per_modality(self):
+        config, pixel_values, pixel_values_videos = self.prepare_config_and_inputs()
+        input_ids = ids_tensor([self.batch_size, self.seq_length], config.text_config.vocab_size - 2) + 2
+        attention_mask = torch.ones(input_ids.shape, dtype=torch.long).to(torch_device)
+
+        input_ids[input_ids == config.image_token_index] = self.pad_token_id
+        nput_ids[input_ids == config.video_token_index] = self.pad_token_id
+
+        text_inputs_dict = {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+        }
+
+        input_ids[:, : self.num_image_tokens] = config.image_token_index
+        image_inputs_dict = {
+            "pixel_values": pixel_values,
+            "image_sizes": torch.tensor(
+                [[self.vision_config["image_size"], self.vision_config["image_size"]]] * self.batch_size
+            ),
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+        }
+
+        input_ids[input_ids == config.image_token_index] = self.pad_token_id
+        input_ids[input_ids == config.video_token_index] = self.pad_token_id
+        input_ids[:, : self.num_video_tokens] = config.video_token_index
+        video_inputs_dict = {
+            "pixel_values_videos": pixel_values_videos,
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+        }
+        return config, [text_inputs_dict, image_inputs_dict, video_inputs_dict]
+
 
 @require_torch
 class LlavaNextVideoForConditionalGenerationModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCase):
