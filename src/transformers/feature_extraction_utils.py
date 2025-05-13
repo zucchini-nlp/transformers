@@ -27,6 +27,7 @@ import numpy as np
 from .dynamic_module_utils import custom_object_save
 from .utils import (
     FEATURE_EXTRACTOR_NAME,
+    AUDIO_PROCESSOR_NAME,
     PushToHubMixin,
     TensorType,
     add_model_info_to_auto_map,
@@ -430,10 +431,10 @@ class FeatureExtractionMixin(PushToHubMixin):
             custom_object_save(self, save_directory, config=self)
 
         # If we save using the predefined names, we can load using `from_pretrained`
-        output_feature_extractor_file = os.path.join(save_directory, FEATURE_EXTRACTOR_NAME)
+        output_audio_processor_file = os.path.join(save_directory, AUDIO_PROCESSOR_NAME)
 
-        self.to_json_file(output_feature_extractor_file)
-        logger.info(f"Feature extractor saved in {output_feature_extractor_file}")
+        self.to_json_file(output_audio_processor_file)
+        logger.info(f"Feature extractor saved in {output_audio_processor_file}")
 
         if push_to_hub:
             self._upload_modified_files(
@@ -495,8 +496,7 @@ class FeatureExtractionMixin(PushToHubMixin):
 
         pretrained_model_name_or_path = str(pretrained_model_name_or_path)
         is_local = os.path.isdir(pretrained_model_name_or_path)
-        if os.path.isdir(pretrained_model_name_or_path):
-            feature_extractor_file = os.path.join(pretrained_model_name_or_path, FEATURE_EXTRACTOR_NAME)
+
         if os.path.isfile(pretrained_model_name_or_path):
             resolved_feature_extractor_file = pretrained_model_name_or_path
             is_local = True
@@ -505,8 +505,24 @@ class FeatureExtractionMixin(PushToHubMixin):
             resolved_feature_extractor_file = download_url(pretrained_model_name_or_path)
         else:
             feature_extractor_file = FEATURE_EXTRACTOR_NAME
+            audio_processor_file = AUDIO_PROCESSOR_NAME
             try:
-                # Load from local folder or from cache or download from model Hub and cache
+                # Try to Load from AUDIO_PROCESSOR_NAME
+                resolved_feature_extractor_file = cached_file(
+                    pretrained_model_name_or_path,
+                    audio_processor_file,
+                    cache_dir=cache_dir,
+                    force_download=force_download,
+                    proxies=proxies,
+                    resume_download=resume_download,
+                    local_files_only=local_files_only,
+                    subfolder=subfolder,
+                    token=token,
+                    user_agent=user_agent,
+                    revision=revision,
+                )
+            except:
+                # Otherwise fallback to FEATURE_EXTRACTOR_NAME for BC
                 resolved_feature_extractor_file = cached_file(
                     pretrained_model_name_or_path,
                     feature_extractor_file,
@@ -530,7 +546,7 @@ class FeatureExtractionMixin(PushToHubMixin):
                     f"Can't load feature extractor for '{pretrained_model_name_or_path}'. If you were trying to load"
                     " it from 'https://huggingface.co/models', make sure you don't have a local directory with the"
                     f" same name. Otherwise, make sure '{pretrained_model_name_or_path}' is the correct path to a"
-                    f" directory containing a {FEATURE_EXTRACTOR_NAME} file"
+                    f" directory containing a {AUDIO_PROCESSOR_NAME} file."
                 )
 
         try:
