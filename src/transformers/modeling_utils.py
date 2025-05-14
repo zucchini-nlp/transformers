@@ -232,7 +232,7 @@ VLMS = [
     "mistral3",
     "mllama",
     "paligemma",
-    "qwen2_vl",
+    "qwen2vl",
     "qwem2_5_vl",
     "video_llava",
     "vipllava",
@@ -741,6 +741,8 @@ def _load_state_dict_into_meta_model(
     keep_in_fp32_regex: Optional[re.Pattern] = None,
     unexpected_keys: Optional[List[str]] = None,  # passing `unexpected` for cleanup from quantization items
     device_mesh: Optional["torch.distributed.device_mesh.DeviceMesh"] = None,
+    modality_modules: Optional[List] = None,
+    modality_offloaded_files: Optional[Dict] = None,
 ) -> Tuple[Optional[Dict], Optional[Dict]]:
     """Load parameters from `meta_state_dict` into the model. The parameters of the `meta_state_dict` are on the meta
     device in order to easily infer the shapes and dtypes that they will have. Then proper parameters are then loaded
@@ -816,6 +818,17 @@ def _load_state_dict_into_meta_model(
                     disk_offload_index = offload_weight(param, param_name, disk_offload_folder, disk_offload_index)
             elif param_device == "cpu" and cpu_offload_index is not None:
                 cpu_offload_index = offload_weight(param, param_name, cpu_offload_folder, cpu_offload_index)
+            elif modality_modules is not None and any(
+                modality_prefix in param_name for modality_prefix in modality_modules
+            ):
+                for modality_prefix in modality_modules:
+                    if modality_prefix in param_name:
+                        if shard_file not in modality_offloaded_files[modality_prefix]:
+                            modality_offloaded_files[modality_prefix][shard_file] = []
+                        modality_offloaded_files[modality_prefix][shard_file].append(
+                            {"param_name": param_name, "param_device": param_device, "dtype": casting_dtype}
+                        )
+                        break
             elif (
                 not is_quantized
                 or (not hf_quantizer.requires_parameters_quantization)
@@ -857,7 +870,7 @@ def _load_state_dict_into_meta_model(
     if file_pointer is not None:
         file_pointer.__exit__(None, None, None)
 
-    return disk_offload_index, cpu_offload_index
+    return disk_offload_index, cpu_offload_index, modality_offloaded_files
 
 
 def _add_variant(weights_name: str, variant: Optional[str] = None) -> str:
@@ -4951,6 +4964,9 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, PushToHubMixin, PeftAdapterMi
             cpu_offload_folder = tempfile.mkdtemp()
             cpu_offload_index = {}
 
+        if cls._modality_modules is not None:
+            modality_offloaded_files = {mod: {} for mod in cls._modality_modules}
+
         # For nice tqdm bars
         if checkpoint_files is not None and len(checkpoint_files) > 1:
             checkpoint_files = logging.tqdm(checkpoint_files, desc="Loading checkpoint shards")
@@ -5006,7 +5022,7 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, PushToHubMixin, PeftAdapterMi
                 error_msgs += _load_state_dict_into_zero3_model(model_to_load, state_dict)
             # Skip it with fsdp on ranks other than 0
             elif not (is_fsdp_enabled() and not is_local_dist_rank_0() and not is_quantized):
-                disk_offload_index, cpu_offload_index = _load_state_dict_into_meta_model(
+                disk_offload_index, cpu_offload_index, modality_offloaded_files = _load_state_dict_into_meta_model(
                     model_to_load,
                     state_dict,
                     shard_file,
@@ -5022,6 +5038,8 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, PushToHubMixin, PeftAdapterMi
                     keep_in_fp32_regex=keep_in_fp32_regex,
                     unexpected_keys=unexpected_keys,
                     device_mesh=device_mesh,
+                    modality_modules=cls._modality_modules,
+                    modality_offloaded_files=modality_offloaded_files,
                 )
 
             # force memory release if loading multiple shards, to avoid having 2 state dicts in memory in next loop
@@ -5049,6 +5067,34 @@ class PreTrainedModel(nn.Module, ModuleUtilsMixin, PushToHubMixin, PeftAdapterMi
             load_offloaded_weights(model_to_load, cpu_offload_index, cpu_offload_folder)
             shutil.rmtree(cpu_offload_folder)
 
+        def attach_mm_hook(model, prefix_name=""):
+            for name, child in model.named_children():
+                for prefix in cls._modality_modules:
+                    if hasattr(child, prefix):
+                        module = getattr(child, prefix)
+                        old_forward = module.forward
+
+                        def new_forward(module, *args, **kwargs):
+                            for shard_file in modality_offloaded_files[prefix].keys():
+                                file_pointer = safe_open(shard_file, framework="pt", device="cpu")
+                                for param_name, empty_param in module.state_dict().items():
+                                    serialized_param_name = reverse_key_renaming_mapping[f"model.visual.{param_name}"]
+                                    param = file_pointer.get_slice(serialized_param_name)
+                                    param = param[...].to("cuda:0")
+                                    module.load_state_dict({param_name: param}, strict=False, assign=True)
+                            if module._hf_hook.no_grad:
+                                with torch.no_grad():
+                                    output = module._real_forward(*args, **kwargs)
+                            else:
+                                output = module._real_forward(*args, **kwargs)
+                            module.forward = module._real_forward
+                            return output
+
+                        module.forward = functools.update_wrapper(functools.partial(new_forward, module), old_forward)
+                        module._real_forward = old_forward
+                attach_mm_hook(child, prefix_name=f"{prefix_name}.{name}")
+
+        attach_mm_hook(model_to_load)
         if hf_quantizer is not None:
             missing_keys = hf_quantizer.update_missing_keys_after_loading(model_to_load, missing_keys, prefix)
 

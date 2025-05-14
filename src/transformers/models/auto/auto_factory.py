@@ -545,7 +545,9 @@ class _BaseAutoModelClass:
                 kwargs["quantization_config"] = kwargs_orig["quantization_config"]
 
         has_remote_code = hasattr(config, "auto_map") and cls.__name__ in config.auto_map
-        has_local_code = type(config) in cls._model_mapping.keys()
+        has_local_code = (
+            type(config) in cls._model_mapping.keys() or type(config.get_text_config()) in cls._model_mapping.keys()
+        )
         trust_remote_code = resolve_trust_remote_code(
             trust_remote_code, pretrained_model_name_or_path, has_local_code, has_remote_code
         )
