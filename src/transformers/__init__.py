@@ -55,6 +55,7 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 # Base objects, independent of any specific backend
 _import_structure = {
+    "audio_processing_utils": ["AudioProcessorBase"],
     "audio_utils": [],
     "commands": [],
     "configuration_utils": ["PretrainedConfig"],
@@ -549,6 +550,8 @@ else:
 
 # Direct imports for type-checking
 if TYPE_CHECKING:
+    from .audio_processing_utils import AudioProcessorBase
+
     # All modeling imports
     from .configuration_utils import PretrainedConfig
 

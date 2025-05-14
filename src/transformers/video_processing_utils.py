@@ -338,7 +338,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         **kwargs,
     ):
         r"""
-        Instantiate a type of [`~video_processing_utils.VideoProcessorBase`] from an video processor.
+        Instantiate a type of [`~video_processing_utils.VideoProcessorBase`] from a video processor.
 
         Args:
             pretrained_model_name_or_path (`str` or `os.PathLike`):
@@ -442,7 +442,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
 
     def save_pretrained(self, save_directory: Union[str, os.PathLike], push_to_hub: bool = False, **kwargs):
         """
-        Save an video processor object to the directory `save_directory`, so that it can be re-loaded using the
+        Save a video processor object to the directory `save_directory`, so that it can be re-loaded using the
         [`~video_processing_utils.VideoProcessorBase.from_pretrained`] class method.
 
         Args:
