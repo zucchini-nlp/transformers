@@ -290,6 +290,7 @@ class Mistral3Model(Mistral3PreTrainedModel):
             selected_image_feature = torch.cat(hs_pool, dim=-1)
 
         image_features = self.multi_modal_projector(selected_image_feature.squeeze(0), image_sizes)
+        image_features = image_features.view(pixel_values.shape[0], -1, 5120)
         return image_features
 
     @can_return_tuple

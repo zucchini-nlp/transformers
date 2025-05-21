@@ -247,6 +247,8 @@ class ChameleonConfig(PretrainedConfig):
         self.vq_config = ChameleonVQVAEConfig(**vq_config)
 
         self.vocabulary_map = vocabulary_map
+        if vocabulary_map is not None:
+            self.image_token_id = vocabulary_map.get("<image>")
 
         super().__init__(
             pad_token_id=pad_token_id,

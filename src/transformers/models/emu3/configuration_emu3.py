@@ -320,6 +320,8 @@ class Emu3Config(PretrainedConfig):
         self.vq_config = vq_config
         self.text_config = text_config
         self.vocabulary_map = vocabulary_map
+        if vocabulary_map is not None:
+            self.image_token_id = vocabulary_map.get("<image>")
 
         super().__init__(**kwargs)
 

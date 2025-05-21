@@ -411,8 +411,7 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
                     image_feature = torch.cat((image_feature, image_newline[None].to(image_feature)), dim=0)
             new_image_features.append(image_feature)
             feature_lens.append(image_feature.size(0))
-        image_features = torch.cat(new_image_features, dim=0)
-        feature_lens = torch.tensor(feature_lens, dtype=torch.long, device=image_features.device)
+        feature_lens = torch.tensor(feature_lens, dtype=torch.long)
         return image_features, feature_lens
 
     def get_image_features(
@@ -421,6 +420,7 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
         image_sizes: torch.Tensor,
         vision_feature_layer: Optional[Union[int, List[int]]] = None,
         vision_feature_select_strategy: Optional[str] = None,
+        vision_aspect_ratio: Optional[str] = None,
     ):
         """
         Obtains image last hidden states from the vision tower and apply multimodal projection.
@@ -448,6 +448,9 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
             vision_feature_select_strategy
             if vision_feature_select_strategy is not None
             else self.config.vision_feature_select_strategy
+        )
+        vision_aspect_ratio = (
+            vision_aspect_ratio if vision_aspect_ratio is not None else self.config.vision_aspect_ratio
         )
 
         # ! infer image_num_patches from image_sizes
@@ -482,6 +485,14 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
             selected_image_feature = selected_image_feature
         image_features = self.multi_modal_projector(selected_image_feature)
         image_features = torch.split(image_features, image_num_patches, dim=0)
+
+        image_features, feature_lens = self.pack_image_features(
+            image_features,
+            image_sizes,
+            image_newline=self.image_newline,
+            vision_aspect_ratio=vision_aspect_ratio,
+        )
+        image_features = [image_feature.flatten(0, 1) for image_feature in image_features]
         return image_features
 
     @can_return_tuple
@@ -559,12 +570,7 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
-            image_features, feature_lens = self.pack_image_features(
-                image_features,
-                image_sizes,
-                image_newline=self.image_newline,
-                vision_aspect_ratio=vision_aspect_ratio,
-            )
+            image_features = torch.cat(image_features, dim=0)
 
             special_image_mask = (input_ids == self.config.image_token_id).unsqueeze(-1)
             special_image_mask = special_image_mask.expand_as(inputs_embeds).to(inputs_embeds.device)

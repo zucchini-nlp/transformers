@@ -28,6 +28,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint
 
 from transformers.models.qwen2_vl.configuration_qwen2_vl import Qwen2VLConfig, Qwen2VLTextConfig
+from transformers.models.qwen2_vl.image_processing_qwen2_vl import smart_resize
 from transformers.models.qwen2_vl.modeling_qwen2_vl import (
     PatchEmbed,
     PatchMerger,
@@ -42,7 +43,6 @@ from transformers.models.qwen2_vl.modeling_qwen2_vl import (
     VisionSdpaAttention,
 )
 from transformers.models.qwen2_vl.processing_qwen2_vl import Qwen2VLImagesKwargs, Qwen2VLProcessor
-from transformers.models.qwen2_vl.image_processing_qwen2_vl import smart_resize
 
 from ...activations import ACT2FN
 from ...configuration_utils import PretrainedConfig
@@ -1044,7 +1044,7 @@ class Qwen2_5_VLProcessor(Qwen2VLProcessor):
 
         return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors)
 
-    def _get_num_mm_tokens_from_sizes(
+    def _get_num_multimodal_tokens(
         self, image_sizes=None, video_sizes=None, audio_lengths=None, **mm_processor_kwargs
     ):
         """

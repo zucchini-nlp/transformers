@@ -263,6 +263,8 @@ class AyaVisionModel(AyaVisionPreTrainedModel):
             selected_image_feature = torch.cat(hs_pool, dim=-1)
 
         image_features = self.multi_modal_projector(selected_image_feature)
+        image_features = image_features.reshape(-1, 1690, 4096)
+
         return image_features
 
     @can_return_tuple
