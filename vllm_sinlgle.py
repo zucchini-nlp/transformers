@@ -192,13 +192,13 @@ def run_idefics3(question: str, modality: str):
 
     llm = LLM(
         model=model_name,
-        max_model_len=5000,
-        max_num_batched_tokens=1700,
+        max_model_len=2000,
+        max_num_batched_tokens=1000,
         disable_mm_preprocessor_cache=True,
         gpu_memory_utilization=0.6,
         dtype="bfloat16",
         enforce_eager=True,
-        max_num_seqs=1700,
+        max_num_seqs=1000,
         model_impl="transformers",
         limit_mm_per_prompt={"image": 2},
         enable_prefix_caching=False,
