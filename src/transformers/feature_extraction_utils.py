@@ -19,12 +19,12 @@ import copy
 import json
 import os
 import warnings
-from collections import UserDict
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 import numpy as np
 
 from .dynamic_module_utils import custom_object_save
+from .tokenization_utils_base import BatchEncoding, EncodingFast
 from .utils import (
     FEATURE_EXTRACTOR_NAME,
     PushToHubMixin,
@@ -56,7 +56,7 @@ logger = logging.get_logger(__name__)
 PreTrainedFeatureExtractor = Union["SequenceFeatureExtractor"]  # noqa: F821
 
 
-class BatchFeature(UserDict):
+class BatchFeature(BatchEncoding):
     r"""
     Holds the output of the [`~SequenceFeatureExtractor.pad`] and feature extractor specific `__call__` methods.
 
@@ -69,11 +69,19 @@ class BatchFeature(UserDict):
         tensor_type (`Union[None, str, TensorType]`, *optional*):
             You can give a tensor_type here to convert the lists of integers in PyTorch/TensorFlow/Numpy Tensors at
             initialization.
+        encoding (`tokenizers.Encoding` or `Sequence[tokenizers.Encoding]`, *optional*):
+            If the processed inputs contain text inputs and the tokenizer used is a fast tokenizer which outputs additional
+            information like mapping from word/character space to token space the `tokenizers.Encoding` instance or list of
+            instance (for batches) hold this information.
     """
 
-    def __init__(self, data: Optional[dict[str, Any]] = None, tensor_type: Union[None, str, TensorType] = None):
-        super().__init__(data)
-        self.convert_to_tensors(tensor_type=tensor_type)
+    def __init__(
+        self,
+        data: Optional[dict[str, Any]] = None,
+        tensor_type: Union[None, str, TensorType] = None,
+        encoding: Optional[Union[EncodingFast, Sequence[EncodingFast]]] = None,
+    ):
+        super().__init__(data, tensor_type=tensor_type, encoding=encoding)
 
     def __getitem__(self, item: str) -> Any:
         """
@@ -157,7 +165,7 @@ class BatchFeature(UserDict):
             is_tensor = is_numpy_array
         return is_tensor, as_tensor
 
-    def convert_to_tensors(self, tensor_type: Optional[Union[str, TensorType]] = None):
+    def convert_to_tensors(self, tensor_type: Optional[Union[str, TensorType]] = None, **kwargs):
         """
         Convert the inner content to tensors.
 

@@ -200,7 +200,7 @@ class LlavaOnevisionProcessor(ProcessorMixin):
             mm_token_type_ids[array_ids == self.image_token_id] = 1
             text_inputs["mm_token_type_ids"] = mm_token_type_ids.tolist()
 
-        return BatchFeature(data={**text_inputs, **image_inputs, **video_inputs}, tensor_type=return_tensors)
+        return BatchFeature(data={**text_inputs, **image_inputs, **video_inputs}, tensor_type=return_tensors, encoding=text_inputs.encodings)
 
     def _expand_image_tokens(
         self,

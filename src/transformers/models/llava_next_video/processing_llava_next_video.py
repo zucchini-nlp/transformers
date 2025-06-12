@@ -221,7 +221,7 @@ class LlavaNextVideoProcessor(ProcessorMixin):
         text_inputs = self.tokenizer(text, **output_kwargs["text_kwargs"])
         self._check_special_mm_tokens(text, text_inputs, modalities=["image", "video"])
 
-        return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors)
+        return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors, encoding=text_inputs.encodings)
 
     # Copied from transformers.models.llava_next.processing_llava_next.LlavaNextProcessor._get_number_of_features
     def _get_number_of_features(self, orig_height: int, orig_width: int, height: int, width: int) -> int:
