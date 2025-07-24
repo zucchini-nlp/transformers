@@ -43,6 +43,7 @@ class JanusProcessorTest(ProcessorTesterMixin, unittest.TestCase):
         # Hence set to False to avoid any issues in the test irrespective of inputs.
         processor.use_default_system_prompt = False
         processor.save_pretrained(self.tmpdirname)
+        self.image_token = processor.image_token
 
     def get_tokenizer(self, **kwargs):
         return AutoTokenizer.from_pretrained(self.tmpdirname, **kwargs)
@@ -52,6 +53,10 @@ class JanusProcessorTest(ProcessorTesterMixin, unittest.TestCase):
 
     def get_processor(self):
         return AutoProcessor.from_pretrained(self.tmpdirname)
+
+    @staticmethod
+    def prepare_processor_dict():
+        return {"num_image_tokens": 3}
 
     def test_chat_template_single(self):
         """

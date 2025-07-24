@@ -133,14 +133,13 @@ class ChameleonProcessor(ProcessorMixin):
             text = [text]
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
-        if text is None and images is None:
-            raise ValueError("You must provide either text or images")
 
         output_kwargs = self._merge_kwargs(
             ChameleonProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
+        self._check_mm_tokens_matches_inputs(text, images=images)
         return_for_text_completion = output_kwargs["text_kwargs"].pop("return_for_text_completion", False)
 
         # Replace the image token with the expanded image token sequence

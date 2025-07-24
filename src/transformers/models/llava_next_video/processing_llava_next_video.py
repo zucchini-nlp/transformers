@@ -178,6 +178,7 @@ class LlavaNextVideoProcessor(ProcessorMixin):
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
         if image_inputs:
             image_sizes = iter(image_inputs["image_sizes"])
             height, width = get_image_size(to_numpy_array(image_inputs["pixel_values"][0][0]))

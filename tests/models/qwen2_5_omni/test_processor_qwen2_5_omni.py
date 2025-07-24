@@ -204,8 +204,12 @@ class Qwen2_5OmniProcessorTest(ProcessorTesterMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmpdirname = tempfile.mkdtemp()
-        processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-7B")
+        processor = Qwen2_5OmniProcessor.from_pretrained(
+            "Qwen/Qwen2.5-Omni-7B", patch_size=4, max_pixels=56 * 56, min_pixels=28 * 28
+        )
         processor.save_pretrained(cls.tmpdirname)
+        cls.image_token = processor.image_token
+        cls.video_token = processor.video_token
 
     def get_tokenizer(self, **kwargs):
         return AutoProcessor.from_pretrained(self.tmpdirname, **kwargs).tokenizer

@@ -159,6 +159,7 @@ class LlavaOnevisionProcessor(ProcessorMixin):
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
         image_inputs = video_inputs = {}
 
         if images is not None:

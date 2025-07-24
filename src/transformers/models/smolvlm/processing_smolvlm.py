@@ -20,7 +20,7 @@ from datetime import timedelta
 from typing import TYPE_CHECKING, Optional, Union
 
 from ...feature_extraction_utils import BatchFeature
-from ...image_utils import ImageInput, make_nested_list_of_images
+from ...image_utils import ImageInput
 from ...processing_utils import AllKwargsForChatTemplate, ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import BatchEncoding, TextInput
 from ...utils import is_num2words_available, is_vision_available, logging
@@ -175,19 +175,11 @@ class SmolVLMProcessor(ProcessorMixin):
         super().__init__(image_processor, tokenizer, video_processor, chat_template=chat_template, **kwargs)
 
     def process_vision(self, text, images, output_kwargs):
-        if text is not None:
-            n_images_in_text = [sample.count(self.image_token) for sample in text]
-
-        n_images_in_images = [len(sublist) for sublist in images]
         image_inputs = self.image_processor(images, **output_kwargs["images_kwargs"])
 
         if text is None:
             return None, image_inputs
 
-        if n_images_in_images != n_images_in_text:
-            raise ValueError(
-                f"The number of images in the text {n_images_in_text} and images {n_images_in_images} should be the same."
-            )
         image_rows = image_inputs.pop("rows", [[0] * len(text)])
         image_cols = image_inputs.pop("cols", [[0] * len(text)])
 
@@ -219,23 +211,13 @@ class SmolVLMProcessor(ProcessorMixin):
         return prompt_strings, image_inputs
 
     def process_video(self, text, videos, output_kwargs):
-        if text is not None:
-            n_videos_in_text = [sample.count(self.video_token) for sample in text]
-
-        n_videos_in_videos = [len(sublist) for sublist in videos]
         video_inputs = self.video_processor(videos, **output_kwargs["videos_kwargs"])
-
         num_frames = video_inputs["pixel_values"].shape[1]
         batch_timestamps = iter(video_inputs.pop("timestamps"))
         batch_durations = iter(video_inputs.pop("durations"))
 
         if text is None:
             return None, video_inputs
-
-        if n_videos_in_videos != n_videos_in_text:
-            raise ValueError(
-                f"The number of videos in the text {n_videos_in_text} and videos {n_videos_in_videos} should be the same."
-            )
 
         prompt_strings = []
         for sample in text:
@@ -334,14 +316,11 @@ class SmolVLMProcessor(ProcessorMixin):
                 text = [text]
             elif not isinstance(text, list) and not isinstance(text[0], str):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
-            n_images_in_text = sum([sample.count(self.image_token) for sample in text])
-            if n_images_in_text > 0 and (images is None and videos is None):
-                raise ValueError(f"We detected {n_images_in_text} tokens in the text but no images/videos were passed")
+            self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
 
         inputs = {}
         # Images and videos are mutually exclusive, so process one which is present
         if images is not None:
-            images = make_nested_list_of_images(images)
             text, vision_inputs = self.process_vision(
                 text,
                 images,

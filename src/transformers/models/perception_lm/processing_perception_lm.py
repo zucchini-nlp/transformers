@@ -148,7 +148,7 @@ class PerceptionLMProcessor(ProcessorMixin):
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise ValueError("Invalid input text. Please provide a string, or a list of strings")
 
-        # try to expand inputs in processing if we have the necessary parts
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
         prompt_strings = []
 
         pixel_values = iter(image_inputs.get("pixel_values", []))

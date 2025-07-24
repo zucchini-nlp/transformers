@@ -18,7 +18,7 @@ from typing import Optional, Union
 import numpy as np
 
 from ...feature_extraction_utils import BatchFeature
-from ...image_utils import ImageInput, make_nested_list_of_images
+from ...image_utils import ImageInput
 from ...processing_utils import AudioKwargs, ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
@@ -64,8 +64,8 @@ class Gemma3nProcessor(ProcessorMixin):
     """
 
     attributes = ["feature_extractor", "image_processor", "tokenizer"]
-    feature_extractor_class = "AutoFeatureExtractor"
-    image_processor_class = "AutoImageProcessor"
+    feature_extractor_class = "Gemma3nAudioFeatureExtractor"
+    image_processor_class = ("SiglipImageProcessor", "SiglipImageProcessorFast")
     tokenizer_class = "AutoTokenizer"
 
     def __init__(
@@ -111,42 +111,26 @@ class Gemma3nProcessor(ProcessorMixin):
         if text is None and images is None and audio is None:
             raise ValueError("Provide at least one of `text`, `images`, or `audio`.")
 
+        if isinstance(text, str):
+            text = [text]
+        elif not isinstance(text, list) and not isinstance(text[0], str):
+            raise TypeError("Invalid input text. Please provide a string, or a list of strings")
+
         output_kwargs = self._merge_kwargs(
             Gemma3nProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
-
-        if isinstance(text, str):
-            text = [text]
-        elif not isinstance(text, list) and not isinstance(text[0], str):
-            raise ValueError("Invalid input text. Please provide a string, or a list of strings")
+        self._check_mm_tokens_matches_inputs(text, images=images)
 
         if audio is not None:
             audio_inputs = self.feature_extractor(audio, **output_kwargs["audio_kwargs"])
-
-            if not text:
-                text = [self.audio_token for _ in audio]
-
-            # Expand placeholder audio tokens to the full audio token sequence
             text = [prompt.replace(self.audio_token, self.full_audio_sequence) for prompt in text]
         else:
             audio_inputs = {}
 
         if images is not None:
-            batched_images = make_nested_list_of_images(images)
-            image_inputs = self.image_processor(batched_images, **output_kwargs["images_kwargs"])
-
-            # Create empty text to be replaced with placeholders
-            if not text:
-                text = [" ".join([self.image_token] * len(images)) for images in batched_images]
-
-            if len(batched_images) != len(text):
-                raise ValueError(
-                    f"Received inconsistently sized batches of images ({len(batched_images)}) and text ({len(text)})."
-                )
-
-            # Expand placeholder image tokens to the full image token sequence
+            image_inputs = self.image_processor(images, **output_kwargs["images_kwargs"])
             text = [prompt.replace(self.image_token, self.full_image_sequence) for prompt in text]
         else:
             image_inputs = {}

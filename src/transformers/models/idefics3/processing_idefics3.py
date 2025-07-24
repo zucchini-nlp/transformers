@@ -253,7 +253,6 @@ class Idefics3Processor(ProcessorMixin):
         return_tensors = output_kwargs["text_kwargs"].pop("return_tensors", None)
 
         n_images_in_text = []
-        n_images_in_images = []
         inputs = {}
 
         if text is not None:
@@ -262,17 +261,13 @@ class Idefics3Processor(ProcessorMixin):
             elif not isinstance(text, list) and not isinstance(text[0], str):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
             n_images_in_text = [sample.count(self.image_token) for sample in text]
+            self._check_mm_tokens_matches_inputs(text, images=images)
 
         if images is not None:
             if is_image_or_image_url(images):
                 images = [[images]]
             elif isinstance(images, (list, tuple)) and is_image_or_image_url(images[0]):
                 if text is not None:
-                    if sum(n_images_in_text) != len(images):
-                        raise ValueError(
-                            f"The total number of {self.image_token} tokens in the prompts should be the same as the number of images passed."
-                            f" Found {sum(n_images_in_text)} {self.image_token} tokens and {len(images)} images."
-                        )
                     # Reorganize the images to match the prompts
                     cumsum_images_in_text = [0] + list(accumulate(n_images_in_text))
                     images = [
@@ -289,20 +284,13 @@ class Idefics3Processor(ProcessorMixin):
                 raise ValueError(
                     "Invalid input images. Please provide a single image or a list of images or a list of list of images."
                 )
-            n_images_in_images = [len(sample) for sample in images]
 
             # Load images if they are URLs
             images = [[load_image(im) if is_url(im) else im for im in sample] for sample in images]
-
             image_inputs = self.image_processor(images, **output_kwargs["images_kwargs"])
             inputs.update(image_inputs)
 
             if text is not None:
-                if n_images_in_images != n_images_in_text:
-                    raise ValueError(
-                        f"The number of images in the text {n_images_in_text} and images {n_images_in_images} should be the same."
-                    )
-
                 image_rows = inputs.pop("rows", [[0] * len(text)])
                 image_cols = inputs.pop("cols", [[0] * len(text)])
 
@@ -346,10 +334,6 @@ class Idefics3Processor(ProcessorMixin):
                 inputs.update(text_inputs)
 
         elif text is not None:
-            if any(n_images_in_text):
-                raise ValueError(
-                    f"Found {sum(n_images_in_text)} {self.image_token} tokens in the text but no images were passed."
-                )
             text_inputs = self.tokenizer(text=text, **output_kwargs["text_kwargs"])
             inputs.update(text_inputs)
 

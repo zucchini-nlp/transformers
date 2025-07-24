@@ -20,7 +20,7 @@ from typing import Optional, Union
 import numpy as np
 
 from ...feature_extraction_utils import BatchFeature
-from ...image_utils import ImageInput, make_nested_list_of_images
+from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
@@ -280,42 +280,13 @@ class MllamaProcessor(ProcessorMixin):
                 text = [text]
             elif not (isinstance(text, (list, tuple)) and all(isinstance(t, str) for t in text)):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
-            n_images_in_text = [t.count(self.image_token) for t in text]
+            self._check_mm_tokens_matches_inputs(text, images=images)
+
             text = [build_string_from_input(text_item, self.bos_token, self.image_token) for text_item in text]
             _ = text_kwargs.pop("padding_side", None)  # hack until padding-side is an accepted kwarg by tokenizers
             encoding = self.tokenizer(text, **text_kwargs)
             self._check_special_mm_tokens(text, encoding, modalities=["image"])
-            n_images_in_ids = [token_ids.count(self.image_token_id) for token_ids in encoding["input_ids"]]
             data.update(encoding)
-
-        n_images_in_images = [0]
-        if images is not None:
-            images = make_nested_list_of_images(images)
-            n_images_in_images = [len(sample) for sample in images]
-
-        if text is not None:
-            if any(batch_img == 0 for batch_img in n_images_in_text) and not all(
-                batch_img == 0 for batch_img in n_images_in_text
-            ):
-                raise ValueError(
-                    "If a batch of text is provided, there should be either no images or at least one image per sample"
-                )
-            if sum(n_images_in_text) > 0 and (
-                n_images_in_images != n_images_in_text or n_images_in_ids != n_images_in_images
-            ):
-                if images is None:
-                    raise ValueError("No image were provided, but there are image tokens in the prompt")
-                else:
-                    add_message = ""
-                    if sum(n_images_in_images) == sum(n_images_in_text) and n_images_in_images != n_images_in_text:
-                        add_message = "Make sure to pass your images as a nested list, where each sub-list holds images per batch"
-                    elif n_images_in_ids != n_images_in_images:
-                        add_message = "If you activated truncation with `max_length`, increase the `max_length` so image tokens aren't cropped."
-
-                    raise ValueError(
-                        f"The number of image tokens in each text ({n_images_in_text}) should be the same as the "
-                        f"number of provided images per batch ({n_images_in_images}). {add_message}"
-                    )
 
         if images is not None:
             image_features = self.image_processor(images, **images_kwargs)

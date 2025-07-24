@@ -190,7 +190,7 @@ class PixtralProcessor(ProcessorMixin):
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
-        # try to expand inputs in processing if we have the necessary parts
+        self._check_mm_tokens_matches_inputs(text, images=images)
         prompt_strings = text
         if image_inputs.get("pixel_values") is not None:
             # Replace the image token with the expanded image token sequence

@@ -18,7 +18,7 @@ from typing import Optional, Union
 import numpy as np
 
 from ...image_processing_utils import BatchFeature
-from ...image_utils import ImageInput, make_flat_list_of_images
+from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 
@@ -174,22 +174,20 @@ class AyaVisionProcessor(ProcessorMixin):
               `None`).
             - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
         """
-        if text is None:
-            raise ValueError("You have to specify text.")
+        if isinstance(text, str):
+            text = [text]
+        elif not isinstance(text, list) and not isinstance(text[0], str):
+            raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
         output_kwargs = self._merge_kwargs(
             AyaVisionProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
+        self._check_mm_tokens_matches_inputs(text, images=images)
 
-        if not isinstance(text, (list, tuple)):
-            text = [text]
-
-        # Process images
         image_inputs = {}
         if images is not None:
-            images = make_flat_list_of_images(images)
             image_inputs = self.image_processor(images=images, **output_kwargs["images_kwargs"])
             num_patches = image_inputs.pop("num_patches")
             image_index = 0
@@ -202,10 +200,6 @@ class AyaVisionProcessor(ProcessorMixin):
                     new_prompt = new_prompt.replace("<image>", image_tokens, 1)
                     image_index += 1
                 processed_text.append(new_prompt)
-
-            if image_index != len(images):
-                raise ValueError("Number of image placeholders in the prompt does not match the number of images.")
-
             text = processed_text
 
         return_tensors = output_kwargs["text_kwargs"].pop("return_tensors", None)

@@ -44,6 +44,7 @@ class PixtralProcessorTest(ProcessorTesterMixin, unittest.TestCase):
         self.tmpdirname = tempfile.mkdtemp()
         processor = PixtralProcessor.from_pretrained("mistral-community/pixtral-12b")
         processor.save_pretrained(self.tmpdirname)
+        self.image_token = processor.image_token
 
     def tearDown(self):
         shutil.rmtree(self.tmpdirname)

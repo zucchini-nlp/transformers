@@ -22,6 +22,7 @@ from parameterized import parameterized
 from transformers import GemmaTokenizerFast, SiglipImageProcessorFast, is_speech_available
 from transformers.testing_utils import require_sentencepiece, require_torch, require_torchaudio, require_vision
 
+from ...test_processing_common import ProcessorTesterMixin
 from .test_feature_extraction_gemma3n import floats_list
 
 
@@ -33,24 +34,43 @@ if is_speech_available():
 @require_torchaudio
 @require_vision
 @require_sentencepiece
-class Gemma3nProcessorTest(unittest.TestCase):
-    def setUp(self):
-        # TODO: update to google?
-        self.model_id = "hf-internal-testing/namespace-google-repo_name-gemma-3n-E4B-it"
-        self.tmpdirname = tempfile.mkdtemp(suffix="gemma3n")
-        self.maxDiff = None
+class Gemma3nProcessorTest(ProcessorTesterMixin, unittest.TestCase):
+    processor_class = Gemma3nProcessor
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmpdirname = tempfile.mkdtemp()
+        processor = Gemma3nProcessor.from_pretrained(
+            "hf-internal-testing/namespace-google-repo_name-gemma-3n-E4B-it", image_seq_length=2
+        )
+        print(processor.image_seq_length)
+        processor.save_pretrained(cls.tmpdirname)
+        cls.image_token = processor.image_token
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmpdirname, ignore_errors=True)
+
+    # Override as Gemma3n needs images to be an explicitly nested batch
+    def prepare_image_inputs(self, batch_size=None):
+        """This function prepares a list of PIL images for testing"""
+        images = super().prepare_image_inputs(batch_size)
+        if isinstance(images, (list, tuple)):
+            images = [[image] for image in images]
+        return images
+
+    @staticmethod
+    def prepare_processor_dict():
+        return {"image_seq_length": 2}
 
     def get_tokenizer(self, **kwargs):
-        return GemmaTokenizerFast.from_pretrained(self.model_id, **kwargs)
+        return GemmaTokenizerFast.from_pretrained(self.tmpdirname, **kwargs)
 
     def get_feature_extractor(self, **kwargs):
-        return Gemma3nAudioFeatureExtractor.from_pretrained(self.model_id, **kwargs)
+        return Gemma3nAudioFeatureExtractor.from_pretrained(self.tmpdirname, **kwargs)
 
     def get_image_processor(self, **kwargs):
-        return SiglipImageProcessorFast.from_pretrained(self.model_id, **kwargs)
-
-    def tearDown(self):
-        shutil.rmtree(self.tmpdirname)
+        return SiglipImageProcessorFast.from_pretrained(self.tmpdirname, **kwargs)
 
     def test_save_load_pretrained_default(self):
         # NOTE: feature_extractor and image_processor both use the same filename, preprocessor_config.json, when saved to

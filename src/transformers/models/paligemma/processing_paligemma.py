@@ -246,12 +246,7 @@ class PaliGemmaProcessor(ProcessorMixin):
                     "add `<image>` tokens in the very beginning of your text. For this call, we will infer how many images "
                     "each text has and add special tokens."
                 )
-
-                if isinstance(text, list) and isinstance(images, list):
-                    if len(images) != len(text):
-                        raise ValueError(
-                            f"Received {len(images)} images for {len(text)} prompts. Each prompt should be associated with an image or list of images."
-                        )
+                self._check_mm_tokens_matches_inputs(text, images=images)
 
                 # make a nested list of lists to be able to iterate over the images and text below
                 if is_valid_image(images):

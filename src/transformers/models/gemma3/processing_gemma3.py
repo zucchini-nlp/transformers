@@ -19,7 +19,7 @@ from typing import Optional, Union
 import numpy as np
 
 from ...feature_extraction_utils import BatchFeature
-from ...image_utils import ImageInput, make_nested_list_of_images
+from ...image_utils import ImageInput
 from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...utils import to_py_obj
@@ -85,51 +85,34 @@ class Gemma3Processor(ProcessorMixin):
         audio=None,
         **kwargs: Unpack[Gemma3ProcessorKwargs],
     ) -> BatchFeature:
-        if text is None and images is None:
-            raise ValueError("Provide at least one of `text` or `images`.")
+        if isinstance(text, str):
+            text = [text]
+        elif not isinstance(text, list) and not isinstance(text[0], str):
+            raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
         output_kwargs = self._merge_kwargs(
             Gemma3ProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
-
-        if isinstance(text, str):
-            text = [text]
-        elif not isinstance(text, list) and not isinstance(text[0], str):
-            raise TypeError("Invalid input text. Please provide a string, or a list of strings")
+        # self._check_mm_tokens_matches_inputs(text, images=images)
 
         image_inputs = {}
         if images is not None:
-            batched_images = make_nested_list_of_images(images)
-            image_inputs = self.image_processor(batched_images, **output_kwargs["images_kwargs"])
-
-            # Create empty text to be replaced with placeholders
-            if not text:
-                text = [" ".join([self.boi_token] * len(images)) for images in batched_images]
-
-            if len(batched_images) != len(text):
-                raise ValueError(
-                    f"Received inconsistently sized batches of images ({len(batched_images)}) and text ({len(text)})."
-                )
+            image_inputs = self.image_processor(images, **output_kwargs["images_kwargs"])
 
             # Replace image tokens by the full expanded sequence
-            num_crops = to_py_obj(image_inputs.pop("num_crops"))
-            batch_num_crops = [[num_crops.pop(0) for _ in range(len(images))] for images in batched_images]
-            for batch_idx, (prompt, images, num_crops) in enumerate(zip(text, batched_images, batch_num_crops)):
+            batch_num_crops = to_py_obj(image_inputs.pop("num_crops"))
+            for batch_idx, prompt in enumerate(text):
                 image_indexes = [m.start() for m in re.finditer(self.boi_token, prompt)]
 
-                if len(images) != len(image_indexes):
-                    raise ValueError(
-                        f"Prompt contained {len(image_indexes)} image tokens but received {len(images)} images."
-                    )
-
                 # Insert additional image tokens for Pan-and-Scan crops
-                for num, idx in reversed(list(zip(num_crops, image_indexes))):
-                    if num:
+                for idx in image_indexes:
+                    num_crops = batch_num_crops.pop(0)
+                    if num_crops:
                         formatted_image_text = (
                             f"Here is the original image {self.boi_token} and here are some crops to help you see better "
-                            + " ".join([self.boi_token] * num)
+                            + " ".join([self.boi_token] * num_crops)
                         )
                         prompt = prompt[:idx] + formatted_image_text + prompt[idx + len(self.boi_token) :]
                         text[batch_idx] = prompt

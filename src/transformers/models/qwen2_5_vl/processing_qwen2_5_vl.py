@@ -168,6 +168,7 @@ class Qwen2_5_VLProcessor(ProcessorMixin):
         if not isinstance(text, list):
             text = [text]
 
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
         text = text.copy()  # below lines change text in-place
         if images is not None:
             merge_length = self.image_processor.merge_size**2

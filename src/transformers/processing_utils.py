@@ -34,9 +34,9 @@ from huggingface_hub.errors import EntryNotFoundError
 from .audio_utils import load_audio
 from .dynamic_module_utils import custom_object_save
 from .feature_extraction_utils import BatchFeature
-from .image_utils import ChannelDimension, is_vision_available, load_image
+from .image_utils import ChannelDimension, ImageInput, is_vision_available, load_image
 from .utils.chat_template_utils import render_jinja_template
-from .video_utils import VideoMetadata, load_video
+from .video_utils import VideoInput, VideoMetadata, load_video
 
 
 if is_vision_available():
@@ -1664,6 +1664,63 @@ class ProcessorMixin(PushToHubMixin):
             `list[str]`: The decoded text.
         """
         return self.tokenizer.batch_decode(generated_outputs, skip_special_tokens=skip_special_tokens, **kwargs)
+
+    def _check_mm_tokens_matches_inputs(
+        self,
+        text: list[str],
+        images: ImageInput = None,
+        videos: VideoInput = None,
+        is_nested: bool = False,
+    ):
+        """
+        Checks that number of special tokens in text matches the number of input images/videos.
+        """
+        n_images_in_text = [sample.count(self.image_token) for sample in text] if hasattr(self, "image_token") else [0]
+        n_videos_in_text = [sample.count(self.video_token) for sample in text] if hasattr(self, "video_token") else [0]
+
+        if sum(n_images_in_text) != 0 and images is None:
+            raise ValueError("No images were provided, but there are image tokens in the prompt")
+
+        elif images is not None:
+            if not isinstance(images, (list, tuple)):
+                images = [images]
+
+            flat_images = (
+                images
+                if not isinstance(images[0], (list, tuple))
+                else [image for sublist in images for image in sublist]
+            )
+            nested_images = images if isinstance(images[0], (list, tuple)) else [images]
+            n_images_in_images = [len(image_list) for image_list in nested_images]
+            if sum(n_images_in_text) != len(flat_images):
+                raise ValueError(
+                    f"Number of image placeholders in the prompt={sum(n_images_in_text)} does not match the number of input images={len(flat_images)}."
+                )
+
+            if (
+                is_nested
+                and sum(n_images_in_images) == sum(n_images_in_text)
+                and n_images_in_images != n_images_in_text
+            ):
+                raise ValueError(
+                    "Make sure to pass your images as a nested list, where each sub-list holds images per batch"
+                )
+
+        if sum(n_videos_in_text) != 0 and videos is None:
+            raise ValueError("No videos were provided, but there are video tokens in the prompt")
+        elif videos is not None:
+            if not isinstance(videos, (list, tuple)):
+                videos = [videos]
+
+            flat_videos = (
+                videos
+                if not isinstance(videos[0], (list, tuple))
+                else [video for sublist in videos for video in sublist]
+            )
+            if sum(n_videos_in_text) != len(flat_videos):
+                raise ValueError(
+                    f"Number of video placeholders in the prompt={sum(n_videos_in_text)} does not match the number of input videos={len(flat_videos)}."
+                )
 
     def _check_special_mm_tokens(self, text: list[str], text_inputs: "BatchFeature", modalities: list[str]):
         """

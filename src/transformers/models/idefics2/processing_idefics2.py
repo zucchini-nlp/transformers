@@ -198,6 +198,7 @@ class Idefics2Processor(ProcessorMixin):
                 text = [text]
             elif not isinstance(text, list) and not isinstance(text[0], str):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
+            self._check_mm_tokens_matches_inputs(text, images=images)
 
             # Replace the image token with fake tokens around the expanded image token sequence of length `image_seq_len`
             fake_image_token = self.fake_image_token
@@ -226,11 +227,6 @@ class Idefics2Processor(ProcessorMixin):
                 images = [[images]]
             elif isinstance(images, (list, tuple)) and is_image_or_image_url(images[0]):
                 if text is not None:
-                    if sum(n_images_in_text) != len(images):
-                        raise ValueError(
-                            f"The total number of {image_token} tokens in the prompts should be the same as the number of images passed."
-                            f" Found {sum(n_images_in_text)} {image_token} tokens and {len(images)} images."
-                        )
                     # Reorganize the images to match the prompts
                     cumsum_images_in_text = [0] + list(accumulate(n_images_in_text))
                     images = [
@@ -247,12 +243,6 @@ class Idefics2Processor(ProcessorMixin):
             ):
                 raise ValueError(
                     "Invalid input images. Please provide a single image or a list of images or a list of list of images."
-                )
-
-            n_images_in_images = [len(sample) for sample in images]
-            if text is not None and not n_images_in_images == n_images_in_text:
-                raise ValueError(
-                    f"The number of images in the text {n_images_in_text} and images  {n_images_in_images} should be the same."
                 )
 
             # Load images if they are URLs

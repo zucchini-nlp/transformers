@@ -62,14 +62,24 @@ class JanusProcessor(ProcessorMixin):
             in a chat into a tokenizable string.
         use_default_system_prompt (`str`, *optional*, defaults to `False`):
             Use default system prompt for Text Generation.
+        num_image_tokens (`int`, *optional*, defaults to 576):
+            Number of image token placeholders per single image.
     """
 
     attributes = ["image_processor", "tokenizer"]
     image_processor_class = "JanusImageProcessor"
     tokenizer_class = "LlamaTokenizerFast"
 
-    def __init__(self, image_processor, tokenizer, chat_template=None, use_default_system_prompt=False, **kwargs):
-        self.num_image_tokens = 576
+    def __init__(
+        self,
+        image_processor,
+        tokenizer,
+        chat_template=None,
+        use_default_system_prompt=False,
+        num_image_tokens=576,
+        **kwargs,
+    ):
+        self.num_image_tokens = num_image_tokens
         self.image_token = tokenizer.image_token
         self.image_start_token = tokenizer.boi_token
         self.image_end_token = tokenizer.eoi_token
@@ -129,6 +139,7 @@ class JanusProcessor(ProcessorMixin):
                 text = [text]
             elif not (isinstance(text, (list, tuple)) and all(isinstance(t, str) for t in text)):
                 raise ValueError("Invalid input text. Please provide a string, or a list of strings")
+            self._check_mm_tokens_matches_inputs(text, images=images)
 
         generation_mode = output_kwargs["text_kwargs"].pop("generation_mode")
 

@@ -18,7 +18,7 @@ from typing import Optional, Union
 import numpy as np
 
 from ...image_processing_utils import BatchFeature
-from ...image_utils import ImageInput, concatenate_list, make_flat_list_of_images
+from ...image_utils import ImageInput, concatenate_list
 from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_utils_base import PreTokenizedInput, TextInput
 from ...video_utils import VideoInput, make_batched_videos
@@ -194,17 +194,17 @@ class InternVLProcessor(ProcessorMixin):
               `None`).
             - **pixel_values** -- Pixel values to be fed to a model. Returned when `images` is not `None`.
         """
-        if text is None:
-            raise ValueError("You have to specify text.")
+        if isinstance(text, str):
+            text = [text]
+        elif not isinstance(text, list) and not isinstance(text[0], str):
+            raise TypeError("Invalid input text. Please provide a string, or a list of strings")
 
         output_kwargs = self._merge_kwargs(
             InternVLProcessorKwargs,
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
-
-        if not isinstance(text, (list, tuple)):
-            text = [text]
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
 
         # Process images and videos separately, as videos don't support crop_to_patches
         image_num_patches = []
@@ -216,7 +216,6 @@ class InternVLProcessor(ProcessorMixin):
         video_patch_indices = np.array([0])
         video_num_patches_indices = np.array([0])
         if images is not None:
-            images = make_flat_list_of_images(images)
             image_inputs = self.image_processor(images=images, **output_kwargs["images_kwargs"])
             image_num_patches = image_inputs.pop("num_patches")
             image_pixel_values = image_inputs.pop("pixel_values")
@@ -244,11 +243,6 @@ class InternVLProcessor(ProcessorMixin):
                 video_num_patches_indices,
                 video_patch_indices,
             )
-            if images is not None and image_index != len(images):
-                raise ValueError("Number of image placeholders in the prompt does not match the number of images.")
-            if videos is not None and video_index != len(videos):
-                raise ValueError("Number of video placeholders in the prompt does not match the number of videos.")
-
             # Concatenate the interleaved image and video patches (function agnostic to the patches type (list, numpy array, torch tensor))
             image_videos_inputs = {"pixel_values": concatenate_list(image_video_patches)}
 

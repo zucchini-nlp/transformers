@@ -47,6 +47,7 @@ class Qwen2_5_VLProcessorTest(ProcessorTesterMixin, unittest.TestCase):
         )
         processor.save_pretrained(cls.tmpdirname)
         cls.image_token = processor.image_token
+        cls.video_token = processor.video_token
 
     def get_tokenizer(self, **kwargs):
         return AutoProcessor.from_pretrained(self.tmpdirname, **kwargs).tokenizer

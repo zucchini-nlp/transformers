@@ -158,7 +158,7 @@ class ProcessorTesterMixin:
     @require_vision
     def prepare_video_inputs(self, batch_size: Optional[int] = None):
         """This function prepares a list of numpy videos."""
-        video_input = [np.random.randint(255, size=(3, 30, 400), dtype=np.uint8)] * 8
+        video_input = np.stack([np.random.randint(255, size=(3, 30, 400), dtype=np.uint8)] * 8)
         if batch_size is None:
             return video_input
         return [video_input] * batch_size
@@ -212,7 +212,7 @@ class ProcessorTesterMixin:
                     hasattr(param.annotation, "__origin__") and param.annotation.__origin__ == Unpack
                 )
         if not is_kwargs_typed_dict:
-            self.skipTest(f"{self.processor_class} doesn't have typed kwargs.")
+            self.skipTest(f"{self.processor_class.__name__} doesn't have typed kwargs.")
 
     def test_tokenizer_defaults_preserved_by_kwargs(self):
         if "image_processor" not in self.processor_class.attributes:

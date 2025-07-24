@@ -143,6 +143,7 @@ class Emu3Processor(ProcessorMixin):
             tokenizer_init_kwargs=self.tokenizer.init_kwargs,
             **kwargs,
         )
+        self._check_mm_tokens_matches_inputs(text, images=images)
         return_for_image_generation = output_kwargs["text_kwargs"].pop("return_for_image_generation", False)
         ratio = output_kwargs["images_kwargs"].pop("ratio", None)
         image_area = output_kwargs["images_kwargs"].pop("image_area", None)

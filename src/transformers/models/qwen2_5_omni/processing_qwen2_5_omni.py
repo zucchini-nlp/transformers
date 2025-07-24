@@ -195,6 +195,7 @@ class Qwen2_5OmniProcessor(ProcessorMixin):
         if not isinstance(text, list):
             text = [text]
 
+        self._check_mm_tokens_matches_inputs(text, images=images, videos=videos)
         text = self.replace_multimodal_special_tokens(
             text,
             audio_lengths,

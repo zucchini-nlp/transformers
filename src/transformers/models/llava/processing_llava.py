@@ -146,6 +146,7 @@ class LlavaProcessor(ProcessorMixin):
             text = [text]
         elif not isinstance(text, list) and not isinstance(text[0], str):
             raise TypeError("Invalid input text. Please provide a string, or a list of strings")
+        self._check_mm_tokens_matches_inputs(text, images=images)
 
         # try to expand inputs in processing if we have the necessary parts
         prompt_strings = text
