@@ -423,6 +423,18 @@ class _BaseAutoModelClass:
 
     @classmethod
     def from_config(cls, config, **kwargs):
+        hub_kwargs_names = [
+            "cache_dir",
+            "force_download",
+            "local_files_only",
+            "proxies",
+            "resume_download",
+            "revision",
+            "code_revision",
+            "token",
+        ]
+        hub_kwargs = {name: kwargs.pop(name) for name in hub_kwargs_names if name in kwargs}
+
         trust_remote_code = kwargs.pop("trust_remote_code", None)
         has_remote_code = hasattr(config, "auto_map") and cls.__name__ in config.auto_map
         has_local_code = type(config) in cls._model_mapping
@@ -441,14 +453,13 @@ class _BaseAutoModelClass:
                 repo_id, class_ref = class_ref.split("--")
             else:
                 repo_id = config.name_or_path
-            model_class = get_class_from_dynamic_module(class_ref, repo_id, **kwargs)
+            model_class = get_class_from_dynamic_module(class_ref, repo_id, **hub_kwargs)
             # This block handles the case where the user is loading a model with `trust_remote_code=True`
             # but a library model exists with the same name. We don't want to override the autoclass
             # mappings in this case, or all future loads of that model will be the remote code model.
             if not has_local_code:
                 cls.register(config.__class__, model_class, exist_ok=True)
                 model_class.register_for_auto_class(auto_class=cls)
-            _ = kwargs.pop("code_revision", None)
             model_class = add_generation_mixin_to_remote_model(model_class)
             return model_class._from_config(config, **kwargs)
         elif type(config) in cls._model_mapping:

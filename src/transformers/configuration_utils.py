@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Any, Optional, TypeVar, Union
 from packaging import version
 
 from . import __version__
-from .dynamic_module_utils import custom_object_save
+from .dynamic_module_utils import custom_object_save, get_class_from_dynamic_module
 from .modeling_gguf_pytorch_utils import load_gguf_checkpoint
 from .utils import (
     CONFIG_NAME,
@@ -471,6 +471,11 @@ class PretrainedConfig(PushToHubMixin):
         if self._auto_class is not None:
             custom_object_save(self, save_directory, config=self)
 
+        for key in self.sub_configs:
+            subconfig = getattr(self, key)
+            if subconfig._auto_class is not None:
+                custom_object_save(subconfig, save_directory, config=subconfig)
+
         # If we save using the predefined names, we can load using `from_pretrained`
         output_config_file = os.path.join(save_directory, CONFIG_NAME)
 
@@ -603,6 +608,7 @@ class PretrainedConfig(PushToHubMixin):
         kwargs["force_download"] = force_download
         kwargs["local_files_only"] = local_files_only
         kwargs["revision"] = revision
+        original_kwargs = copy.deepcopy(kwargs)
 
         cls._set_token_in_kwargs(kwargs, token)
 
@@ -623,6 +629,16 @@ class PretrainedConfig(PushToHubMixin):
                     f"You are using a model of type {config_dict['model_type']} to instantiate a model of type "
                     f"{cls.model_type}. This is not supported for all configurations of models and can yield errors."
                 )
+
+        for key in cls.sub_configs:
+            subconfig_dict = config_dict.get(key)
+            subconfig_class = cls.maybe_init_subconfig(
+                subconfig_dict,
+                pretrained_model_name_or_path=pretrained_model_name_or_path,
+                token=token,
+                **original_kwargs,
+            )
+            config_dict[key] = subconfig_class
 
         return cls.from_dict(config_dict, **kwargs)
 
@@ -756,6 +772,24 @@ class PretrainedConfig(PushToHubMixin):
             config_dict["model_type"] = "timm_wrapper"
 
         return config_dict, kwargs
+
+    @staticmethod
+    def maybe_init_subconfig(
+        config_dict: dict,
+        pretrained_model_name_or_path: Union[str, os.PathLike],
+        trust_remote_code: Optional[bool] = None,
+        **kwargs,
+    ):
+        if isinstance(config_dict, PretrainedConfig) or config_dict is None:
+            return config_dict
+
+        if trust_remote_code and "auto_map" in config_dict:
+            class_ref = config_dict["auto_map"]["AutoConfig"]
+            config_class = get_class_from_dynamic_module(class_ref, pretrained_model_name_or_path, **kwargs)
+            config_class.register_for_auto_class()
+            return config_class(**config_dict)
+
+        return config_dict
 
     @classmethod
     def from_dict(

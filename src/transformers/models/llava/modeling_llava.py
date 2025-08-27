@@ -134,12 +134,12 @@ class LlavaPreTrainedModel(PreTrainedModel):
 class LlavaModel(LlavaPreTrainedModel):
     _checkpoint_conversion_mapping = {"language_model.model": "language_model"}
 
-    def __init__(self, config: LlavaConfig):
+    def __init__(self, config: LlavaConfig, **kwargs):
         super().__init__(config)
-        self.vision_tower = AutoModel.from_config(config.vision_config)
+        self.vision_tower = AutoModel.from_config(config.vision_config, **kwargs)
 
         self.multi_modal_projector = LlavaMultiModalProjector(config)
-        self.language_model = AutoModel.from_config(config.text_config)
+        self.language_model = AutoModel.from_config(config.text_config, **kwargs)
         self.post_init()
 
     def get_input_embeddings(self):
