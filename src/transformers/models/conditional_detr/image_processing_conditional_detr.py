@@ -50,10 +50,7 @@ from ...image_utils import (
     is_scaled_image,
     make_flat_list_of_images,
     to_numpy_array,
-    valid_images,
     validate_annotations,
-    validate_kwargs,
-    validate_preprocess_arguments,
 )
 from ...utils import TensorType, is_scipy_available, is_torch_available, is_torch_tensor, is_vision_available, logging
 from ...utils.import_utils import requires
@@ -70,7 +67,6 @@ if is_vision_available():
 
 if is_scipy_available():
     import scipy.special
-    import scipy.stats
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -747,7 +743,7 @@ class ConditionalDetrImageProcessorKwargs(ImagesKwargs, total=False):
 
     format: Union[str, AnnotationFormat]
     do_convert_annotations: bool
-    return_segmentation_masks: bool
+    return_segmentation_masks: Optional[bool]
     annotations: Optional[Union[AnnotationType, list[AnnotationType]]]
     masks_path: Optional[Union[str, pathlib.Path]]
 
@@ -858,27 +854,6 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
         self.image_std = image_std if image_std is not None else IMAGENET_DEFAULT_STD
         self.do_pad = do_pad
         self.pad_size = pad_size
-        self._valid_processor_keys = [
-            "images",
-            "annotations",
-            "return_segmentation_masks",
-            "masks_path",
-            "do_resize",
-            "size",
-            "resample",
-            "do_rescale",
-            "rescale_factor",
-            "do_normalize",
-            "do_convert_annotations",
-            "image_mean",
-            "image_std",
-            "do_pad",
-            "pad_size",
-            "format",
-            "return_tensors",
-            "data_format",
-            "input_data_format",
-        ]
 
     @classmethod
     # Copied from transformers.models.detr.image_processing_detr.DetrImageProcessor.from_dict with Detr->ConditionalDetr
@@ -908,8 +883,6 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
         """
         Prepare an annotation for feeding into ConditionalDetr model.
         """
-        format = format if format is not None else self.format
-
         if format == AnnotationFormat.COCO_DETECTION:
             return_segmentation_masks = False if return_segmentation_masks is None else return_segmentation_masks
             target = prepare_coco_detection_annotation(
@@ -924,8 +897,6 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
                 return_masks=return_segmentation_masks,
                 input_data_format=input_data_format,
             )
-        else:
-            raise ValueError(f"Format {format} is not supported.")
         return target
 
     # Copied from transformers.models.detr.image_processing_detr.DetrImageProcessor.resize
@@ -982,11 +953,7 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
             )
         elif "height" in size and "width" in size:
             new_size = (size["height"], size["width"])
-        else:
-            raise ValueError(
-                "Size must contain 'height' and 'width' keys or 'shortest_edge' and 'longest_edge' keys. Got"
-                f" {size.keys()}."
-            )
+
         image = resize(
             image,
             size=new_size,
@@ -1210,6 +1177,11 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
 
         return encoded_inputs
 
+    def validate_annotations(self):
+        if self.annotations is not None:
+            format = AnnotationFormat(self.format)
+            validate_annotations(format, SUPPORTED_ANNOTATION_FORMATS, self.annotations)
+
     # Copied from transformers.models.detr.image_processing_detr.DetrImageProcessor.preprocess
     def preprocess(
         self,
@@ -1315,46 +1287,7 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
             )
             do_pad = kwargs.pop("pad_and_return_pixel_mask")
 
-        if "max_size" in kwargs:
-            logger.warning_once(
-                "The `max_size` argument is deprecated and will be removed in a future version, use"
-                " `size['longest_edge']` instead."
-            )
-            size = kwargs.pop("max_size")
-
-        do_resize = self.do_resize if do_resize is None else do_resize
-        size = self.size if size is None else size
-        size = get_size_dict(size=size, default_to_square=False)
-        resample = self.resample if resample is None else resample
-        do_rescale = self.do_rescale if do_rescale is None else do_rescale
-        rescale_factor = self.rescale_factor if rescale_factor is None else rescale_factor
-        do_normalize = self.do_normalize if do_normalize is None else do_normalize
-        image_mean = self.image_mean if image_mean is None else image_mean
-        image_std = self.image_std if image_std is None else image_std
-        do_convert_annotations = (
-            self.do_convert_annotations if do_convert_annotations is None else do_convert_annotations
-        )
-        do_pad = self.do_pad if do_pad is None else do_pad
-        pad_size = self.pad_size if pad_size is None else pad_size
-        format = self.format if format is None else format
-
         images = make_flat_list_of_images(images)
-
-        if not valid_images(images):
-            raise ValueError("Invalid image type. Must be of type PIL.Image.Image, numpy.ndarray, or torch.Tensor.")
-        validate_kwargs(captured_kwargs=kwargs.keys(), valid_processor_keys=self._valid_processor_keys)
-
-        # Here, the pad() method pads to the maximum of (width, height). It does not need to be validated.
-        validate_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_resize=do_resize,
-            size=size,
-            resample=resample,
-        )
 
         if annotations is not None and isinstance(annotations, dict):
             annotations = [annotations]
@@ -1365,18 +1298,6 @@ class ConditionalDetrImageProcessor(BaseImageProcessor):
             )
 
         format = AnnotationFormat(format)
-        if annotations is not None:
-            validate_annotations(format, SUPPORTED_ANNOTATION_FORMATS, annotations)
-
-        if (
-            masks_path is not None
-            and format == AnnotationFormat.COCO_PANOPTIC
-            and not isinstance(masks_path, (pathlib.Path, str))
-        ):
-            raise ValueError(
-                "The path to the directory containing the mask PNG files should be provided as a"
-                f" `pathlib.Path` or string object, but is {type(masks_path)} instead."
-            )
 
         # All transformations expect numpy arrays
         images = [to_numpy_array(image) for image in images]

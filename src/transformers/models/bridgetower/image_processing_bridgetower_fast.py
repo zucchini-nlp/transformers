@@ -109,6 +109,9 @@ class BridgeTowerImageProcessorFast(BaseImageProcessorFast):
     def preprocess(self, images: ImageInput, **kwargs: Unpack[BridgeTowerImageProcessorKwargs]) -> BatchFeature:
         return super().preprocess(images, **kwargs)
 
+    def validate_foo(self):
+        pass
+
     def resize(
         self,
         image: "torch.Tensor",
@@ -139,8 +142,6 @@ class BridgeTowerImageProcessorFast(BaseImageProcessorFast):
             `torch.Tensor`: The resized image.
         """
         interpolation = interpolation if interpolation is not None else F.InterpolationMode.BILINEAR
-        if not size.shortest_edge:
-            raise ValueError(f"The `size` dictionary must contain the key `shortest_edge`. Got {size.keys()}")
         shorter = size.shortest_edge
         longer = int(1333 / 800 * shorter)
         output_height, output_width = get_resize_output_image_size(

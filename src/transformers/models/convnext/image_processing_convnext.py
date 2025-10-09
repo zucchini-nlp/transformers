@@ -35,8 +35,6 @@ from ...image_utils import (
     is_scaled_image,
     make_flat_list_of_images,
     to_numpy_array,
-    valid_images,
-    validate_preprocess_arguments,
 )
 from ...processing_utils import ImagesKwargs
 from ...utils import TensorType, filter_out_non_signature_kwargs, is_vision_available, logging
@@ -160,8 +158,6 @@ class ConvNextImageProcessor(BaseImageProcessor):
                 image.
         """
         size = get_size_dict(size, default_to_square=False)
-        if "shortest_edge" not in size:
-            raise ValueError(f"Size dictionary must contain 'shortest_edge' key. Got {size.keys()}")
         shortest_edge = size["shortest_edge"]
 
         if shortest_edge < 384:
@@ -196,6 +192,10 @@ class ConvNextImageProcessor(BaseImageProcessor):
                 input_data_format=input_data_format,
                 **kwargs,
             )
+
+    def validate_image_size(self):
+        if isinstance(self.size, dict) and self.size["shortest_edge"] is None:
+            raise ValueError(f"The `size` dictionary must contain the key `shortest_edge`. Got {self.size.keys()}")
 
     @filter_out_non_signature_kwargs()
     def preprocess(
@@ -260,33 +260,8 @@ class ConvNextImageProcessor(BaseImageProcessor):
                 - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
                 - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
         """
-        do_resize = do_resize if do_resize is not None else self.do_resize
-        crop_pct = crop_pct if crop_pct is not None else self.crop_pct
-        resample = resample if resample is not None else self.resample
-        do_rescale = do_rescale if do_rescale is not None else self.do_rescale
-        rescale_factor = rescale_factor if rescale_factor is not None else self.rescale_factor
-        do_normalize = do_normalize if do_normalize is not None else self.do_normalize
-        image_mean = image_mean if image_mean is not None else self.image_mean
-        image_std = image_std if image_std is not None else self.image_std
-
-        size = size if size is not None else self.size
         size = get_size_dict(size, default_to_square=False)
-
         images = make_flat_list_of_images(images)
-
-        if not valid_images(images):
-            raise ValueError("Invalid image type. Must be of type PIL.Image.Image, numpy.ndarray, or torch.Tensor")
-
-        validate_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_resize=do_resize,
-            size=size,
-            resample=resample,
-        )
 
         # All transformations expect numpy arrays.
         images = [to_numpy_array(image) for image in images]

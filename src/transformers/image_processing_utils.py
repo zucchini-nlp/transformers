@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import math
 from collections.abc import Iterable
 from typing import Optional, Union
 
 import numpy as np
+from huggingface_hub.dataclasses import validate_typed_dict
 
 from .image_processing_base import BatchFeature, ImageProcessingMixin
 from .image_transforms import center_crop, normalize, rescale
-from .image_utils import ChannelDimension, ImageInput, get_image_size
+from .image_utils import ChannelDimension, ImageInput, get_image_size, valid_images, validate_preprocess_arguments
 from .processing_utils import ImagesKwargs, Unpack
 from .utils import logging
 from .utils.import_utils import requires
@@ -53,8 +55,47 @@ class BaseImageProcessor(ImageProcessingMixin):
         """Preprocess an image or a batch of images."""
         return self.preprocess(images, *args, **kwargs)
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        original_preprocess = cls.preprocess
+
+        @functools.wraps(original_preprocess)
+        def wrapped_preprocess(self, images=None, *args, **kwargs):
+            # Set default kwargs from self. This ensures that if a kwarg isn't provided by the user
+            # It gets its default value from the instance, or is set to None.
+            valid_kwargs_names = list(self.valid_kwargs.__annotations__.keys())
+            for kwarg_name in valid_kwargs_names:
+                kwargs.setdefault(kwarg_name, getattr(self, kwarg_name, None))
+            kwargs["data_format"] = kwargs["data_format"] or ChannelDimension.FIRST
+
+            # Run strict validation on kwargs and images
+            validate_typed_dict(schema=self.valid_kwargs, data=kwargs)
+            if not valid_images(images):
+                raise ValueError("Invalid image type. Must be of type PIL.Image.Image, numpy.ndarray, or torch.Tensor")
+
+            images = self.fetch_images(images)
+            processed_inputs = original_preprocess(self, images=images, *args, **kwargs)
+            return processed_inputs
+
+        cls.preprocess = wrapped_preprocess
+
     def preprocess(self, images, **kwargs) -> BatchFeature:
         raise NotImplementedError("Each image processor must implement its own preprocess method")
+
+    def validate_kwargs(self):
+        validate_preprocess_arguments(
+            do_rescale=self.do_rescale,
+            rescale_factor=self.rescale_factor,
+            do_normalize=self.do_normalize,
+            image_mean=self.image_mean,
+            image_std=self.image_std,
+            do_center_crop=self.do_center_crop,
+            crop_size=self.crop_size,
+            do_resize=self.do_resize,
+            size=self.size,
+            resample=self.resample,
+        )
 
     def rescale(
         self,

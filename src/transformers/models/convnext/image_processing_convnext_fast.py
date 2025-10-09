@@ -88,8 +88,6 @@ class ConvNextImageProcessorFast(BaseImageProcessorFast):
         Returns:
             `torch.Tensor`: Resized image.
         """
-        if not size.shortest_edge:
-            raise ValueError(f"Size dictionary must contain 'shortest_edge' key. Got {size.keys()}")
         shortest_edge = size["shortest_edge"]
 
         if shortest_edge < 384:

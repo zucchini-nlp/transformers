@@ -329,8 +329,6 @@ class ConditionalDetrImageProcessorFast(BaseImageProcessorFast):
                 return_masks=return_segmentation_masks,
                 input_data_format=input_data_format,
             )
-        else:
-            raise ValueError(f"Format {format} is not supported.")
         return target
 
     def resize(
@@ -373,11 +371,6 @@ class ConditionalDetrImageProcessorFast(BaseImageProcessorFast):
             new_size = get_image_size_for_max_height_width(image.size()[-2:], size["max_height"], size["max_width"])
         elif size.height and size.width:
             new_size = (size["height"], size["width"])
-        else:
-            raise ValueError(
-                "Size must contain 'height' and 'width' keys or 'shortest_edge' and 'longest_edge' keys. Got"
-                f" {size.keys()}."
-            )
 
         image = F.resize(
             image,
@@ -542,6 +535,11 @@ class ConditionalDetrImageProcessorFast(BaseImageProcessorFast):
 
         return super().preprocess(images, **kwargs)
 
+    def validate_annotation(self):
+        if self.annotations is not None:
+            format = AnnotationFormat(self.format)
+            validate_annotations(format, SUPPORTED_ANNOTATION_FORMATS, self.annotations)
+
     def _preprocess(
         self,
         images: list["torch.Tensor"],
@@ -574,25 +572,11 @@ class ConditionalDetrImageProcessorFast(BaseImageProcessorFast):
                 f"The number of images ({len(images)}) and annotations ({len(annotations)}) do not match."
             )
 
-        format = AnnotationFormat(format)
-        if annotations is not None:
-            validate_annotations(format, SUPPORTED_ANNOTATION_FORMATS, annotations)
-
-        if (
-            masks_path is not None
-            and format == AnnotationFormat.COCO_PANOPTIC
-            and not isinstance(masks_path, (pathlib.Path, str))
-        ):
-            raise ValueError(
-                "The path to the directory containing the mask PNG files should be provided as a"
-                f" `pathlib.Path` or string object, but is {type(masks_path)} instead."
-            )
-
         data = {}
-
         processed_images = []
         processed_annotations = []
         pixel_masks = []  # Initialize pixel_masks here
+        format = AnnotationFormat(format)
         for image, annotation in zip(images, annotations if annotations is not None else [None] * len(images)):
             # prepare (COCO annotations as a list of Dict -> CONDITIONAL_DETR target as a single Dict per image)
             if annotations is not None:

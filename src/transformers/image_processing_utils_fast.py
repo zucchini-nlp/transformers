@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import inspect
 from collections.abc import Iterable
 from copy import deepcopy
 from functools import lru_cache, partial
@@ -38,7 +39,6 @@ from .image_utils import (
     get_image_type,
     infer_channel_dimension_format,
     make_flat_list_of_images,
-    validate_kwargs,
     validate_preprocess_arguments,
 )
 from .processing_utils import ImagesKwargs, Unpack
@@ -69,45 +69,6 @@ else:
 
 
 logger = logging.get_logger(__name__)
-
-
-@lru_cache(maxsize=10)
-def validate_fast_preprocess_arguments(
-    do_rescale: Optional[bool] = None,
-    rescale_factor: Optional[float] = None,
-    do_normalize: Optional[bool] = None,
-    image_mean: Optional[Union[float, list[float]]] = None,
-    image_std: Optional[Union[float, list[float]]] = None,
-    do_center_crop: Optional[bool] = None,
-    crop_size: Optional[SizeDict] = None,
-    do_resize: Optional[bool] = None,
-    size: Optional[SizeDict] = None,
-    interpolation: Optional["F.InterpolationMode"] = None,
-    return_tensors: Optional[Union[str, TensorType]] = None,
-    data_format: ChannelDimension = ChannelDimension.FIRST,
-):
-    """
-    Checks validity of typically used arguments in an `ImageProcessorFast` `preprocess` method.
-    Raises `ValueError` if arguments incompatibility is caught.
-    """
-    validate_preprocess_arguments(
-        do_rescale=do_rescale,
-        rescale_factor=rescale_factor,
-        do_normalize=do_normalize,
-        image_mean=image_mean,
-        image_std=image_std,
-        do_center_crop=do_center_crop,
-        crop_size=crop_size,
-        do_resize=do_resize,
-        size=size,
-        interpolation=interpolation,
-    )
-    # Extra checks for ImageProcessorFast
-    if return_tensors is not None and return_tensors != "pt":
-        raise ValueError("Only returning PyTorch tensors is currently supported.")
-
-    if data_format != ChannelDimension.FIRST:
-        raise ValueError("Only channel first data format is currently supported.")
 
 
 def safe_squeeze(tensor: "torch.Tensor", axis: Optional[int] = None) -> "torch.Tensor":
@@ -329,11 +290,7 @@ class BaseImageProcessorFast(BaseImageProcessor):
             new_size = get_image_size_for_max_height_width(image.size()[-2:], size.max_height, size.max_width)
         elif size.height and size.width:
             new_size = (size.height, size.width)
-        else:
-            raise ValueError(
-                "Size must contain 'height' and 'width' keys, or 'max_height' and 'max_width', or 'shortest_edge' key. Got"
-                f" {size}."
-            )
+
         # This is a workaround to avoid a bug in torch.compile when dealing with uint8 on AMD MI3XX GPUs
         # Tracked in PyTorch issue: https://github.com/pytorch/pytorch/issues/155209
         # TODO: remove this once the bug is fixed (detected with torch==2.7.0+git1fee196, torchvision==0.22.0+9eb57cd)
@@ -511,6 +468,30 @@ class BaseImageProcessorFast(BaseImageProcessor):
         """
         return convert_to_rgb(image)
 
+    def validate_fast_preprocess_arguments(self):
+        """
+        Checks validity of typically used arguments in an `ImageProcessorFast` `preprocess` method.
+        Raises `huggingface_hub.errors.StrictDataclassClassValidationError` if arguments incompatibility is caught.
+        """
+        validate_preprocess_arguments(
+            do_rescale=self.do_rescale,
+            rescale_factor=self.rescale_factor,
+            do_normalize=self.do_normalize,
+            image_mean=self.image_mean,
+            image_std=self.image_std,
+            do_center_crop=self.do_center_crop,
+            crop_size=self.crop_size,
+            do_resize=self.do_resize,
+            size=self.size,
+            interpolation=self.resample,
+        )
+        # Extra checks for ImageProcessorFast
+        if self.return_tensors is not None and self.return_tensors != "pt":
+            raise ValueError("Only returning PyTorch tensors is currently supported.")
+
+        if self.data_format is not None and self.data_format != ChannelDimension.FIRST:
+            raise ValueError("Only channel first data format is currently supported.")
+
     def filter_out_unused_kwargs(self, kwargs: dict):
         """
         Filter out the unused kwargs from the kwargs dictionary.
@@ -633,7 +614,6 @@ class BaseImageProcessorFast(BaseImageProcessor):
         default_to_square: Optional[bool] = None,
         image_mean: Optional[Union[float, list[float]]] = None,
         image_std: Optional[Union[float, list[float]]] = None,
-        data_format: Optional[ChannelDimension] = None,
         **kwargs,
     ) -> dict:
         """
@@ -652,15 +632,12 @@ class BaseImageProcessorFast(BaseImageProcessor):
             image_mean = tuple(image_mean)
         if isinstance(image_std, list):
             image_std = tuple(image_std)
-        if data_format is None:
-            data_format = ChannelDimension.FIRST
 
         kwargs["size"] = size
         kwargs["crop_size"] = crop_size
         kwargs["pad_size"] = pad_size
         kwargs["image_mean"] = image_mean
         kwargs["image_std"] = image_std
-        kwargs["data_format"] = data_format
 
         # torch resize uses interpolation instead of resample
         # Check if resample is an int before checking if it's an instance of PILImageResampling
@@ -673,70 +650,39 @@ class BaseImageProcessorFast(BaseImageProcessor):
 
         return kwargs
 
-    def _validate_preprocess_kwargs(
-        self,
-        do_rescale: Optional[bool] = None,
-        rescale_factor: Optional[float] = None,
-        do_normalize: Optional[bool] = None,
-        image_mean: Optional[Union[float, tuple[float]]] = None,
-        image_std: Optional[Union[float, tuple[float]]] = None,
-        do_resize: Optional[bool] = None,
-        size: Optional[SizeDict] = None,
-        do_center_crop: Optional[bool] = None,
-        crop_size: Optional[SizeDict] = None,
-        interpolation: Optional["F.InterpolationMode"] = None,
-        return_tensors: Optional[Union[str, TensorType]] = None,
-        data_format: Optional[ChannelDimension] = None,
-        **kwargs,
-    ):
+    @classmethod
+    def get_validation_methods(cls):
         """
-        validate the kwargs for the preprocess method.
+        Return all methods of cls or subclass starting with "validate_" which will be used to run
+        validation at each preprocessing call. The validation method needs to accept only `self` as arg
+        and run necessary checks on `self.xxx` fields.
         """
-        validate_fast_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_resize=do_resize,
-            size=size,
-            do_center_crop=do_center_crop,
-            crop_size=crop_size,
-            interpolation=interpolation,
-            return_tensors=return_tensors,
-            data_format=data_format,
+        return tuple(
+            [
+                name
+                for name, func in inspect.getmembers(cls, predicate=inspect.isfunction)
+                if name.startswith("validate_")
+            ]
         )
 
     @auto_docstring
     def preprocess(self, images: ImageInput, *args, **kwargs: Unpack[ImagesKwargs]) -> BatchFeature:
-        # args are not validated, but their order in the `preprocess` and `_preprocess` signatures must be the same
-        validate_kwargs(captured_kwargs=kwargs.keys(), valid_processor_keys=self._valid_kwargs_names)
-
-        # Perform type validation on received kwargs
-        validate_typed_dict(self.valid_kwargs, kwargs)
-
         # Set default kwargs from self. This ensures that if a kwarg is not provided
         # by the user, it gets its default value from the instance, or is set to None.
         for kwarg_name in self._valid_kwargs_names:
             kwargs.setdefault(kwarg_name, getattr(self, kwarg_name, None))
 
-        # Extract parameters that are only used for preparing the input images
-        do_convert_rgb = kwargs.pop("do_convert_rgb")
-        input_data_format = kwargs.pop("input_data_format")
-        device = kwargs.pop("device")
+        # Perform type validation on received kwargs, including cross validations
+        validate_typed_dict(schema=self.valid_kwargs, data=kwargs, cross_valdators=self.get_validation_methods())
 
-        # Update kwargs that need further processing before being validated
+        # Update kwargs that need further processing to be used with Fast processors
         kwargs = self._further_process_kwargs(**kwargs)
-
-        # Validate kwargs
-        self._validate_preprocess_kwargs(**kwargs)
 
         # Pop kwargs that are not needed in _preprocess
         kwargs.pop("data_format")
 
-        return self._preprocess_image_like_inputs(
-            images, *args, do_convert_rgb=do_convert_rgb, input_data_format=input_data_format, device=device, **kwargs
-        )
+        # Extract parameters that are only used for preparing the input images
+        return self._preprocess_image_like_inputs(images, *args, **kwargs)
 
     def _preprocess_image_like_inputs(
         self,

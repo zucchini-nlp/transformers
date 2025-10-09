@@ -32,7 +32,6 @@ from .image_processing_utils_fast import BaseImageProcessorFast
 from .image_utils import (
     ChannelDimension,
     SizeDict,
-    validate_kwargs,
 )
 from .processing_utils import Unpack, VideosKwargs
 from .utils import (
@@ -169,6 +168,7 @@ class BaseVideoProcessor(BaseImageProcessorFast):
     num_frames = None
     video_metadata = None
     return_metadata = False
+    data_format = ChannelDimension.FIRST
     valid_kwargs = VideosKwargs
     model_input_names = ["pixel_values_videos"]
 
@@ -355,18 +355,15 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         videos: VideoInput,
         **kwargs: Unpack[VideosKwargs],
     ) -> BatchFeature:
-        validate_kwargs(
-            captured_kwargs=kwargs.keys(),
-            valid_processor_keys=list(self.valid_kwargs.__annotations__.keys()) + ["return_tensors"],
-        )
-
-        # Perform type validation on received kwargs
-        validate_typed_dict(self.valid_kwargs, kwargs)
-
         # Set default kwargs from self. This ensures that if a kwarg is not provided
         # by the user, it gets its default value from the instance, or is set to None.
         for kwarg_name in self.valid_kwargs.__annotations__:
             kwargs.setdefault(kwarg_name, getattr(self, kwarg_name, None))
+
+        # Perform type validation on received kwargs
+        validate_typed_dict(
+            schema=self.valid_kwargs, data=kwargs, cross_valdators=(self.__class__.validate_fast_preprocess_arguments,)
+        )
 
         input_data_format = kwargs.pop("input_data_format")
         do_sample_frames = kwargs.pop("do_sample_frames")
@@ -383,7 +380,6 @@ class BaseVideoProcessor(BaseImageProcessorFast):
         videos = self._prepare_input_videos(videos=videos, input_data_format=input_data_format, device=device)
 
         kwargs = self._further_process_kwargs(**kwargs)
-        self._validate_preprocess_kwargs(**kwargs)
 
         # Pop kwargs that are not needed in _preprocess
         kwargs.pop("data_format")

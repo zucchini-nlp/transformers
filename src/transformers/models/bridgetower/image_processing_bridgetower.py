@@ -15,9 +15,10 @@
 """Image processor class for BridgeTower."""
 
 from collections.abc import Iterable
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Optional, Union
 
 import numpy as np
+from huggingface_hub.dataclasses import as_validated_field
 
 from ...image_processing_utils import BaseImageProcessor, BatchFeature, get_size_dict
 from ...image_transforms import PaddingMode, center_crop, pad, resize, to_channel_dimension_format
@@ -32,8 +33,6 @@ from ...image_utils import (
     is_scaled_image,
     make_flat_list_of_images,
     to_numpy_array,
-    valid_images,
-    validate_preprocess_arguments,
 )
 from ...processing_utils import ImagesKwargs
 from ...utils import TensorType, filter_out_non_signature_kwargs, is_vision_available, logging
@@ -123,8 +122,17 @@ def get_resize_output_image_size(
     return new_height, new_width
 
 
+@as_validated_field
+def image_size_validator(value=None):
+    if value is None:
+        pass
+    elif isinstance(value, dict) and value["shortest_edge"] is None:
+        raise ValueError(f"The `size` dictionary must contain the key `shortest_edge`. Got {value.keys()}")
+
+
 class BridgeTowerImageProcessorKwargs(ImagesKwargs, total=False):
     size_divisor: int
+    size: Annotated[Optional[Union[int, list[int], tuple[int, ...], dict[str, int]]], image_size_validator()]
 
 
 class BridgeTowerImageProcessor(BaseImageProcessor):
@@ -245,8 +253,6 @@ class BridgeTowerImageProcessor(BaseImageProcessor):
                 The channel dimension format of the input image. If not provided, it will be inferred.
         """
         size = get_size_dict(size, default_to_square=False)
-        if "shortest_edge" not in size:
-            raise ValueError(f"The `size` dictionary must contain the key `shortest_edge`. Got {size.keys()}")
         shorter = size["shortest_edge"]
         longer = int(1333 / 800 * shorter)
         output_size = get_resize_output_image_size(
@@ -449,42 +455,12 @@ class BridgeTowerImageProcessor(BaseImageProcessor):
                 - `"channels_last"` or `ChannelDimension.LAST`: image in (height, width, num_channels) format.
                 - `"none"` or `ChannelDimension.NONE`: image in (height, width) format.
         """
-        do_resize = do_resize if do_resize is not None else self.do_resize
-        size_divisor = size_divisor if size_divisor is not None else self.size_divisor
-        resample = resample if resample is not None else self.resample
-        do_rescale = do_rescale if do_rescale is not None else self.do_rescale
-        rescale_factor = rescale_factor if rescale_factor is not None else self.rescale_factor
-        do_normalize = do_normalize if do_normalize is not None else self.do_normalize
-        image_mean = image_mean if image_mean is not None else self.image_mean
-        image_std = image_std if image_std is not None else self.image_std
-        do_pad = do_pad if do_pad is not None else self.do_pad
-        do_center_crop = do_center_crop if do_center_crop is not None else self.do_center_crop
         # For backwards compatibility. Initial version of this processor was cropping to the "size" argument, which
         # it should default to if crop_size is undefined.
-        crop_size = (
-            crop_size if crop_size is not None else (self.crop_size if self.crop_size is not None else self.size)
-        )
-
-        size = size if size is not None else self.size
+        crop_size = crop_size if crop_size is not None else size
         size = get_size_dict(size, default_to_square=False)
-        images = self.fetch_images(images)
         images = make_flat_list_of_images(images)
 
-        if not valid_images(images):
-            raise ValueError("Invalid image type. Must be of type PIL.Image.Image, numpy.ndarray, or torch.Tensor")
-        # Here, crop_size is used only if it is set, else size will be used.
-        validate_preprocess_arguments(
-            do_rescale=do_rescale,
-            rescale_factor=rescale_factor,
-            do_normalize=do_normalize,
-            image_mean=image_mean,
-            image_std=image_std,
-            do_center_crop=do_center_crop,
-            crop_size=crop_size,
-            do_resize=do_resize,
-            size=size,
-            resample=resample,
-        )
         # All transformations expect numpy arrays.
         images = [to_numpy_array(image) for image in images]
 
