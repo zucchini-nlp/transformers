@@ -839,6 +839,31 @@ class GenerationMixin(ContinuousMixin):
 
         return torch.ones((batch_size, 1), dtype=torch.long, device=self.device) * bos_token_id
 
+    def _prepare_position_ids_for_generation(self, inputs_tensor, model_kwargs):
+        """
+        Tries to infer position ids given attention mask and past kv cache length. All instances when
+        `position_ids=None` should call this method.
+        """
+        # `input_ids` may be present in the model kwargs, instead of being the main input (e.g. multimodal model)
+        if "input_ids" in model_kwargs and model_kwargs["input_ids"].shape[1] > 0:
+            inputs_tensor = model_kwargs["input_ids"]
+
+        seq_length = inputs_tensor.shape[1]
+
+        if (attention_mask := model_kwargs.get("attention_mask")) is not None:
+            position_ids = attention_mask.long().cumsum(-1) - 1
+            position_ids = position_ids.masked_fill(attention_mask == 0, 1)
+        else:
+            past_length = 0
+            if (cache := model_kwargs.get("past_key_values")) is not None:
+                past_length = cache.get_seq_length()
+
+            position_ids = torch.arange(
+                past_length, seq_length + past_length, dtype=torch.long, device=inputs_tensor.device
+            )
+            position_ids = position_ids.unsqueeze(0)
+        return position_ids
+
     def _prepare_attention_mask_for_generation(
         self,
         inputs_tensor: torch.Tensor,
@@ -1028,28 +1053,29 @@ class GenerationMixin(ContinuousMixin):
                 model_kwargs[cache_name] = getattr(outputs, possible_cache_name)
                 break
 
+        use_cache = model_kwargs.get("use_cache", True)
+
         # update token_type_ids with last value
         if "token_type_ids" in model_kwargs:
             token_type_ids = model_kwargs["token_type_ids"]
             model_kwargs["token_type_ids"] = torch.cat([token_type_ids, token_type_ids[:, -1].unsqueeze(-1)], dim=-1)
 
-        if not is_encoder_decoder:
-            # update attention mask
-            if "attention_mask" in model_kwargs:
-                attention_mask = model_kwargs["attention_mask"]
-                model_kwargs["attention_mask"] = torch.cat(
-                    [attention_mask, attention_mask.new_ones((attention_mask.shape[0], 1))], dim=-1
-                )
-        else:
-            # update decoder attention mask
-            if "decoder_attention_mask" in model_kwargs:
-                decoder_attention_mask = model_kwargs["decoder_attention_mask"]
-                model_kwargs["decoder_attention_mask"] = torch.cat(
-                    [decoder_attention_mask, decoder_attention_mask.new_ones((decoder_attention_mask.shape[0], 1))],
-                    dim=-1,
-                )
+        position_ids_key = "position_ids" if not is_encoder_decoder else "decoder_position_ids"
+        if position_ids_key in model_kwargs:
+            position_ids = model_kwargs[position_ids_key]
+            next_position_ids = position_ids[:, -1:] + 1
+            if not use_cache:
+                next_position_ids = torch.cat([position_ids, next_position_ids], dim=-1)
+            model_kwargs[position_ids_key] = next_position_ids
 
-        if model_kwargs.get("use_cache", True):
+        attention_mask_key = "attention_mask" if not is_encoder_decoder else "decoder_attention_mask"
+        if attention_mask_key in model_kwargs:
+            attention_mask = model_kwargs[attention_mask_key]
+            model_kwargs[attention_mask_key] = torch.cat(
+                [attention_mask, attention_mask.new_ones((attention_mask.shape[0], 1))], dim=-1
+            )
+
+        if use_cache:
             model_kwargs["cache_position"] = model_kwargs["cache_position"][-1:] + num_new_tokens
         else:
             past_positions = model_kwargs.pop("cache_position")
@@ -2511,7 +2537,7 @@ class GenerationMixin(ContinuousMixin):
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
 
         accepts_attention_mask = "attention_mask" in set(inspect.signature(self.forward).parameters.keys())
-        requires_attention_mask = "encoder_outputs" not in model_kwargs
+        is_not_encoder_decoder = "encoder_outputs" not in model_kwargs
         kwargs_has_attention_mask = model_kwargs.get("attention_mask", None) is not None
 
         # 3. Define model inputs
@@ -2547,7 +2573,7 @@ class GenerationMixin(ContinuousMixin):
         if not self.config.is_encoder_decoder and model_input_name == "inputs_embeds":
             generation_config.use_cache = True
 
-        if not kwargs_has_attention_mask and requires_attention_mask and accepts_attention_mask:
+        if not kwargs_has_attention_mask and is_not_encoder_decoder and accepts_attention_mask:
             model_kwargs["attention_mask"] = self._prepare_attention_mask_for_generation(
                 inputs_tensor, generation_config, model_kwargs
             )
@@ -2555,6 +2581,11 @@ class GenerationMixin(ContinuousMixin):
             # TODO (joao): generalize this check with other types of inputs
             if model_input_name == "input_ids" and len(model_kwargs["attention_mask"].shape) > 2:
                 raise ValueError("`attention_mask` passed to `generate` must be 2D.")
+
+        kwargs_has_position_ids = model_kwargs.get("position_ids", None) is not None
+        accepts_position_ids = "position_ids" in set(inspect.signature(self.forward).parameters.keys())
+        if not kwargs_has_position_ids and accepts_position_ids and is_not_encoder_decoder:
+            model_kwargs["position_ids"] = self._prepare_position_ids_for_generation(inputs_tensor, model_kwargs)
 
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created and added to `model_kwargs`
