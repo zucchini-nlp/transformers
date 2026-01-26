@@ -1110,6 +1110,30 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
     def set_input_embeddings(self, value):
         self.language_model.set_input_embeddings(value)
 
+    def get_vision_position_ids(
+        self,
+        start_position: int,
+        grid_thw: list[int, int, int],
+        temp_merge_size: int = 1,
+        spatial_merge_size: int = 1,
+        device: str | torch.device | None = None,
+    ):
+        llm_grid_t, llm_grid_h, llm_grid_w = (
+            grid_thw[0] // temp_merge_size,
+            grid_thw[1] // spatial_merge_size,
+            grid_thw[2] // spatial_merge_size,
+        )
+
+        image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
+        h_grids = image_seq_length // llm_grid_h + start_position
+        w_grids = image_seq_length // llm_grid_w + start_position
+        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
+        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
+        vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
+
+        return vision_position_ids
+
     def get_rope_index(
         self,
         input_ids: torch.LongTensor | None = None,
@@ -1177,9 +1201,6 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
 
         mrope_position_deltas = []
         if input_ids is not None and (image_grid_thw is not None or video_grid_thw is not None):
-            total_input_ids = input_ids
-            if attention_mask is None:
-                attention_mask = torch.ones_like(total_input_ids)
             position_ids = torch.ones(
                 3,
                 input_ids.shape[0],
@@ -1187,62 +1208,59 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
                 dtype=input_ids.dtype,
                 device=input_ids.device,
             )
-            image_index, video_index = 0, 0
-            attention_mask = attention_mask.to(total_input_ids.device)
-            for i, input_ids in enumerate(total_input_ids):
-                # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0)
+
+            for batch_idx, current_input_ids in enumerate(input_ids):
+                current_position_ids = position_ids[:, batch_idx]
+
+                # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0). Early exit
                 if mm_token_type_ids is None:
-                    input_token_type = torch.zeros_like(input_ids)[attention_mask[i] == 1].tolist()
-                else:
-                    input_token_type = mm_token_type_ids[i, attention_mask[i] == 1].tolist()
+                    text_positions = torch.arange(len(current_input_ids), device=input_ids.device)
+                    current_position_ids = (
+                        current_position_ids[attention_mask[batch_idx]]
+                        if attention_mask is not None
+                        else current_position_ids
+                    )
+                    current_position_ids = text_positions[None, :].repeat(3, 1)
+                    mrope_position_deltas.append(1)
+                    continue
+
+                input_token_type = mm_token_type_ids[batch_idx]
+                if attention_mask is not None:
+                    current_input_ids = current_input_ids[attention_mask[batch_idx].bool()]
+                    input_token_type = input_token_type[attention_mask[batch_idx].bool()]
+                    current_position_ids = current_position_ids[:, attention_mask[batch_idx].bool()]
 
                 input_type_group = []
+                input_token_type = input_token_type.tolist()
                 for key, group in itertools.groupby(enumerate(input_token_type), lambda x: x[1]):
                     group = list(group)
                     start_index = group[0][0]
                     end_index = group[-1][0] + 1
                     input_type_group.append((key, start_index, end_index))
 
+                current_pos = 0
+                grid_iters = {1: image_grid_thw, 2: video_grid_thw}
                 llm_pos_ids_list = []
                 for modality_type, start_idx, end_idx in input_type_group:
-                    st_idx = llm_pos_ids_list[-1].max() + 1 if len(llm_pos_ids_list) > 0 else 0
-
                     # text == 0
                     if modality_type == 0:
                         text_len = end_idx - start_idx
-                        llm_pos_ids_list.append(torch.arange(text_len).view(1, -1).expand(3, -1) + st_idx)
+                        llm_pos_ids_list.append(torch.arange(text_len).view(1, -1).expand(3, -1) + current_pos)
+                        current_pos += text_len
 
                     # image == 1, video == 2
                     else:
-                        grid_thw = image_grid_thw if modality_type == 1 else video_grid_thw
-                        mm_index = image_index if modality_type == 1 else video_index
+                        grid_thw = next(grid_iters[modality_type].tolist())
                         t_merge_size = 1 if modality_type == 1 else temporal_merge_size
-
-                        t, h, w = (
-                            grid_thw[mm_index][0],
-                            grid_thw[mm_index][1],
-                            grid_thw[mm_index][2],
+                        vision_position_ids = self.get_vision_position_ids(
+                            current_pos, grid_thw, t_merge_size, spatial_merge_size, device=input_ids.device
                         )
-                        llm_grid_t, llm_grid_h, llm_grid_w = (
-                            t.item() // t_merge_size,
-                            h.item() // spatial_merge_size,
-                            w.item() // spatial_merge_size,
-                        )
-
-                        for t_idx in range(llm_grid_t):
-                            t_index = torch.tensor(t_idx).view(-1, 1).expand(-1, llm_grid_h * llm_grid_w).flatten()
-                            h_index = torch.arange(llm_grid_h).view(1, -1, 1).expand(1, -1, llm_grid_w).flatten()
-                            w_index = torch.arange(llm_grid_w).view(1, 1, -1).expand(1, llm_grid_h, -1).flatten()
-                            llm_pos_ids_list.append(torch.stack([t_index, h_index, w_index]) + st_idx)
-
-                        if modality_type == 1:
-                            image_index += 1
-                        else:
-                            video_index += 1
+                        llm_pos_ids_list.append(vision_position_ids)
+                        current_pos += max(grid_thw[1], grid_thw[2])
 
                 llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)
-                position_ids[..., i, attention_mask[i] == 1] = llm_positions.to(position_ids.device)
-                mrope_position_deltas.append(llm_positions.max() + 1 - len(total_input_ids[i]))
+                current_position_ids = llm_positions.to(position_ids.device)
+                mrope_position_deltas.append(llm_positions.max() + 1 - len(current_input_ids))
             mrope_position_deltas = torch.tensor(mrope_position_deltas, device=input_ids.device).unsqueeze(1)
             return position_ids, mrope_position_deltas
         else:
@@ -1480,6 +1498,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
                 attention_mask=attention_mask,
                 mm_token_type_ids=mm_token_type_ids,
             )
+            print(position_ids, rope_deltas)
             self.rope_deltas = rope_deltas
         # then use the prev pre-calculated rope-deltas to get the correct position ids
         else:
