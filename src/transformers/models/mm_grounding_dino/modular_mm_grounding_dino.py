@@ -155,10 +155,6 @@ class MMGroundingDinoConfig(PreTrainedConfig):
     def __init__(
         self,
         backbone_config=None,
-        backbone=None,
-        use_pretrained_backbone=False,
-        use_timm_backbone=False,
-        backbone_kwargs=None,
         text_config=None,
         num_queries=900,
         encoder_layers=6,
