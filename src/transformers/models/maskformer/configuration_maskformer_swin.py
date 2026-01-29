@@ -144,9 +144,7 @@ class MaskFormerSwinConfig(BackboneConfigMixin, PreTrainedConfig):
         # this indicates the channel dimension after the last stage of the model
         self.hidden_size = int(embed_dim * 2 ** (len(depths) - 1))
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        out_indices = list(out_indices) if out_indices is not None else None
-        self._out_features, self._out_indices = out_features, out_indices
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
 
 
 __all__ = ["MaskFormerSwinConfig"]

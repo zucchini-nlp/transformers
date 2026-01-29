@@ -186,9 +186,7 @@ class BeitConfig(BackboneConfigMixin, PreTrainedConfig):
 
         # backbone attributes
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, self.num_hidden_layers + 1)]
-        out_indices = list(out_indices) if out_indices is not None else None
-        self._out_features, self._out_indices = out_features, out_indices
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
         self.add_fpn = add_fpn
         self.reshape_hidden_states = reshape_hidden_states
 

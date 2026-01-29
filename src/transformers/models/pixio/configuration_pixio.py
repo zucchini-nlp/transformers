@@ -138,9 +138,7 @@ class PixioConfig(BackboneConfigMixin, PreTrainedConfig):
         self.qkv_bias = qkv_bias
         self.drop_path_rate = drop_path_rate
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, num_hidden_layers + 1)]
-        out_indices = list(out_indices) if out_indices is not None else None
-        self._out_features, self._out_indices = out_features, out_indices
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
         self.apply_layernorm = apply_layernorm
         self.reshape_hidden_states = reshape_hidden_states
 

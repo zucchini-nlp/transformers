@@ -92,8 +92,7 @@ class TimmBackboneConfig(BackboneConfigMixin, PreTrainedConfig):
         """
         self._out_indices = list(out_indices) if out_indices is not None else out_indices
         if getattr(self, "stage_names", None) is not None:
-            self._out_features = None
-            self.align_output_features_output_indices()
+            self.set_output_features_output_indices(out_features=None, out_indices=out_indices)
 
     @property
     def out_features(self):
@@ -106,8 +105,7 @@ class TimmBackboneConfig(BackboneConfigMixin, PreTrainedConfig):
         """
         self._out_features = out_features
         if getattr(self, "stage_names", None) is not None:
-            self._out_indices = None
-            self.align_output_features_output_indices()
+            self.set_output_features_output_indices(out_features=out_features, out_indices=None)
 
 
 __all__ = ["TimmBackboneConfig"]

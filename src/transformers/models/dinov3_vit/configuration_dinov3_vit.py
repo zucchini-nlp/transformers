@@ -182,9 +182,7 @@ class DINOv3ViTConfig(BackboneConfigMixin, PreTrainedConfig):
         self.stage_names = stage_names
 
         # Initialize backbone features/indices
-        out_indices = list(out_indices) if out_indices is not None else None
-        self._out_features, self._out_indices = out_features, out_indices
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
 
 
 __all__ = ["DINOv3ViTConfig"]

@@ -38,43 +38,27 @@ class BackboneConfigMixin:
 
     def set_output_features_output_indices(
         self,
-        stage_names: list | None = None,
-        out_features: list | None = None,
-        out_indices: list | None = None,
+        out_features: list | None,
+        out_indices: list | None,
     ):
         """
         Sets output indices and features to new values and aligns them with the given `stage_names`.
+        If one of the inputs is not given, find the corresponding `out_features` or `out_indices`
+        for the given `stage_names`.
 
         Args:
             out_features (`list[str]`, *optional*):
                 The names of the features for the backbone to output. Defaults to `config._out_features` if not provided.
             out_indices (`list[int]` or `tuple[int]`, *optional*):
                 The indices of the features for the backbone to output. Defaults to `config._out_indices` if not provided.
-            stage_names (`list[str]`, *optional*):
-                The names of the stages of the backbone. Defaults to `config.stage_names` if not provided.
         """
-        self.stage_names = stage_names if stage_names is not None else self.stage_names
-        self._out_features = out_features if out_features is not None else self._out_features
-        self._out_indices = out_indices if out_indices is not None else self._out_indices
-        self.align_output_features_output_indices()
-
-    def align_output_features_output_indices(self):
-        """
-        Finds the corresponding `out_features` and `out_indices` for the given `stage_names`.
-
-        The logic is as follows:
-            - `out_features` not set, `out_indices` set: `out_features` is set to the `out_features` corresponding to the
-            `out_indices`.
-            - `out_indices` not set, `out_features` set: `out_indices` is set to the `out_indices` corresponding to the
-            `out_features`.
-            - `out_indices` and `out_features` not set: `out_indices` and `out_features` are set to the last stage.
-            - `out_indices` and `out_features` set: input `out_indices` and `out_features` are returned.
-        """
+        self._out_features = out_features
+        self._out_indices = list(out_indices) if isinstance(out_indices, tuple) else out_indices
 
         # First verify that the out_features and out_indices are valid
-        self._out_indices = list(self._out_indices) if isinstance(self._out_indices, tuple) else self._out_indices
         self.verify_out_features_out_indices()
 
+        # Align output features with indices
         out_features, out_indices = self._out_features, self._out_indices
         if out_indices is None and out_features is None:
             out_indices = [len(self.stage_names) - 1]
@@ -147,9 +131,7 @@ class BackboneConfigMixin:
         """
         Set the out_features attribute. This will also update the out_indices attribute to match the new out_features.
         """
-        self._out_features = out_features
-        self._out_indices = None
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_features=out_features, out_indices=None)
 
     @property
     def out_indices(self):
@@ -160,9 +142,8 @@ class BackboneConfigMixin:
         """
         Set the out_indices attribute. This will also update the out_features attribute to match the new out_indices.
         """
-        self._out_indices = list(out_indices) if out_indices is not None else out_indices
-        self._out_features = None
-        self.align_output_features_output_indices()
+        out_indices = list(out_indices) if out_indices is not None else out_indices
+        self.set_output_features_output_indices(out_features=None, out_indices=out_indices)
 
     def to_dict(self):
         """
@@ -202,7 +183,7 @@ class BackboneMixin:
 
     def _init_transformers_backbone(self, config) -> None:
         self.stage_names = config.stage_names
-        self.config.align_output_features_output_indices()
+        self.config.verify_out_features_out_indices()
         # Number of channels for each stage. This is set in the transformer backbone model init
         self.num_features = None
 
