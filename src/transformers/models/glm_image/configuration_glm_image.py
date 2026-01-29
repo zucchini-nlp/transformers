@@ -246,7 +246,7 @@ class GlmImageTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         tie_word_embeddings: bool | None = False,
         vision_vocab_size: int | None = 16512,
         attention_bias: bool | None = True,
-      eos_token_id: int | None = 16385,
+        eos_token_id: int | None = 16385,
         **kwargs,
     ):
         self.vocab_size = vocab_size
