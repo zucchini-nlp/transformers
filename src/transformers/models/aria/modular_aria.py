@@ -422,7 +422,8 @@ class AriaProjector(nn.Module):
 
 
 class AriaImageProcessor(BaseImageProcessor):
-    """
+    r"""
+
     A vision processor for the Aria model that handles image preprocessing.
     Initialize the AriaImageProcessor.
 
@@ -449,7 +450,7 @@ class AriaImageProcessor(BaseImageProcessor):
             method.
         do_normalize (`bool`, *optional*, defaults to `True`):
             Whether to normalize the image.
-        resample (PILImageResampling, *optional*, defaults to `BICUBIC`):
+        resample (PILImageResampling, *optional*, defaults to `"PILImageResampling.BICUBIC"`):
             The resampling filter to use if resizing the image.
     """
 
