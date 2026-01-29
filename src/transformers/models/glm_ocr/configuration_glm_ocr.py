@@ -155,6 +155,8 @@ class GlmOcrTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
             with longer `max_position_embeddings`.
         pad_token_id (`int`, *optional*):
             The id of the padding token.
+        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
+            Whether to tie weight embeddings
 
     ```python
     >>> from transformers import GlmOcrTextModel, GlmOcrConfig
@@ -203,6 +205,7 @@ class GlmOcrTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         attention_dropout: float | None = 0.0,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         pad_token_id: int | None = None,
+        tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -224,6 +227,7 @@ class GlmOcrTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         self.attention_dropout = attention_dropout
         self.rope_parameters = rope_parameters
         self.pad_token_id = pad_token_id
+        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
 

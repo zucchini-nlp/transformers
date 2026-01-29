@@ -130,6 +130,8 @@ class Glm4vMoeTextConfig(Glm4MoeConfig, RotaryEmbeddingConfigMixin):
             Beginning of stream token id.
         router_aux_loss_coef (`float`, *optional*, defaults to 0.0001):
             The aux loss factor for the loss.
+        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
+            Whether to tie weight embeddings
 
     ```python
     >>> from transformers import Glm4vMoeTextModel, Glm4vMoeConfig
@@ -192,6 +194,7 @@ class Glm4vMoeTextConfig(Glm4MoeConfig, RotaryEmbeddingConfigMixin):
         eos_token_id: int | None = None,
         bos_token_id: int | None = None,
         router_aux_loss_coef: float | None = 0.0001,
+        tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
         self.pad_token_id = pad_token_id
@@ -225,6 +228,7 @@ class Glm4vMoeTextConfig(Glm4MoeConfig, RotaryEmbeddingConfigMixin):
         self.first_k_dense_replace = first_k_dense_replace
         self.norm_topk_prob = norm_topk_prob
         self.router_aux_loss_coef = router_aux_loss_coef
+        self.tie_word_embeddings = tie_word_embeddings
         PreTrainedConfig.__init__(self, ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
 
 

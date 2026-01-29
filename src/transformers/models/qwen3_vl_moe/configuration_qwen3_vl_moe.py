@@ -85,6 +85,8 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
             The dimension of the head. If not specified, will default to `hidden_size // num_attention_heads`.
         pad_token_id (`int`, *optional*):
             The id of the padding token.
+        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
+            Whether to tie weight embeddings
 
     ```python
     >>> from transformers import Qwen3VLMoeForConditionalGeneration, Qwen3VLMoeConfig
@@ -142,6 +144,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         rope_parameters: RopeParameters | None = None,
         head_dim: int | None = None,
         pad_token_id: int | None = None,
+        tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -172,6 +175,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         self.num_experts = num_experts
         self.mlp_only_layers = [] if mlp_only_layers is None else mlp_only_layers
         self.pad_token_id = pad_token_id
+        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(
             ignore_keys_at_rope_validation={"mrope_section", "mrope_interleaved"},

@@ -111,6 +111,8 @@ class Qwen3VLTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
             The dropout ratio for the attention probabilities.
         pad_token_id (`int`, *optional*):
             The id of the padding token. If unset, the config is treated as not having a dedicated padding token.
+        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
+            Whether to tie weight embeddings
 
     ```python
     >>> from transformers import Qwen3VLTextModel, Qwen3VLTextConfig
@@ -147,6 +149,7 @@ class Qwen3VLTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         attention_bias: bool | None = False,
         attention_dropout: float | None = 0.0,
         pad_token_id: int | None = None,
+        tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -170,6 +173,7 @@ class Qwen3VLTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         self.attention_dropout = attention_dropout
         self.rope_parameters = rope_parameters
         self.pad_token_id = pad_token_id
+        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(
             ignore_keys_at_rope_validation={"mrope_section", "mrope_interleaved"},

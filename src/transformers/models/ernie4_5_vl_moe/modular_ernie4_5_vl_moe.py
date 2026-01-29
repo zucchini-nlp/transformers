@@ -240,6 +240,8 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
             End of stream token id.
         bos_token_id (`int`, *optional*):
             Beginning of stream token id.
+        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
+            Whether to tie weight embeddings
     """
 
     model_type = "ernie4_5_vl_moe_text"
@@ -284,6 +286,7 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
         pad_token_id=None,
         eos_token_id=None,
         bos_token_id=None,
+        tie_word_embeddings=True,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -318,6 +321,7 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
         self.pad_token_id = pad_token_id
         self.eos_token_id = eos_token_id
         self.bos_token_id = bos_token_id
+        self.tie_word_embeddings = tie_word_embeddings
 
         PreTrainedConfig.__init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
 
