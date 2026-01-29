@@ -18,6 +18,7 @@ from torch import nn
 
 from ... import initialization as init
 from ...configuration_utils import PreTrainedConfig
+from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 from ..auto.modeling_auto import AutoModel
@@ -195,30 +196,14 @@ class MMGroundingDinoConfig(PreTrainedConfig):
         tie_word_embeddings=True,
         **kwargs,
     ):
-        if backbone_config is None and backbone is None:
-            logger.info("`backbone_config` is `None`. Initializing the config with the default `Swin` backbone.")
-            backbone_config = CONFIG_MAPPING["swin"](
-                window_size=7,
-                image_size=224,
-                embed_dim=96,
-                depths=[2, 2, 6, 2],
-                num_heads=[3, 6, 12, 24],
-                out_indices=[2, 3, 4],
-            )
-        elif isinstance(backbone_config, dict):
-            backbone_model_type = backbone_config.pop("model_type")
-            config_class = CONFIG_MAPPING[backbone_model_type]
-            backbone_config = config_class.from_dict(backbone_config)
-
-        if text_config is None:
-            text_config = {}
-            logger.info("text_config is None. Initializing the text config with default values (`BertConfig`).")
+        backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
+            backbone_config=backbone_config,
+            default_config_type="swin",
+            default_config_kwargs={"out_indices": [2, 3, 4]},
+            **kwargs,
+        )
 
         self.backbone_config = backbone_config
-        self.backbone = backbone
-        self.use_pretrained_backbone = use_pretrained_backbone
-        self.use_timm_backbone = use_timm_backbone
-        self.backbone_kwargs = backbone_kwargs
         self.num_queries = num_queries
         self.d_model = d_model
         self.encoder_ffn_dim = encoder_ffn_dim
@@ -252,6 +237,7 @@ class MMGroundingDinoConfig(PreTrainedConfig):
             text_config["model_type"] = text_config.get("model_type", "bert")
             text_config = CONFIG_MAPPING[text_config["model_type"]](**text_config)
         elif text_config is None:
+            logger.info("text_config is None. Initializing the text config with default values (`BertConfig`).")
             text_config = CONFIG_MAPPING["bert"]()
 
         self.text_config = text_config
