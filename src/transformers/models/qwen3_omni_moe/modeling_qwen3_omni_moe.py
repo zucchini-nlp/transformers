@@ -2215,9 +2215,9 @@ class Qwen3OmniMoeThinkerForConditionalGeneration(
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
         if pixel_values_videos is not None:
-            video_embeds, video_embeds_multiscale = self.get_video_features(
-                pixel_values_videos, video_grid_thw, return_dict=True
-            ).pooler_output
+            video_outputs = self.get_video_features(pixel_values_videos, video_grid_thw, return_dict=True)
+            video_embeds = video_outputs.pooler_output
+            video_embeds_multiscale = video_outputs.deepstack_features
 
             video_embeds = video_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
             _, video_mask, _ = self.get_placeholder_mask(
