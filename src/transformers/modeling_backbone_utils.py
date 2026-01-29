@@ -169,31 +169,32 @@ class BackboneMixin:
         pretrained model weights have been loaded.
         """
         super().__init__(*args, **kwargs)
-        if getattr(self, "_backbone", None) is not None:
+        timm_backbone = kwargs.pop("timm_backbone", None)
+        if timm_backbone is not None:
             self.backbone_type = BackboneType.TIMM
         else:
             self.backbone_type = BackboneType.TRANSFORMERS
 
         if self.backbone_type == BackboneType.TIMM:
-            self._init_timm_backbone()
+            self._init_timm_backbone(backbone=timm_backbone)
         elif self.backbone_type == BackboneType.TRANSFORMERS:
             self._init_transformers_backbone()
         else:
             raise ValueError(f"backbone_type {self.backbone_type} not supported.")
 
-    def _init_timm_backbone(self) -> None:
+    def _init_timm_backbone(self, backbone) -> None:
         """
-        Initialize the backbone model from timm. The backbone must already be loaded to self._backbone
+        Initialize the backbone model from timm. The backbone must already be loaded to backbone
         """
 
         # These will disagree with the defaults for the transformers models e.g. for resnet50
         # the transformer model has out_features = ['stem', 'stage1', 'stage2', 'stage3', 'stage4']
         # the timm model has out_features = ['act', 'layer1', 'layer2', 'layer3', 'layer4']
-        self.stage_names = [stage["module"] for stage in self._backbone.feature_info.info]
-        self.num_features = [stage["num_chs"] for stage in self._backbone.feature_info.info]
+        self.stage_names = [stage["module"] for stage in backbone.feature_info.info]
+        self.num_features = [stage["num_chs"] for stage in backbone.feature_info.info]
 
-        self.config._out_indices = list(self._backbone.feature_info.out_indices)
-        self.config._out_features = self._backbone.feature_info.module_name()
+        self.config._out_indices = list(backbone.feature_info.out_indices)
+        self.config._out_features = backbone.feature_info.module_name()
         self.config.stage_names = self.stage_names
 
         # We verify the out indices and out features are valid
