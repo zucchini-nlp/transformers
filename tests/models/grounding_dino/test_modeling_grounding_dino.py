@@ -14,6 +14,7 @@
 """Testing suite for the PyTorch Grounding DINO model."""
 
 import collections
+import copy
 import inspect
 import math
 import re
@@ -530,7 +531,7 @@ class GroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Tes
         config = config.__class__(**config_dict)
 
         for model_class in self.all_model_classes:
-            model = model_class(config)
+            model = model_class(copy.deepcopy(config))
             model.to(torch_device)
             model.eval()
             with torch.no_grad():

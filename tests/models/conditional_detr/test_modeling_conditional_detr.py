@@ -13,6 +13,7 @@
 # limitations under the License.
 """Testing suite for the PyTorch Conditional DETR model."""
 
+import copy
 import inspect
 import math
 import unittest
@@ -446,7 +447,7 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         config = config.__class__(**config_dict)
 
         for model_class in self.all_model_classes:
-            model = model_class(config)
+            model = model_class(copy.deepcopy(config))
             model.to(torch_device)
             model.eval()
             with torch.no_grad():

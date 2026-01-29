@@ -14,7 +14,6 @@
 
 """Collection of utils to be used by backbones and their components."""
 
-import copy
 import enum
 import inspect
 
@@ -315,7 +314,6 @@ def load_backbone(config):
     """
     from transformers import AutoBackbone
 
-    config = copy.deepcopy(config)
     backbone_config = getattr(config, "backbone_config", None)
 
     if backbone_config is None:
