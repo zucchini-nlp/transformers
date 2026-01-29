@@ -187,7 +187,7 @@ class BackboneMixin:
         Initialize the backbone model from timm The backbone must already be loaded to self._backbone
         """
 
-        # These will diagree with the defaults for the transformers models e.g. for resnet50
+        # These will disagree with the defaults for the transformers models e.g. for resnet50
         # the transformer model has out_features = ['stem', 'stage1', 'stage2', 'stage3', 'stage4']
         # the timm model has out_features = ['act', 'layer1', 'layer2', 'layer3', 'layer4']
         self.stage_names = [stage["module"] for stage in self._backbone.feature_info.info]
