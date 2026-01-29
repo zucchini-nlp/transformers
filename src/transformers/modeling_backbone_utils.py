@@ -184,7 +184,7 @@ class BackboneMixin:
 
     def _init_timm_backbone(self, config) -> None:
         """
-        Initialize the backbone model from timm The backbone must already be loaded to self._backbone
+        Initialize the backbone model from timm. The backbone must already be loaded to self._backbone
         """
 
         # These will disagree with the defaults for the transformers models e.g. for resnet50
