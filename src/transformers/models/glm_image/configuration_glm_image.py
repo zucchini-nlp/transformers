@@ -242,11 +242,10 @@ class GlmImageTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         use_cache: bool | None = True,
         attention_dropout: float | None = 0.0,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        pad_token_id: int | None = 167841,
-        tie_word_embeddings: bool | None = False,
-        vision_vocab_size: int | None = 16512,
-        attention_bias: bool | None = True,
-        eos_token_id: int | None = 16385,
+        pad_token_id: int = 167841,
+        vision_vocab_size: int = 16512,
+        attention_bias: bool = True,
+        eos_token_id: int = 16385,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -268,7 +267,6 @@ class GlmImageTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         self.attention_dropout = attention_dropout
         self.rope_parameters = rope_parameters
         self.pad_token_id = pad_token_id
-        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
         self.vision_vocab_size = vision_vocab_size

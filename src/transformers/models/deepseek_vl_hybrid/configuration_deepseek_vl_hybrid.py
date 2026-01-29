@@ -103,7 +103,6 @@ class DeepseekVLHybridConfig(PreTrainedConfig):
         self.text_config = text_config
         self.vision_config = vision_config
         self.image_token_id = image_token_id
-        self.tie_word_embeddings = tie_word_embeddings
         super().__init__(**kwargs)
 
 
