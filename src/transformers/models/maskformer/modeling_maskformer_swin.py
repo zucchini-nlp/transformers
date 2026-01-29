@@ -785,7 +785,7 @@ class MaskFormerSwinModel(MaskFormerSwinPreTrainedModel):
         )
 
 
-class MaskFormerSwinBackbone(MaskFormerSwinPreTrainedModel, BackboneMixin):
+class MaskFormerSwinBackbone(BackboneMixin, MaskFormerSwinPreTrainedModel):
     """
     MaskFormerSwin backbone, designed especially for the MaskFormer framework.
 
@@ -799,7 +799,6 @@ class MaskFormerSwinBackbone(MaskFormerSwinPreTrainedModel, BackboneMixin):
 
     def __init__(self, config: MaskFormerSwinConfig):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.model = MaskFormerSwinModel(config)
         if "stem" in self.out_features:

@@ -336,7 +336,6 @@ class Dinov2WithRegistersForImageClassification(Dinov2ForImageClassification):
 class Dinov2WithRegistersBackbone(Dinov2Backbone):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_register_tokens = config.num_register_tokens
         self.num_features = [config.hidden_size for _ in range(config.num_hidden_layers + 1)]

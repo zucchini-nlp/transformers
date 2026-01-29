@@ -855,12 +855,11 @@ class FocalNetForImageClassification(FocalNetPreTrainedModel):
     FocalNet backbone, to be used with frameworks like X-Decoder.
     """
 )
-class FocalNetBackbone(FocalNetPreTrainedModel, BackboneMixin):
+class FocalNetBackbone(BackboneMixin, FocalNetPreTrainedModel):
     has_attentions = False
 
     def __init__(self, config: FocalNetConfig):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.embed_dim] + config.hidden_sizes
         self.focalnet = FocalNetModel(config)

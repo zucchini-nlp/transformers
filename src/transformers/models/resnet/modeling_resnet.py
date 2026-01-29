@@ -372,12 +372,11 @@ class ResNetForImageClassification(ResNetPreTrainedModel):
     ResNet backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class ResNetBackbone(ResNetPreTrainedModel, BackboneMixin):
+class ResNetBackbone(BackboneMixin, ResNetPreTrainedModel):
     has_attentions = False
 
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.embedding_size] + config.hidden_sizes
         self.embedder = ResNetEmbeddings(config)

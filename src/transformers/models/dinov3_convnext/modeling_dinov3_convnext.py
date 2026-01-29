@@ -244,12 +244,11 @@ class DINOv3ConvNextModel(DINOv3ConvNextPreTrainedModel):
 
 
 @auto_docstring
-class DINOv3ConvNextBackbone(DINOv3ConvNextPreTrainedModel, BackboneMixin):
+class DINOv3ConvNextBackbone(BackboneMixin, DINOv3ConvNextPreTrainedModel):
     config: DINOv3ConvNextConfig
 
     def __init__(self, config: DINOv3ConvNextConfig):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.num_channels] + list(config.hidden_sizes)
 

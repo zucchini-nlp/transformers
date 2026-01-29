@@ -544,10 +544,9 @@ class Dinov2ForImageClassification(Dinov2PreTrainedModel):
     Dinov2 backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class Dinov2Backbone(Dinov2PreTrainedModel, BackboneMixin):
+class Dinov2Backbone(BackboneMixin, Dinov2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.hidden_size for _ in range(config.num_hidden_layers + 1)]
         self.embeddings = Dinov2Embeddings(config)

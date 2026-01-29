@@ -1099,10 +1099,9 @@ class SwinForImageClassification(SwinPreTrainedModel):
     Swin backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class SwinBackbone(SwinPreTrainedModel, BackboneMixin):
+class SwinBackbone(BackboneMixin, SwinPreTrainedModel):
     def __init__(self, config: SwinConfig):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.embed_dim] + [int(config.embed_dim * 2**i) for i in range(len(config.depths))]
         self.embeddings = SwinEmbeddings(config)

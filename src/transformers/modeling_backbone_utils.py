@@ -163,7 +163,25 @@ class BackboneMixin:
     # Should be set to `False` for conv-based models to be able to run `forward_with_filtered_kwargs`
     has_attentions: bool = True
 
-    def _init_timm_backbone(self, config) -> None:
+    def __init__(self, *args, **kwargs) -> None:
+        """
+        Method to initialize the backbone. This method is called by the constructor of the base class after the
+        pretrained model weights have been loaded.
+        """
+        super().__init__(*args, **kwargs)
+        if getattr(self, "_backbone", None) is not None:
+            self.backbone_type = BackboneType.TIMM
+        else:
+            self.backbone_type = BackboneType.TRANSFORMERS
+
+        if self.backbone_type == BackboneType.TIMM:
+            self._init_timm_backbone()
+        elif self.backbone_type == BackboneType.TRANSFORMERS:
+            self._init_transformers_backbone()
+        else:
+            raise ValueError(f"backbone_type {self.backbone_type} not supported.")
+
+    def _init_timm_backbone(self) -> None:
         """
         Initialize the backbone model from timm. The backbone must already be loaded to self._backbone
         """
@@ -181,29 +199,11 @@ class BackboneMixin:
         # We verify the out indices and out features are valid
         self.config.verify_out_features_out_indices()
 
-    def _init_transformers_backbone(self, config) -> None:
-        self.stage_names = config.stage_names
+    def _init_transformers_backbone(self) -> None:
+        self.stage_names = self.config.stage_names
         self.config.verify_out_features_out_indices()
         # Number of channels for each stage. This is set in the transformer backbone model init
         self.num_features = None
-
-    def _init_backbone(self, config) -> None:
-        """
-        Method to initialize the backbone. This method is called by the constructor of the base class after the
-        pretrained model weights have been loaded.
-        """
-        self.config = config
-        if getattr(self, "_backbone", None) is not None:
-            self.backbone_type = BackboneType.TIMM
-        else:
-            self.backbone_type = BackboneType.TRANSFORMERS
-
-        if self.backbone_type == BackboneType.TIMM:
-            self._init_timm_backbone(config)
-        elif self.backbone_type == BackboneType.TRANSFORMERS:
-            self._init_transformers_backbone(config)
-        else:
-            raise ValueError(f"backbone_type {self.backbone_type} not supported.")
 
     @property
     def out_features(self):

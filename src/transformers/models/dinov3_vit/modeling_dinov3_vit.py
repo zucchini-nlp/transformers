@@ -516,10 +516,9 @@ class DINOv3ViTModel(DINOv3ViTPreTrainedModel):
 
 
 @auto_docstring
-class DINOv3ViTBackbone(DINOv3ViTPreTrainedModel, BackboneMixin):
+class DINOv3ViTBackbone(BackboneMixin, DINOv3ViTPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.embeddings = DINOv3ViTEmbeddings(config)
         self.rope_embeddings = DINOv3ViTRopePositionEmbedding(config)

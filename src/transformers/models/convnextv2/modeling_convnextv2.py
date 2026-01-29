@@ -367,12 +367,11 @@ class ConvNextV2ForImageClassification(ConvNextV2PreTrainedModel):
     """
 )
 # Copied from transformers.models.convnext.modeling_convnext.ConvNextBackbone with CONVNEXT->CONVNEXTV2,ConvNext->ConvNextV2,facebook/convnext-tiny-224->facebook/convnextv2-tiny-1k-224
-class ConvNextV2Backbone(ConvNextV2PreTrainedModel, BackboneMixin):
+class ConvNextV2Backbone(BackboneMixin, ConvNextV2PreTrainedModel):
     has_attentions = False
 
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.embeddings = ConvNextV2Embeddings(config)
         self.encoder = ConvNextV2Encoder(config)

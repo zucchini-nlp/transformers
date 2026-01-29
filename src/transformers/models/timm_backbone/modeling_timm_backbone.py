@@ -28,7 +28,7 @@ if is_timm_available():
     import timm
 
 
-class TimmBackbone(PreTrainedModel, BackboneMixin):
+class TimmBackbone(BackboneMixin, PreTrainedModel):
     """
     Wrapper class for timm models to be used as backbones. This enables using the timm models interchangeably with the
     other models in the library keeping the same API.
@@ -41,8 +41,6 @@ class TimmBackbone(PreTrainedModel, BackboneMixin):
 
     def __init__(self, config, **kwargs):
         requires_backends(self, "timm")
-        super().__init__(config)
-        self.config = config
 
         if config.backbone is None:
             raise ValueError("backbone is not set in the config. Please set it to a timm model name.")
@@ -50,10 +48,9 @@ class TimmBackbone(PreTrainedModel, BackboneMixin):
         if hasattr(config, "out_features") and config.out_features is not None:
             raise ValueError("out_features is not supported by TimmBackbone. Please use out_indices instead.")
 
-        pretrained = kwargs.pop("pretrained", False)
-
         # We just take the final layer by default. This matches the default for the transformers models.
         out_indices = config.out_indices if getattr(config, "out_indices", None) is not None else (-1,)
+        pretrained = kwargs.pop("pretrained", False)
 
         in_chans = kwargs.pop("in_chans", config.num_channels)
         self._backbone = timm.create_model(
@@ -67,7 +64,8 @@ class TimmBackbone(PreTrainedModel, BackboneMixin):
             **kwargs,
         )
 
-        # Converts all `BatchNorm2d` and `SyncBatchNorm` or `BatchNormAct2d` and `SyncBatchNormAct2d` layers of provided module into `FrozenBatchNorm2d` or `FrozenBatchNormAct2d` respectively
+        # Converts all `BatchNorm2d` and `SyncBatchNorm` or `BatchNormAct2d` and `SyncBatchNormAct2d` layers of
+        # provided module into `FrozenBatchNorm2d` or `FrozenBatchNormAct2d` respectively
         if getattr(config, "freeze_batch_norm_2d", False):
             self.freeze_batch_norm_2d()
 
@@ -77,7 +75,10 @@ class TimmBackbone(PreTrainedModel, BackboneMixin):
             layer["module"]: str(layer["index"]) for layer in self._backbone.feature_info.get_dicts()
         }
         self._all_layers = {layer["module"]: str(i) for i, layer in enumerate(self._backbone.feature_info.info)}
-        super()._init_backbone(config)
+
+        # Needs to be called after creating timm model, because `super()` will try to infer
+        # `stage_names` from model architecture
+        super().__init__(config)
 
         self.post_init()
 

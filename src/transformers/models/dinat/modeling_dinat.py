@@ -710,10 +710,9 @@ class DinatForImageClassification(DinatPreTrainedModel):
     NAT backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class DinatBackbone(DinatPreTrainedModel, BackboneMixin):
+class DinatBackbone(BackboneMixin, DinatPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         requires_backends(self, ["natten"])
 

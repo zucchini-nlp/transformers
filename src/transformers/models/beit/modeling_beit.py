@@ -1336,10 +1336,9 @@ class BeitForSemanticSegmentation(BeitPreTrainedModel):
     BEiT backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class BeitBackbone(BeitPreTrainedModel, BackboneMixin):
+class BeitBackbone(BackboneMixin, BeitPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.hidden_size for _ in range(config.num_hidden_layers + 1)]
         self.embeddings = BeitEmbeddings(config)

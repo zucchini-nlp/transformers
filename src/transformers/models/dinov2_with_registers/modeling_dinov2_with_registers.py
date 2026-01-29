@@ -564,10 +564,9 @@ class Dinov2WithRegistersForImageClassification(Dinov2WithRegistersPreTrainedMod
     Dinov2WithRegisters backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class Dinov2WithRegistersBackbone(Dinov2WithRegistersPreTrainedModel, BackboneMixin):
+class Dinov2WithRegistersBackbone(BackboneMixin, Dinov2WithRegistersPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
         self.num_features = [config.hidden_size for _ in range(config.num_hidden_layers + 1)]
         self.embeddings = Dinov2WithRegistersEmbeddings(config)
         self.encoder = Dinov2WithRegistersEncoder(config)

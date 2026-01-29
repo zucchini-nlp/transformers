@@ -329,12 +329,11 @@ class RTDetrResNetPreTrainedModel(PreTrainedModel):
     ResNet backbone, to be used with frameworks like RTDETR.
     """
 )
-class RTDetrResNetBackbone(RTDetrResNetPreTrainedModel, BackboneMixin):
+class RTDetrResNetBackbone(BackboneMixin, RTDetrResNetPreTrainedModel):
     has_attentions = False
 
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.embedding_size] + config.hidden_sizes
         self.embedder = RTDetrResNetEmbeddings(config)

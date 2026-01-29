@@ -459,12 +459,11 @@ class HGNetV2Encoder(nn.Module):
         )
 
 
-class HGNetV2Backbone(HGNetV2PreTrainedModel, BackboneMixin):
+class HGNetV2Backbone(BackboneMixin, HGNetV2PreTrainedModel):
     has_attentions = False
 
     def __init__(self, config: HGNetV2Config):
         super().__init__(config)
-        super()._init_backbone(config)
         self.depths = config.depths
         self.num_features = [config.embedding_size] + config.hidden_sizes
         self.embedder = HGNetV2Embeddings(config)

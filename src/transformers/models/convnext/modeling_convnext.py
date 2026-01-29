@@ -344,12 +344,11 @@ class ConvNextForImageClassification(ConvNextPreTrainedModel):
     ConvNeXt backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class ConvNextBackbone(ConvNextPreTrainedModel, BackboneMixin):
+class ConvNextBackbone(BackboneMixin, ConvNextPreTrainedModel):
     has_attentions = False
 
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.embeddings = ConvNextEmbeddings(config)
         self.encoder = ConvNextEncoder(config)

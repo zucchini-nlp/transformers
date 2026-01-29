@@ -342,12 +342,11 @@ class TextNetForImageClassification(TextNetPreTrainedModel):
     TextNet backbone, to be used with frameworks like DETR and MaskFormer.
     """
 )
-class TextNetBackbone(TextNetPreTrainedModel, BackboneMixin):
+class TextNetBackbone(BackboneMixin, TextNetPreTrainedModel):
     has_attentions = False
 
     def __init__(self, config):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.textnet = TextNetModel(config)
         self.num_features = config.hidden_sizes

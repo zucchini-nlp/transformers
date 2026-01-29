@@ -375,10 +375,9 @@ class VitPoseBackbonePreTrainedModel(PreTrainedModel):
     The VitPose backbone useful for downstream tasks.
     """
 )
-class VitPoseBackbone(VitPoseBackbonePreTrainedModel, BackboneMixin):
+class VitPoseBackbone(BackboneMixin, VitPoseBackbonePreTrainedModel):
     def __init__(self, config: VitPoseBackboneConfig):
         super().__init__(config)
-        super()._init_backbone(config)
 
         self.num_features = [config.hidden_size for _ in range(config.num_hidden_layers + 1)]
         self.embeddings = VitPoseBackboneEmbeddings(config)
