@@ -13,6 +13,7 @@
 # limitations under the License.
 """Testing suite for the PyTorch Mask2Former model."""
 
+import copy
 import unittest
 from functools import cached_property
 
@@ -335,7 +336,7 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
         config = config.__class__(**config_dict)
 
         for model_class in self.all_model_classes:
-            model = model_class(config).to(torch_device).eval()
+            model = model_class(copy.deepcopy(config)).to(torch_device).eval()
             if model.__class__.__name__ == "Mask2FormerModel":
                 self.assertEqual(model.pixel_level_module.encoder.out_indices, [1, 2, 3])
             elif model.__class__.__name__ == "Mask2FormerForUniversalSegmentation":
@@ -351,7 +352,7 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
         config = config.__class__(**config_dict)
 
         for model_class in self.all_model_classes:
-            model = model_class(config).to(torch_device).eval()
+            model = model_class(copy.deepcopy(config)).to(torch_device).eval()
             if model.__class__.__name__ == "Mask2FormerModel":
                 self.assertEqual(model.pixel_level_module.encoder.out_indices, [1, 2, 3])
             elif model.__class__.__name__ == "Mask2FormerForUniversalSegmentation":

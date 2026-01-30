@@ -13,8 +13,8 @@
 # limitations under the License.
 """Testing suite for the PyTorch TVP model."""
 
-import unittest
 import copy
+import unittest
 from functools import cached_property
 
 from transformers import ResNetConfig, TimmBackboneConfig, TvpConfig
