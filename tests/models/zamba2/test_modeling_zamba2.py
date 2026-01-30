@@ -63,7 +63,7 @@ class Zamba2ModelTester:
         mamba_d_state=2,
         chunk_size=8,
         mamba_dt_rank="auto",
-        num_hidden_layers=2,
+        num_hidden_layers=3,
         num_attention_heads=2,
         n_mamba_heads=8,
         mamba_ngroups=8,
@@ -79,7 +79,7 @@ class Zamba2ModelTester:
         num_labels=3,
         num_choices=4,
         scope=None,
-        layers_block_type=["mamba", "hybrid"],
+        layers_block_type=["mamba", "hybrid", "hybrid"],
         num_mem_blocks=1,
         use_mem_rope=True,
     ):
