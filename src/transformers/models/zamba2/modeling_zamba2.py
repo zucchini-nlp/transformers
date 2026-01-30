@@ -1426,16 +1426,26 @@ class Zamba2Model(Zamba2PreTrainedModel):
         layers = []
         self._tied_weights_keys = {}
         self.first_transformer_layer_id = 0
-        first_mem_hybrid_layer = None
+        unique_hybrid_blocks = []
         for layer_id, layer_type in enumerate(self.layers_block_type):
             if layer_type == "hybrid":
                 block = next(blocks)
-                if self.config.num_mem_blocks * len(self.config.hybrid_layer_ids) > 1:
-                    prefix_pattern = f"layers.{layer_id}.shared_transformer"
-                    if first_mem_hybrid_layer is None:
-                        first_mem_hybrid_layer = prefix_pattern
-                    else:
-                        self._tied_weights_keys.update({prefix_pattern: first_mem_hybrid_layer})
+                prefix_pattern = f"layers.{layer_id}.shared_transformer"
+
+                # Zamba ties Hybrid module weights by repeating blocks after every
+                # `num_mem_blocks`. So if `num_mem_blocks=2`, the blocks looks like
+                # [1, 2, 1, 2, 1, 2] where all "ones" share the same set of weights.
+                if (
+                    not isinstance(unique_hybrid_blocks, list)
+                    or len(unique_hybrid_blocks) >= self.config.num_mem_blocks
+                ):
+                    if isinstance(unique_hybrid_blocks, list):
+                        unique_hybrid_blocks = cycle(unique_hybrid_blocks)
+                    target_pattern = next(unique_hybrid_blocks)
+                    self._tied_weights_keys.update({prefix_pattern: target_pattern})
+                else:
+                    # Store source patterns to which the subsequent modules will be tied
+                    unique_hybrid_blocks.append(prefix_pattern)
                 layers.append(Zamba2HybridLayer(block, next(linear_layers), next(mamba_layers)))
             else:
                 layers.append(next(mamba_layers))
