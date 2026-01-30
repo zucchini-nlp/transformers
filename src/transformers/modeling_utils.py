@@ -1321,6 +1321,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         # when a different component (e.g. language_model) is used.
         self._keep_in_fp32_modules = copy.copy(self.__class__._keep_in_fp32_modules)
         self._keep_in_fp32_modules_strict = copy.copy(self.__class__._keep_in_fp32_modules_strict)
+        self._tied_weight_keys = copy.copy(self.__class__._tied_weight_keys)
         self.dtype_plan = {}
 
         if isinstance(self._keep_in_fp32_modules, list):
