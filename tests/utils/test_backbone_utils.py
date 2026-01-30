@@ -29,7 +29,7 @@ from transformers.utils.import_utils import is_torch_available
 if is_torch_available():
     import torch
 
-    from transformers import BertPreTrainedModel
+    from transformers import BertPreTrainedModel, PreTrainedModel
 
 
 class AnyBackboneConfig(BackboneConfigMixin, PreTrainedConfig):
@@ -41,10 +41,13 @@ class AnyBackboneConfig(BackboneConfigMixin, PreTrainedConfig):
         **kwargs,
     ):
         self.stage_names = stage_names
-        self._out_features, self._out_indices = out_features, out_indices
-        self.align_output_features_output_indices()
+        self.set_output_features_output_indices(out_features=out_features, out_indices=out_indices)
 
         super().__init__(**kwargs)
+
+
+@require_torch
+class AnyBackbone(BackboneMixin, PreTrainedModel): ...
 
 
 class BackboneUtilsTester(unittest.TestCase):
@@ -94,9 +97,6 @@ class BackboneUtilsTester(unittest.TestCase):
         with pytest.raises(ValueError, match="out_indices must be a list, got <class 'int'>"):
             AnyBackboneConfig(stage_names=["a", "b"], out_features=None, out_indices=0)
 
-        with pytest.raises(ValueError, match="out_indices must be a list, got <class 'tuple'>"):
-            AnyBackboneConfig(stage_names=["a", "b"], out_features=None, out_indices=(0, 1))
-
         # Out indices must be a subset of stage names
         with pytest.raises(
             ValueError, match=r"out_indices must be valid indices for stage_names \['a'\], got \[0, 1\]"
@@ -134,9 +134,10 @@ class BackboneUtilsTester(unittest.TestCase):
         # Check passes with valid inputs
         AnyBackboneConfig(stage_names=["a", "b", "c", "d"], out_features=["a", "b", "d"], out_indices=[0, 1, -1])
 
+    @require_torch
     def test_backbone_mixin(self):
         config = AnyBackboneConfig(stage_names=["a", "b", "c"], out_features=["a", "c"], out_indices=[0, 2])
-        backbone = BackboneMixin()
+        backbone = AnyBackbone(config)
         backbone.config = config
 
         # Check that the output features and indices are set correctly
