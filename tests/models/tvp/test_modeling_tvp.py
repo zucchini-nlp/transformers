@@ -14,6 +14,7 @@
 """Testing suite for the PyTorch TVP model."""
 
 import unittest
+import copy
 from functools import cached_property
 
 from transformers import ResNetConfig, TimmBackboneConfig, TvpConfig
@@ -196,7 +197,7 @@ class TVPModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
     def test_backbone_selection(self):
         def _validate_backbone_init():
             for model_class in self.all_model_classes:
-                model = model_class(config)
+                model = model_class(copy.deepcopy(config))
                 model.to(torch_device)
                 model.eval()
 

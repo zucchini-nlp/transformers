@@ -112,10 +112,6 @@ class TimmBackbone(BackboneMixin, PreTrainedModel):
         if hasattr(module, "init_non_persistent_buffers"):
             module.init_non_persistent_buffers()
         elif isinstance(module, nn.BatchNorm2d):
-            # Skip initialization if using pretrained backbone - buffers are already loaded from checkpoint
-            if self.config.use_pretrained_backbone:
-                return
-
             # For non-pretrained models, always initialize buffers (handles both meta device and to_empty() cases)
             running_mean = getattr(module, "running_mean", None)
             if running_mean is not None:
