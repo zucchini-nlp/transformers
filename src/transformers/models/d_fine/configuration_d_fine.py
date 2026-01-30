@@ -19,11 +19,7 @@
 # limitations under the License.
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
-from ...utils import logging
 from ..auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 # TODO: Attribute map assignment logic should be fixed in modular

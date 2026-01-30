@@ -168,7 +168,7 @@ class DetrConfig(PreTrainedConfig):
         backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
             backbone_config=backbone_config,
             default_backbone="resnet50",
-            default_config_type="resnet50",
+            default_config_type="resnet",
             default_config_kwargs={"out_features": ["stage4"]},
             timm_default_kwargs=timm_default_kwargs,
             **kwargs,

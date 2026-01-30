@@ -20,11 +20,7 @@
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 class PromptDepthAnythingConfig(PreTrainedConfig):

@@ -156,7 +156,6 @@ class TableTransformerConfig(PreTrainedConfig):
         eos_coefficient=0.1,
         **kwargs,
     ):
-        # Init timm backbone with hardcoded values for BC
         backbone_kwargs = kwargs.get("backbone_kwargs", {})
         timm_default_kwargs = {
             "num_channels": backbone_kwargs.get("num_channels", num_channels),
@@ -171,9 +170,7 @@ class TableTransformerConfig(PreTrainedConfig):
             backbone_config=backbone_config,
             default_backbone="resnet50",
             default_config_type="resnet",
-            default_config_kwargs={
-                "out_features": ["stage4"],
-            },
+            default_config_kwargs={"out_features": ["stage4"]},
             timm_default_kwargs=timm_default_kwargs,
             **kwargs,
         )

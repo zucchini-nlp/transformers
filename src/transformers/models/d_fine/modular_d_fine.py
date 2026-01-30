@@ -22,8 +22,9 @@ from ... import initialization as init
 from ...activations import ACT2CLS
 from ...configuration_utils import PreTrainedConfig
 from ...image_transforms import corners_to_center_format
+from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...utils import logging, torch_compilable_check
-from ..auto import CONFIG_MAPPING, AutoConfig
+from ..auto import AutoConfig
 from ..rt_detr.modeling_rt_detr import (
     RTDetrConvNormLayer,
     RTDetrDecoder,
@@ -217,11 +218,7 @@ class DFineConfig(PreTrainedConfig):
         batch_norm_eps=1e-5,
         # backbone
         backbone_config=None,
-        backbone=None,
-        use_pretrained_backbone=False,
-        use_timm_backbone=False,
         freeze_backbone_batch_norms=True,
-        backbone_kwargs=None,
         # encoder HybridEncoder
         encoder_hidden_dim=256,
         encoder_in_channels=[512, 1024, 2048],
@@ -290,38 +287,16 @@ class DFineConfig(PreTrainedConfig):
         self.initializer_bias_prior_prob = initializer_bias_prior_prob
         self.layer_norm_eps = layer_norm_eps
         self.batch_norm_eps = batch_norm_eps
-        # backbone
-        if backbone_config is None and backbone is None:
-            logger.info(
-                "`backbone_config` and `backbone` are `None`. Initializing the config with the default `HGNet-V2` backbone."
-            )
-            backbone_model_type = "hgnet_v2"
-            config_class = CONFIG_MAPPING[backbone_model_type]
-            # this will map it to HGNetV2Config
-            # and we would need to create HGNetV2Backbone
-            backbone_config = config_class(
-                num_channels=3,
-                embedding_size=64,
-                hidden_sizes=[256, 512, 1024, 2048],
-                depths=[3, 4, 6, 3],
-                layer_type="bottleneck",
-                hidden_act="relu",
-                downsample_in_first_stage=False,
-                downsample_in_bottleneck=False,
-                out_features=None,
-                out_indices=[2, 3, 4],
-            )
-        elif isinstance(backbone_config, dict):
-            backbone_model_type = backbone_config.pop("model_type")
-            config_class = CONFIG_MAPPING[backbone_model_type]
-            backbone_config = config_class.from_dict(backbone_config)
+
+        backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
+            backbone_config=backbone_config,
+            default_config_type="hgnet_v2",
+            default_config_kwargs={"out_indices": [2, 3, 4]},
+            **kwargs,
+        )
 
         self.backbone_config = backbone_config
-        self.backbone = backbone
-        self.use_pretrained_backbone = use_pretrained_backbone
-        self.use_timm_backbone = use_timm_backbone
         self.freeze_backbone_batch_norms = freeze_backbone_batch_norms
-        self.backbone_kwargs = backbone_kwargs
         # encoder
         self.encoder_hidden_dim = encoder_hidden_dim
         self.encoder_in_channels = encoder_in_channels
