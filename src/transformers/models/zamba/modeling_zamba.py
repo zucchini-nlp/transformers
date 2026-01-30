@@ -848,7 +848,6 @@ class ZambaModel(ZambaPreTrainedModel):
                     }
             else:
                 layers.append(mamba)
-        print()
         self.layers = nn.ModuleList(layers)
 
         self._attn_implementation = config._attn_implementation
