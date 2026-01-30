@@ -1318,7 +1318,8 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         self.warnings_issued = {}
         # Overwrite the class attribute to make it an instance attribute, so models like
         # `InstructBlipForConditionalGeneration` can dynamically update it without modifying the class attribute
-        # when a different component (e.g. language_model) is used.
+        # when a different component (e.g. language_model) is used. Same for `_tied_weights_keys` which pops/adds
+        # new keys dynamically depending on config values
         self._keep_in_fp32_modules = copy.copy(self.__class__._keep_in_fp32_modules)
         self._keep_in_fp32_modules_strict = copy.copy(self.__class__._keep_in_fp32_modules_strict)
         self._tied_weights_keys = copy.copy(self.__class__._tied_weights_keys)
