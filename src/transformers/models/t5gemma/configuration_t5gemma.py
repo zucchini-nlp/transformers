@@ -285,20 +285,5 @@ class T5GemmaConfig(PreTrainedConfig):
         # Used in pipeline generation.
         self.vocab_size = vocab_size
 
-    def __setattr__(self, key, value):
-        shared_attr_with_submodules = [
-            "output_hidden_states",
-            "output_attentions",
-            "_attn_implementation",
-            "dropout_rate",
-            "attention_dropout",
-            "vocab_size",
-        ]
-
-        if key in shared_attr_with_submodules:
-            setattr(self.encoder, key, value)
-            setattr(self.decoder, key, value)
-        super().__setattr__(key, value)
-
 
 __all__ = ["T5GemmaConfig", "T5GemmaModuleConfig"]

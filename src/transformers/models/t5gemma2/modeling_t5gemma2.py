@@ -804,6 +804,11 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
 
         self.text_config = text_config
 
+        # Set attn implementation manually because `text-config` is never passed to `super()`
+        self.text_config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+            self.text_config._attn_implementation, is_init_check=True
+        )
+
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -1103,8 +1108,8 @@ class T5Gemma2Model(T5Gemma2PreTrainedModel):
         super().__init__(config)
 
         # setup encoder and decoder
-        self.encoder = T5Gemma2Encoder(config.encoder, config.eoi_token_index)
-        self.decoder = T5Gemma2Decoder(config.decoder, config.eoi_token_index)
+        self.encoder = T5Gemma2Encoder._from_config(config.encoder, config.eoi_token_index)
+        self.decoder = T5Gemma2Decoder._from_config(config.decoder, config.eoi_token_index)
 
         self.post_init()
 
