@@ -165,6 +165,7 @@ class FalconMambaConfig(PreTrainedConfig):
         self.residual_in_fp32 = residual_in_fp32
         self.use_cache = use_cache
         self.use_falcon_mambapy = use_falcon_mambapy
+        self.tie_word_embeddings = tie_word_embeddings
 
         super().__init__(**kwargs)
         self.mixer_rms_eps = mixer_rms_eps
