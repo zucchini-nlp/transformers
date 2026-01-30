@@ -304,8 +304,6 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
             with longer `max_position_embeddings`.
         initializer_range (`float`, *optional*, defaults to 0.02):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
-        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
-            Whether to tie weight embeddings
 
     Example:
 
@@ -370,7 +368,6 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
         eos_token_id: int | None = None,
-        tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -408,7 +405,6 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
         layer_type_validation(self.layer_types, self.num_hidden_layers)
 
         self.rope_parameters = rope_parameters
-        self.tie_word_embeddings = tie_word_embeddings
         super().__init__(
             ignore_keys_at_rope_validation={"mrope_section"},
             **kwargs,

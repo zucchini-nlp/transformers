@@ -156,8 +156,6 @@ class GlmOcrTextConfig(Glm4vTextConfig):
             with longer `max_position_embeddings`.
         pad_token_id (`int`, *optional*):
             The id of the padding token.
-        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
-            Whether to tie weight embeddings
 
     ```python
     >>> from transformers import GlmOcrTextModel, GlmOcrConfig

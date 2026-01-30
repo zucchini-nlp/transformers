@@ -186,8 +186,6 @@ class GlmImageTextConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
             with longer `max_position_embeddings`.
         pad_token_id (`int`, *optional*, defaults to 167841):
             The id of the padding token.
-        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
-            Whether to tie weight embeddings
         vision_vocab_size (`int`, *optional*, defaults to 16512):
             Vision vocabulary size of the GlmImage model. Defines the number of different tokens that can be
             represented by the `inputs_ids` passed when calling [`GlmImageVisionModel`]
