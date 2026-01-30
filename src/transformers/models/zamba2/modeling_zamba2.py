@@ -1426,12 +1426,16 @@ class Zamba2Model(Zamba2PreTrainedModel):
         layers = []
         self._tied_weights_keys = {}
         self.first_transformer_layer_id = 0
+        first_mem_hybrid_layer = None
         for layer_id, layer_type in enumerate(self.layers_block_type):
             if layer_type == "hybrid":
                 block = next(blocks)
                 if self.config.num_mem_blocks * len(self.config.hybrid_layer_ids) > 1:
                     prefix_pattern = f"layers.{layer_id}.shared_transformer"
-                    self._tied_weights_keys.update({prefix_pattern: "layers.0.shared_transformer"})
+                    if first_mem_hybrid_layer is None:
+                        first_mem_hybrid_layer = prefix_pattern
+                    else:
+                        self._tied_weights_keys.update({prefix_pattern: first_mem_hybrid_layer})
                 layers.append(Zamba2HybridLayer(block, next(linear_layers), next(mamba_layers)))
             else:
                 layers.append(next(mamba_layers))
