@@ -463,35 +463,13 @@ class T5Gemma2Config(PreTrainedConfig):
             if special_token_key not in kwargs:
                 kwargs[special_token_key] = getattr(decoder, special_token_key)
 
-        super().__init__(**kwargs)
-
-        self.is_encoder_decoder = is_encoder_decoder
-        self.dropout_rate = dropout_rate
-        self.attention_dropout = attention_dropout
         self.classifier_dropout_rate = classifier_dropout_rate
         self.initializer_range = initializer_range
         self.eoi_token_index = encoder.eoi_token_index
         self.image_token_index = image_token_index
         self.tie_word_embeddings = tie_word_embeddings
 
-    def __setattr__(self, key, value):
-        shared_attr_with_submodules = [
-            "output_hidden_states",
-            "output_attentions",
-            "_attn_implementation_internal",
-            "dropout_rate",
-            "attention_dropout",
-            "vocab_size",
-            "dtype",
-            "return_dict",
-        ]
-
-        if key in shared_attr_with_submodules:
-            setattr(self.encoder.text_config, key, value)
-            setattr(self.encoder.vision_config, key, value)
-            setattr(self.decoder, key, value)
-            setattr(self.encoder, key, value)
-        super().__setattr__(key, value)
+        super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
 
 
 class T5Gemma2RMSNorm(Gemma3RMSNorm):
@@ -855,6 +833,11 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
         self.rotary_emb = T5Gemma2RotaryEmbedding(text_config)
 
         self.text_config = text_config
+
+        # Set attn implementation manually because `text-config` is never passed to `super()`
+        self.text_config._attn_implementation_internal = self._check_and_adjust_attn_implementation(
+            self.text_config._attn_implementation, is_init_check=True
+        )
 
         # Initialize weights and apply final processing
         self.post_init()

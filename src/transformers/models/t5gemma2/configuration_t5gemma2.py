@@ -609,4 +609,5 @@ class T5Gemma2Config(PreTrainedConfig):
 
         super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
 
+
 __all__ = ["T5Gemma2Config", "T5Gemma2TextConfig", "T5Gemma2EncoderConfig", "T5Gemma2DecoderConfig"]

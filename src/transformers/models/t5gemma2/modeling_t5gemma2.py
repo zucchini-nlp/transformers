@@ -1108,8 +1108,8 @@ class T5Gemma2Model(T5Gemma2PreTrainedModel):
         super().__init__(config)
 
         # setup encoder and decoder
-        self.encoder = T5Gemma2Encoder._from_config(config.encoder, config.eoi_token_index)
-        self.decoder = T5Gemma2Decoder._from_config(config.decoder, config.eoi_token_index)
+        self.encoder = T5Gemma2Encoder(config.encoder, config.eoi_token_index)
+        self.decoder = T5Gemma2Decoder(config.decoder, config.eoi_token_index)
 
         self.post_init()
 
