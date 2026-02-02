@@ -1228,6 +1228,7 @@ class T5Gemma2ForConditionalGeneration(T5Gemma2PreTrainedModel, GenerationMixin)
     def get_decoder(self):
         return self.model.get_decoder()
 
+    @can_return_tuple
     @auto_docstring
     def get_image_features(
         self, pixel_values: torch.Tensor, **kwargs: Unpack[TransformersKwargs]
