@@ -757,7 +757,7 @@ class Zamba2MambaMixer(nn.Module):
                 # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
                 input_states = (input_states * attention_mask[:, :, None]).to(dtype)
             projected_states = self.in_proj(input_states)
-        d_mlp = (projected_states.shape[-1] - 2 * self.intermediate_size - 2 * self.n_groups * self.ssm_state_size- self.num_heads) // 2
+        d_mlp = (projected_states.shape[-1] - 2 * self.intermediate_size - 2 * self.n_groups * self.ssm_state_size - self.num_heads) // 2
         _, _, gate, hidden_states, dt = projected_states.split(
                 [d_mlp, d_mlp, self.intermediate_size,  self.conv_dim, self.num_heads], dim=-1
         )
@@ -1249,20 +1249,8 @@ class Zamba2Model(Zamba2PreTrainedModel):
         self.vocab_size = config.vocab_size
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
-        blocks = [Zamba2AttentionDecoderLayer(config, block_id=k) for k in range(config.num_mem_blocks)]
-        mamba_layers = []
-        linear_layers = []
         self.layers_block_type = config.layers_block_type
-        for i in range(config.num_hidden_layers):
-            if config.layers_block_type[i] == "mamba":
-                mamba_layers.append(Zamba2MambaDecoderLayer(config, layer_idx=i))
-            elif config.layers_block_type[i] == "hybrid":
-                linear_layers.append(nn.Linear(self.config.hidden_size, self.config.hidden_size, bias=False))
-                mamba_layers.append(Zamba2MambaDecoderLayer(config, layer_idx=i))
-        mamba_layers = iter(mamba_layers)
-        linear_layers = iter(linear_layers)
-        blocks = cycle(blocks)
-        layers = self.get_layers(blocks, linear_layers, mamba_layers)
+        layers = self.get_layers()
         self.layers = nn.ModuleList(layers)
 
         self._attn_implementation = config._attn_implementation
@@ -1422,14 +1410,16 @@ class Zamba2Model(Zamba2PreTrainedModel):
 
         return causal_mask
 
-    def get_layers(self, blocks, linear_layers, mamba_layers):
+    def get_layers(self):
         layers = []
         self._tied_weights_keys = {}
         self.first_transformer_layer_id = 0
         unique_hybrid_blocks = []
+
         for layer_id, layer_type in enumerate(self.layers_block_type):
+            mamba_layer = Zamba2MambaDecoderLayer(self.config, layer_idx=layer_id)
+
             if layer_type == "hybrid":
-                block = next(blocks)
                 prefix_pattern = f"layers.{layer_id}.shared_transformer"
 
                 # Zamba ties Hybrid module weights by repeating blocks after every
@@ -1446,9 +1436,13 @@ class Zamba2Model(Zamba2PreTrainedModel):
                 else:
                     # Store source patterns to which the subsequent modules will be tied
                     unique_hybrid_blocks.append(prefix_pattern)
-                layers.append(Zamba2HybridLayer(block, next(linear_layers), next(mamba_layers)))
+
+                block_id = layer_id % self.config.num_mem_blocks
+                attn_block = Zamba2AttentionDecoderLayer(self.config, block_id=block_id)
+                linear_layer = nn.Linear(self.config.hidden_size, self.config.hidden_size, bias=False)
+                layers.append(Zamba2HybridLayer(attn_block, linear_layer, mamba_layer))
             else:
-                layers.append(next(mamba_layers))
+                layers.append(mamba_layer)
         return layers
 
 
