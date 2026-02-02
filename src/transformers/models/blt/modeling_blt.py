@@ -37,7 +37,7 @@ from ...modeling_outputs import BaseModelOutputWithPast, CausalLMOutputWithPast
 from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
-from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
+from ...utils import TransformersKwargs, auto_docstring
 from ...utils.generic import OutputRecorder, check_model_inputs, maybe_autocast
 from .configuration_blt import (
     BltConfig,
@@ -1372,11 +1372,6 @@ class BltModel(BltPreTrainedModel):
         return (patch_starts.unsqueeze(1) <= token_positions.unsqueeze(0).unsqueeze(-1)).sum(dim=-1) - 1
 
 
-@auto_docstring(
-    custom_intro="""
-    The Blt Text Model with a language modeling head on top.
-    """
-)
 class BltForCausalLM(BltPreTrainedModel, GenerationMixin):
     config: BltConfig
     _can_compile_fullgraph = False
@@ -1392,8 +1387,6 @@ class BltForCausalLM(BltPreTrainedModel, GenerationMixin):
 
         self.post_init()
 
-    @can_return_tuple
-    @auto_docstring
     def forward(
         self,
         input_ids: torch.LongTensor | None = None,
@@ -1440,8 +1433,8 @@ class BltForCausalLM(BltPreTrainedModel, GenerationMixin):
         ```python
         >>> from transformers import AutoTokenizer, BltForCausalLM
 
-        >>> model = BltForCausalLM.from_pretrained("Llama-3.2-11B-Vision")
-        >>> tokenizer = AutoTokenizer.from_pretrained("Llama-3.2-11B-Vision")
+        >>> model = BltForCausalLM.from_pretrained("itazap/blt-1b-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("itazap/blt-1b-hf")
 
         >>> prompt = "If I had to write a haiku, it would be:"
         >>> inputs = tokenizer(prompt, return_tensors="pt")

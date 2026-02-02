@@ -1128,6 +1128,50 @@ class BltForCausalLM(BltPreTrainedModel, GenerationMixin):
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | CausalLMOutputWithPast:
+        r"""
+        cross_attention_states (`torch.FloatTensor`, *optional*):
+            Output of the vision model, used for cross-attention. This tensor contains the processed image features that
+            the language model will attend to.
+        cross_attention_mask (`torch.Tensor` of shape `(batch_size, seq_length, max_num_images, max_num_tiles)`, *optional*):
+            Cross-attention mask to control the interaction between text tokens and image tiles.
+            This 4D tensor defines which image tiles each text token should attend to.
+
+            For each text token (in seq_length):
+            - 1 indicates the token **should attend** to the corresponding image tile
+            - 0 indicates the token **should not attend** to the corresponding image tile
+        full_text_row_masked_out_mask (`tuple[torch.Tensor, torch.Tensor]`, *optional*):
+            A tuple containing two tensors that mask out rows in the cross-attention mechanism:
+            - The first tensor has shape `(batch_size, 1, seq_length, 1)` and contains values of 0 or 1.
+              A value of 0 indicates that the corresponding text token's entire row in the cross-attention
+              matrix should be masked out (all image tokens ignored).
+            - The second tensor has the same shape and is used internally to apply the masking during
+              the forward pass of cross-attention layers.
+            This mask is derived from the cross_attention_mask and is used to handle cases where a text token
+            should not attend to any image token.
+        labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
+            Labels for computing the masked language modeling loss. Indices should either be in `[0, ...,
+            config.vocab_size]` or -100 (see `input_ids` docstring). Tokens with indices set to `-100` are ignored
+            (masked), the loss is only computed for the tokens with labels in `[0, ..., config.vocab_size]`.
+
+        Example:
+
+        ```python
+        >>> from transformers import AutoTokenizer, BltForCausalLM
+
+        >>> model = BltForCausalLM.from_pretrained("itazap/blt-1b-hf")
+        >>> tokenizer = AutoTokenizer.from_pretrained("itazap/blt-1b-hf")
+
+        >>> prompt = "If I had to write a haiku, it would be:"
+        >>> inputs = tokenizer(prompt, return_tensors="pt")
+
+        >>> # Generate
+        >>> generate_ids = model.generate(inputs.input_ids, max_length=40, do_sample=True, temperature=0.6)
+        >>> result = tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        >>> print(result)
+        If I had to write a haiku, it would be: "Snowflakes gently fall" - simple, yet peaceful.
+        I love the idea of snowflakes gently falling, each one
+        ```
+        """
         # Call parent forward but exclude cross_attention_states from model call
         outputs = self.model(
             input_ids=input_ids,
