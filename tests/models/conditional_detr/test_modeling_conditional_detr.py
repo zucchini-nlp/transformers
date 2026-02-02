@@ -435,47 +435,50 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
                 expected_arg_names = ["pixel_values", "pixel_mask"]
                 self.assertListEqual(arg_names[:1], expected_arg_names)
 
-    def test_different_timm_backbone(self):
+    @require_timm
+    def test_backbone_selection(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
 
-        # let's pick a random timm backbone
+        def _validate_backbone_init(config):
+            for model_class in self.all_model_classes:
+                model = model_class(copy.deepcopy(config))
+                model.to(torch_device)
+                model.eval()
+                with torch.no_grad():
+                    outputs = model(**self._prepare_for_class(inputs_dict, model_class))
+
+                if model_class.__name__ == "ConditionalDetrForObjectDetection":
+                    expected_shape = (
+                        self.model_tester.batch_size,
+                        self.model_tester.num_queries,
+                        self.model_tester.num_labels,
+                    )
+                    self.assertEqual(outputs.logits.shape, expected_shape)
+                    # Confirm out_indices was propagated to backbone
+                    self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                elif model_class.__name__ == "ConditionalDetrForSegmentation":
+                    # Confirm out_indices was propagated to backbone
+                    self.assertEqual(
+                        len(model.conditional_detr.model.backbone.conv_encoder.intermediate_channel_sizes), 3
+                    )
+                else:
+                    # Confirm out_indices was propagated to backbone
+                    self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+
+                self.assertTrue(outputs)
+
+        # These kwargs are all removed and are supported only for BC
+        # In new models we have only `backbone_config`. Let's test that there is no regression
+        # let's test a random timm backbone
         config_dict = config.to_dict()
         config_dict["backbone"] = "tf_mobilenetv3_small_075"
         config_dict["backbone_config"] = None
         config_dict["use_timm_backbone"] = True
         config_dict["backbone_kwargs"] = {"out_indices": [2, 3, 4]}
         config = config.__class__(**config_dict)
+        _validate_backbone_init(config)
 
-        for model_class in self.all_model_classes:
-            model = model_class(copy.deepcopy(config))
-            model.to(torch_device)
-            model.eval()
-            with torch.no_grad():
-                outputs = model(**self._prepare_for_class(inputs_dict, model_class))
-
-            if model_class.__name__ == "ConditionalDetrForObjectDetection":
-                expected_shape = (
-                    self.model_tester.batch_size,
-                    self.model_tester.num_queries,
-                    self.model_tester.num_labels,
-                )
-                self.assertEqual(outputs.logits.shape, expected_shape)
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-            elif model_class.__name__ == "ConditionalDetrForSegmentation":
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.conditional_detr.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-            else:
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-
-            self.assertTrue(outputs)
-
-    @require_timm
-    def test_hf_backbone(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
-
-        # Load a pretrained HF checkpoint as backbone
+        # Now load a pretrained HF checkpoint as backbone
         config_dict = config.to_dict()
         config_dict["backbone"] = "microsoft/resnet-18"
         config_dict["backbone_config"] = None
@@ -483,31 +486,7 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         config_dict["use_pretrained_backbone"] = True
         config_dict["backbone_kwargs"] = {"out_indices": [2, 3, 4]}
         config = config.__class__(**config_dict)
-
-        for model_class in self.all_model_classes:
-            model = model_class(config)
-            model.to(torch_device)
-            model.eval()
-            with torch.no_grad():
-                outputs = model(**self._prepare_for_class(inputs_dict, model_class))
-
-            if model_class.__name__ == "ConditionalDetrForObjectDetection":
-                expected_shape = (
-                    self.model_tester.batch_size,
-                    self.model_tester.num_queries,
-                    self.model_tester.num_labels,
-                )
-                self.assertEqual(outputs.logits.shape, expected_shape)
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-            elif model_class.__name__ == "ConditionalDetrForSegmentation":
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.conditional_detr.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-            else:
-                # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 3)
-
-            self.assertTrue(outputs)
+        _validate_backbone_init(config)
 
 
 TOLERANCE = 1e-4
