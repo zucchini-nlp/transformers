@@ -1867,13 +1867,10 @@ class GenerationMixin(ContinuousMixin):
 
         Returns the resulting cache object.
         """
-        requires_cross_attention_cache = (
-            self.config.is_encoder_decoder or model_kwargs.get("encoder_outputs") is not None
-        )
         offload_cache = "offloaded" in cache_implementation
 
         if hasattr(self, "_cache"):
-            cache_to_check = self._cache.self_attention_cache if requires_cross_attention_cache else self._cache
+            cache_to_check = self._cache.self_attention_cache if self.config.is_encoder_decoder else self._cache
 
         need_new_cache = (
             not hasattr(self, "_cache")
@@ -1882,7 +1879,7 @@ class GenerationMixin(ContinuousMixin):
             or cache_to_check.max_cache_len < max_cache_len
         )
 
-        if requires_cross_attention_cache and hasattr(self, "_cache"):
+        if self.config.is_encoder_decoder and hasattr(self, "_cache"):
             need_new_cache = (
                 need_new_cache
                 or self._cache.cross_attention_cache.max_cache_len != model_kwargs["encoder_outputs"][0].shape[1]
@@ -1895,7 +1892,7 @@ class GenerationMixin(ContinuousMixin):
                 "offloading": offload_cache,
             }
             self._cache = StaticCache(**self_attention_cache_kwargs)
-            if requires_cross_attention_cache:
+            if self.config.is_encoder_decoder:
                 cross_attention_cache_kwargs = {
                     "config": self.config.get_text_config(decoder=True),
                     "max_cache_len": model_kwargs["encoder_outputs"][0].shape[1],
@@ -2027,14 +2024,11 @@ class GenerationMixin(ContinuousMixin):
             model_kwargs["past_key_values"] = QuantizedCache(backend=backend, **cache_config)
         # i.e. `cache_implementation` in [None, "dynamic", "offloaded", "dynamic_full"]
         # TODO: prepare linear cache from a single API, instead of creating in modeling code
-        elif self._supports_default_dynamic_cache():
+        else:
             model_kwargs["past_key_values"] = DynamicCache(**dynamic_cache_kwargs)
 
-        requires_cross_attention_cache = (
-            self.config.is_encoder_decoder or model_kwargs.get("encoder_outputs") is not None
-        )
         if (
-            requires_cross_attention_cache
+            self.config.is_encoder_decoder
             and "past_key_values" in model_kwargs
             and not isinstance(model_kwargs["past_key_values"], EncoderDecoderCache)
         ):
