@@ -757,7 +757,7 @@ class Zamba2MambaMixer(nn.Module):
                 # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
                 input_states = (input_states * attention_mask[:, :, None]).to(dtype)
             projected_states = self.in_proj(input_states)
-        d_mlp = (projected_states.shape[-1] - 2 * self.intermediate_size - 2 * self.n_groups * self.ssm_state_size - self.num_heads) // 2
+        d_mlp = (projected_states.shape[-1] - 2 * self.intermediate_size - 2 * self.n_groups * self.ssm_state_size- self.num_heads) // 2
         _, _, gate, hidden_states, dt = projected_states.split(
                 [d_mlp, d_mlp, self.intermediate_size,  self.conv_dim, self.num_heads], dim=-1
         )
@@ -1250,8 +1250,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
 
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
         self.layers_block_type = config.layers_block_type
-        layers = self.get_layers()
-        self.layers = nn.ModuleList(layers)
+        self.layers = self.get_layers()
 
         self._attn_implementation = config._attn_implementation
         self.final_layernorm = Zamba2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -1443,7 +1442,7 @@ class Zamba2Model(Zamba2PreTrainedModel):
                 layers.append(Zamba2HybridLayer(attn_block, linear_layer, mamba_layer))
             else:
                 layers.append(mamba_layer)
-        return layers
+        return nn.ModuleList(layers)
 
 
 # Adapted from transformers.models.jamba.modeling_jamba.JambaForCausalLM with Jamba->Zamba2, JAMBA->ZAMBA2
