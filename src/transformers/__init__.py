@@ -439,6 +439,7 @@ else:
     _import_structure["modeling_flash_attention_utils"] = []
     _import_structure["modeling_layers"] = ["GradientCheckpointingLayer"]
     _import_structure["modeling_outputs"] = []
+    _import_structure["modeling_backbone_utils"] = ["BackboneConfigMixin", "BackboneMixin"]
     _import_structure["modeling_rope_utils"] = ["ROPE_INIT_FUNCTIONS", "dynamic_rope_update", "RopeParameters"]
     _import_structure["modeling_utils"] = ["PreTrainedModel", "AttentionInterface"]
     _import_structure["masking_utils"] = ["AttentionMaskInterface"]
@@ -611,6 +612,7 @@ if TYPE_CHECKING:
     from .model_debugging_utils import model_addition_debugger_context as model_addition_debugger_context
 
     # Models
+    from .modeling_backbone_utils import BackboneConfigMixin, BackboneMixin
     from .modeling_layers import GradientCheckpointingLayer as GradientCheckpointingLayer
     from .modeling_rope_utils import ROPE_INIT_FUNCTIONS as ROPE_INIT_FUNCTIONS
     from .modeling_rope_utils import RopeParameters as RopeParameters
