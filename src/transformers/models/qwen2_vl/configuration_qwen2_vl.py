@@ -24,7 +24,7 @@ logger = logging.get_logger(__name__)
 
 
 class Qwen2VLVisionConfig(PreTrainedConfig):
-    model_type = "qwen2_vl"
+    model_type = "qwen2_vl_vision"
     base_config_key = "vision_config"
 
     def __init__(

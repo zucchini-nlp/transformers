@@ -29,7 +29,7 @@ from ...modeling_rope_utils import RopeParameters
 
 
 class Qwen2_5_VLVisionConfig(PreTrainedConfig):
-    model_type = "qwen2_5_vl"
+    model_type = "qwen2_5_vl_vision"
     base_config_key = "vision_config"
 
     def __init__(

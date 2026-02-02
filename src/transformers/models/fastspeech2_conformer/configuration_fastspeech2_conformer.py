@@ -377,7 +377,7 @@ class FastSpeech2ConformerHifiGanConfig(PreTrainedConfig):
     >>> configuration = model.config
     ```"""
 
-    model_type = "hifigan"
+    model_type = "fastspeech2_conformer_hifigan"
     base_config_key = "vocoder_config"
 
     def __init__(

@@ -388,7 +388,7 @@ class SpeechT5HifiGanConfig(PreTrainedConfig):
     >>> configuration = model.config
     ```"""
 
-    model_type = "hifigan"
+    model_type = "speecht5_hifigan"
 
     def __init__(
         self,

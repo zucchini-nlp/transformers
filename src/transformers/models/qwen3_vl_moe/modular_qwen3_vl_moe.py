@@ -209,6 +209,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
 
 
 class Qwen3VLMoeVisionConfig(Qwen3VLVisionConfig):
+    model_type = "qwen3_vl_moe_vision"
     pass
 
 

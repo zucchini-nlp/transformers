@@ -180,7 +180,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
 
 
 class Qwen3VLMoeVisionConfig(PreTrainedConfig):
-    model_type = "qwen3_vl_moe"
+    model_type = "qwen3_vl_moe_vision"
     base_config_key = "vision_config"
 
     def __init__(

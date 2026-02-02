@@ -78,7 +78,7 @@ class BaseModelOutputWithDeepstackFeatures(BaseModelOutputWithPooling):
 
 
 class Qwen3VLVisionConfig(PreTrainedConfig):
-    model_type = "qwen3_vl"
+    model_type = "qwen3_vl_vision"
     base_config_key = "vision_config"
 
     def __init__(
