@@ -1372,6 +1372,11 @@ class BltModel(BltPreTrainedModel):
         return (patch_starts.unsqueeze(1) <= token_positions.unsqueeze(0).unsqueeze(-1)).sum(dim=-1) - 1
 
 
+@auto_docstring(
+    custom_intro="""
+    The Blt Text Model with a language modeling head on top.
+    """
+)
 class BltForCausalLM(BltPreTrainedModel, GenerationMixin):
     config: BltConfig
     _can_compile_fullgraph = False
