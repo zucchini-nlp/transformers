@@ -48,8 +48,6 @@ from ..utils import (
     ModelOutput,
     TransformersKwargs,
     is_accelerate_available,
-    is_hqq_available,
-    is_optimum_quanto_available,
     is_torchdynamo_exporting,
     logging,
 )
@@ -1935,8 +1933,9 @@ class GenerationMixin(ContinuousMixin):
         instantiated, writes it to `model_kwargs`, under the name expected by the model.
         """
 
-        is_linear_cache = "mamba" in self.__class__.__name__.lower()
-        cache_name = "past_key_values" if not is_linear_cache else "cache_params"
+        # TODO @raushan, unify cache arg naming for all models
+        is_linear_attn_cache = "mamba" in self.__class__.__name__.lower()
+        cache_name = "past_key_values" if not is_linear_attn_cache else "cache_params"
 
         # Quick escape route 1: if the user specifies a cache, we only need to check for conflicting `generate` arguments
         user_defined_cache = model_kwargs.get(cache_name)
@@ -1971,8 +1970,6 @@ class GenerationMixin(ContinuousMixin):
         # Assisted decoding and contrastive search require cache rollback, which is incompatible with sliding layers.
         # To handle this, we skip passing the model config to DynamicCache (forcing a full-layer cache).
         # The "dynamic_full" option is a shortcut for generate() users to avoid sliding layers on their own.
-        # TODO(joao): support static caches in assisted generation. assisted generation needs to roll back caches,
-        # which is only supported in dynamic caches atm
         if generation_mode in (GenerationMode.ASSISTED_GENERATION, GenerationMode.CONTRASTIVE_SEARCH):
             if generation_config.cache_implementation is not None:
                 logger.warning_once(
@@ -1991,9 +1988,9 @@ class GenerationMixin(ContinuousMixin):
         if generation_config.cache_implementation in ALL_STATIC_CACHE_IMPLEMENTATIONS:
             if generation_config.cache_implementation in DEPRECATED_STATIC_CACHE_IMPLEMENTATIONS:
                 logger.warning_once(
-                    f"Using `cache_implementation='{generation_config.cache_implementation}' is deprecated. "
-                    f"Please only use one of {STATIC_CACHE_IMPLEMENTATIONS}, and the layer structure will be "
-                    "inferred automatically."
+                    f"Using `cache_implementation='{generation_config.cache_implementation}' is deprecated "
+                    f"and will be removed in v5.13. Please only use one of {STATIC_CACHE_IMPLEMENTATIONS}, "
+                    "and the layer structure will be inferred automatically."
                 )
             model_kwargs["past_key_values"] = self._prepare_static_cache(
                 cache_implementation=generation_config.cache_implementation,
@@ -2011,16 +2008,6 @@ class GenerationMixin(ContinuousMixin):
             cache_config = generation_config.cache_config if generation_config.cache_config is not None else {}
             cache_config.setdefault("config", self.config.get_text_config(decoder=True))
             backend = cache_config.pop("backend", "quanto")
-            if backend == "quanto" and not is_optimum_quanto_available():
-                raise ImportError(
-                    "You need to install optimum-quanto in order to use KV cache quantization with optimum-quanto "
-                    "backend. Please install it via  with `pip install optimum-quanto`"
-                )
-            elif backend == "HQQ" and not is_hqq_available():
-                raise ImportError(
-                    "You need to install `HQQ` in order to use KV cache quantization with HQQ backend. "
-                    "Please install it via  with `pip install hqq`"
-                )
             model_kwargs["past_key_values"] = QuantizedCache(backend=backend, **cache_config)
         # i.e. `cache_implementation` in [None, "dynamic", "offloaded", "dynamic_full"]
         # TODO: prepare linear cache from a single API, instead of creating in modeling code
