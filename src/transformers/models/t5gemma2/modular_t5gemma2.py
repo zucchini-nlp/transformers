@@ -863,7 +863,7 @@ class T5Gemma2TextEncoderModel(T5Gemma2PreTrainedModel):
                 "full_attention": create_bidirectional_mask(**mask_kwargs),
                 "sliding_attention": create_bidirectional_mask(
                     **mask_kwargs,
-                    and_mask_function=sliding_window_mask_function(self.text_config.sliding_window, is_causal=False),
+                    and_mask_function=sliding_window_mask_function(self.config.sliding_window, is_causal=False),
                 ),
             }
 
@@ -973,7 +973,7 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
             raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
         if inputs_embeds is None:
-            inputs_embeds = self.embed_tokens(input_ids)
+            inputs_embeds = self.text_model.embed_tokens(input_ids)
 
         if pixel_values is not None:
             image_features = self.get_image_features(pixel_values, return_dict=True).pooler_output
@@ -1139,8 +1139,8 @@ class T5Gemma2Decoder(T5Gemma2PreTrainedModel):
 @auto_docstring
 class T5Gemma2Model(T5Gemma2PreTrainedModel):
     _tied_weights_keys = {
-        "decoder.embed_tokens.weight": "encoder.embed_tokens.weight",
-        "decoder.embed_tokens.eoi_embedding": "encoder.embed_tokens.eoi_embedding",
+        "decoder.embed_tokens.weight": "encoder.text_model.embed_tokens.weight",
+        "decoder.embed_tokens.eoi_embedding": "encoder.text_model.embed_tokens.eoi_embedding",
     }
 
     def __init__(self, config: T5Gemma2Config):
@@ -1234,7 +1234,7 @@ class T5Gemma2Model(T5Gemma2PreTrainedModel):
 
 class T5Gemma2ForConditionalGeneration(T5Gemma2PreTrainedModel, GenerationMixin):
     _tied_weights_keys = {
-        "lm_head.out_proj.weight": "model.encoder.embed_tokens.weight",
+        "lm_head.out_proj.weight": "model.encoder.text_model.embed_tokens.weight",
     }
     _tp_plan = {"lm_head.out_proj": "colwise_rep"}
     _pp_plan = {"lm_head.out_proj": (["hidden_states"], ["logits"])}
