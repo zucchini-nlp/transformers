@@ -161,14 +161,13 @@ class Phi3Config(PreTrainedConfig):
         self.rms_norm_eps = rms_norm_eps
         self.use_cache = use_cache
         self.rope_parameters = rope_parameters
-        kwargs.setdefault("partial_rotary_factor", 1.0)  # assign default for BC
         self.sliding_window = sliding_window
 
         self.bos_token_id = bos_token_id
         self.eos_token_id = eos_token_id
         self.pad_token_id = pad_token_id
         self.tie_word_embeddings = tie_word_embeddings
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
     def convert_rope_params_to_dict(
         self, default_theta: int | float = 10_000.0, ignore_keys: set | None = None, **kwargs
@@ -179,7 +178,7 @@ class Phi3Config(PreTrainedConfig):
 
         # Standardize and validate the correctness of rotary position embeddings parameters
         self.rope_parameters.setdefault("rope_theta", kwargs.pop("rope_theta", default_theta))
-        self.rope_parameters.setdefault("partial_rotary_factor", kwargs["partial_rotary_factor"])
+        self.rope_parameters.setdefault("partial_rotary_factor", kwargs.get("partial_rotary_factor", 1.0))
         self.standardize_rope_params()
 
         # For backward compatibility if previous version used "su" or "yarn"

@@ -404,7 +404,6 @@ class Phi4MultimodalConfig(PreTrainedConfig):
         self.rms_norm_eps = rms_norm_eps
         self.use_cache = use_cache
         self.rope_parameters = rope_parameters
-        kwargs.setdefault("partial_rotary_factor", 1.0)  # assign default for BC
         self.sliding_window = sliding_window
 
         self.bos_token_id = bos_token_id
@@ -422,7 +421,7 @@ class Phi4MultimodalConfig(PreTrainedConfig):
 
         # Standardize and validate the correctness of rotary position embeddings parameters
         self.rope_parameters.setdefault("rope_theta", kwargs.pop("rope_theta", default_theta))
-        self.rope_parameters.setdefault("partial_rotary_factor", kwargs["partial_rotary_factor"])
+        self.rope_parameters.setdefault("partial_rotary_factor", kwargs.get("partial_rotary_factor", 1.0))
         self.standardize_rope_params()
 
         # For backward compatibility if previous version used "su" or "yarn"
