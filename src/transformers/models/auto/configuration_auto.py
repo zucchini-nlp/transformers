@@ -20,6 +20,7 @@ import os
 import re
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, KeysView, ValuesView
+from pathlib import Path
 from typing import Any, TypeVar
 
 from ...configuration_utils import PreTrainedConfig
@@ -37,7 +38,8 @@ def build_config_mapping_names() -> tuple[dict, dict]:
     model_type_map = OrderedDict()
     special_mappings = OrderedDict()
 
-    all_files = glob.glob("/home/raushan/llavas/src/transformers/models/**/configuration_*.py", recursive=True)
+    root_path = Path(__file__).resolve().parents[2]
+    all_files = glob.glob(f"{root_path}/models/**/configuration_*.py", recursive=True)
     for config_path in all_files:
         module_name = config_path.split("/")[-2]
         with open(config_path, "r") as f:

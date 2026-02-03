@@ -1590,7 +1590,7 @@ def _get_model_info(func, parent_class):
     if model_name_lowercase is None:
         config_class = None
     else:
-        try: 
+        try:
             config_class = getattr(
                 getattr(auto_module, PLACEHOLDER_TO_AUTO_MODULE["config_class"][0]),
                 PLACEHOLDER_TO_AUTO_MODULE["config_class"][1],

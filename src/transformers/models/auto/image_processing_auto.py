@@ -13,9 +13,11 @@
 # limitations under the License.
 """AutoImageProcessor class."""
 
+import ast
 import importlib
 import os
 from collections import OrderedDict
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 # Build the list of all image processors
@@ -56,174 +58,116 @@ DEFAULT_TO_SLOW_IMAGE_PROCESSORS = [
     "SmolVLMImageProcessor",
 ]
 
+
+def build_image_processor_mapping() -> OrderedDict[str, tuple[str | None, str | None]]:
+    processor_mapping = OrderedDict()
+    root_path = Path(__file__).resolve().parents[2]
+    for model_type in CONFIG_MAPPING_NAMES:
+        module = model_type_to_module_name(model_type)
+        fast_processor_name = slow_processor_name = None
+        if os.path.exists(f"{root_path}/models/{module}/image_processing_{module}.py"):
+            with open(f"{root_path}/models/{module}/image_processing_{module}.py", "r") as f:
+                content = f.read()
+
+            tree = ast.parse(content)
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef) and any(
+                    base.id == "BaseImageProcessor" for base in node.bases if isinstance(base, ast.Name)
+                ):
+                    slow_processor_name = node.name
+
+        if os.path.exists(f"{root_path}/models/{module}/image_processing_{module}_fast.py"):
+            with open(f"{root_path}/models/{module}/image_processing_{module}_fast.py", "r") as f:
+                content = f.read()
+
+            tree = ast.parse(content)
+            for node in tree.body:
+                if isinstance(node, ast.ClassDef) and any(
+                    base.id == "BaseImageProcessorFast" for base in node.bases if isinstance(base, ast.Name)
+                ):
+                    fast_processor_name = node.name
+
+        if slow_processor_name is not None or fast_processor_name is not None:
+            processor_mapping[model_type] = (slow_processor_name, fast_processor_name)
+
+    return processor_mapping
+
+
 if TYPE_CHECKING:
     # This significantly improves completion suggestion performance when
     # the transformers package is used with Microsoft's Pylance language server.
     IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]] = OrderedDict()
 else:
-    IMAGE_PROCESSOR_MAPPING_NAMES = OrderedDict(
-        [
-            ("aimv2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("aimv2_vision_model", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("align", ("EfficientNetImageProcessor", "EfficientNetImageProcessorFast")),
-            ("altclip", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("aria", ("AriaImageProcessor", None)),
-            ("aya_vision", ("GotOcr2ImageProcessor", "GotOcr2ImageProcessorFast")),
-            ("beit", ("BeitImageProcessor", "BeitImageProcessorFast")),
-            ("bit", ("BitImageProcessor", "BitImageProcessorFast")),
-            ("blip", ("BlipImageProcessor", "BlipImageProcessorFast")),
-            ("blip-2", ("BlipImageProcessor", "BlipImageProcessorFast")),
-            ("bridgetower", ("BridgeTowerImageProcessor", "BridgeTowerImageProcessorFast")),
-            ("chameleon", ("ChameleonImageProcessor", "ChameleonImageProcessorFast")),
-            ("chinese_clip", ("ChineseCLIPImageProcessor", "ChineseCLIPImageProcessorFast")),
-            ("clip", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("clipseg", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("cohere2_vision", (None, "Cohere2VisionImageProcessorFast")),
-            ("colpali", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
-            ("colqwen2", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("conditional_detr", ("ConditionalDetrImageProcessor", "ConditionalDetrImageProcessorFast")),
-            ("convnext", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
-            ("convnextv2", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
-            ("cvt", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
-            ("data2vec-vision", ("BeitImageProcessor", "BeitImageProcessorFast")),
-            ("deepseek_vl", ("DeepseekVLImageProcessor", "DeepseekVLImageProcessorFast")),
-            ("deepseek_vl_hybrid", ("DeepseekVLHybridImageProcessor", "DeepseekVLHybridImageProcessorFast")),
-            ("deformable_detr", ("DeformableDetrImageProcessor", "DeformableDetrImageProcessorFast")),
-            ("deit", ("DeiTImageProcessor", "DeiTImageProcessorFast")),
-            ("depth_anything", ("DPTImageProcessor", "DPTImageProcessorFast")),
-            ("depth_pro", ("DepthProImageProcessor", "DepthProImageProcessorFast")),
-            ("detr", ("DetrImageProcessor", "DetrImageProcessorFast")),
-            ("dinat", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("dinov2", ("BitImageProcessor", "BitImageProcessorFast")),
-            ("dinov3_vit", (None, "DINOv3ViTImageProcessorFast")),
-            ("donut-swin", ("DonutImageProcessor", "DonutImageProcessorFast")),
-            ("dpt", ("DPTImageProcessor", "DPTImageProcessorFast")),
-            ("edgetam", (None, "Sam2ImageProcessorFast")),
-            ("efficientloftr", ("EfficientLoFTRImageProcessor", "EfficientLoFTRImageProcessorFast")),
-            ("efficientnet", ("EfficientNetImageProcessor", "EfficientNetImageProcessorFast")),
-            ("emu3", ("Emu3ImageProcessor", None)),
-            ("eomt", ("EomtImageProcessor", "EomtImageProcessorFast")),
-            ("ernie4_5_vl_moe", ("Ernie4_5_VL_MoeImageProcessor", "Ernie4_5_VL_MoeImageProcessorFast")),
-            ("flava", ("FlavaImageProcessor", "FlavaImageProcessorFast")),
-            ("florence2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("focalnet", ("BitImageProcessor", "BitImageProcessorFast")),
-            ("fuyu", ("FuyuImageProcessor", "FuyuImageProcessorFast")),
-            ("gemma3", ("Gemma3ImageProcessor", "Gemma3ImageProcessorFast")),
-            ("gemma3n", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
-            ("git", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("glm46v", ("Glm46VImageProcessor", "Glm46VImageProcessorFast")),
-            ("glm4v", ("Glm4vImageProcessor", "Glm4vImageProcessorFast")),
-            ("glm_image", ("GlmImageImageProcessor", "GlmImageImageProcessorFast")),
-            ("glpn", ("GLPNImageProcessor", "GLPNImageProcessorFast")),
-            ("got_ocr2", ("GotOcr2ImageProcessor", "GotOcr2ImageProcessorFast")),
-            ("grounding-dino", ("GroundingDinoImageProcessor", "GroundingDinoImageProcessorFast")),
-            ("groupvit", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("hiera", ("BitImageProcessor", "BitImageProcessorFast")),
-            ("idefics", ("IdeficsImageProcessor", None)),
-            ("idefics2", ("Idefics2ImageProcessor", "Idefics2ImageProcessorFast")),
-            ("idefics3", ("Idefics3ImageProcessor", "Idefics3ImageProcessorFast")),
-            ("ijepa", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("imagegpt", ("ImageGPTImageProcessor", "ImageGPTImageProcessorFast")),
-            ("instructblip", ("BlipImageProcessor", "BlipImageProcessorFast")),
-            ("internvl", ("GotOcr2ImageProcessor", "GotOcr2ImageProcessorFast")),
-            ("janus", ("JanusImageProcessor", "JanusImageProcessorFast")),
-            ("kosmos-2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("kosmos-2.5", ("Kosmos2_5ImageProcessor", "Kosmos2_5ImageProcessorFast")),
-            ("layoutlmv2", ("LayoutLMv2ImageProcessor", "LayoutLMv2ImageProcessorFast")),
-            ("layoutlmv3", ("LayoutLMv3ImageProcessor", "LayoutLMv3ImageProcessorFast")),
-            ("layoutxlm", ("LayoutLMv2ImageProcessor", "LayoutLMv2ImageProcessor")),
-            ("levit", ("LevitImageProcessor", "LevitImageProcessorFast")),
-            ("lfm2_vl", (None, "Lfm2VlImageProcessorFast")),
-            ("lightglue", ("LightGlueImageProcessor", "LightGlueImageProcessorFast")),
-            ("lighton_ocr", ("PixtralImageProcessor", "PixtralImageProcessorFast")),
-            ("llama4", (None, "Llama4ImageProcessorFast")),
-            ("llava", ("LlavaImageProcessor", "LlavaImageProcessorFast")),
-            ("llava_next", ("LlavaNextImageProcessor", "LlavaNextImageProcessorFast")),
-            ("llava_next_video", ("LlavaNextImageProcessor", "LlavaNextImageProcessorFast")),
-            ("llava_onevision", ("LlavaOnevisionImageProcessor", "LlavaOnevisionImageProcessorFast")),
-            ("lw_detr", ("DeformableDetrImageProcessor", "DeformableDetrImageProcessorFast")),
-            ("mask2former", ("Mask2FormerImageProcessor", "Mask2FormerImageProcessorFast")),
-            ("maskformer", ("MaskFormerImageProcessor", "MaskFormerImageProcessorFast")),
-            ("metaclip_2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("mgp-str", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("mistral3", ("PixtralImageProcessor", "PixtralImageProcessorFast")),
-            ("mlcd", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("mllama", ("MllamaImageProcessor", "MllamaImageProcessorFast")),
-            ("mm-grounding-dino", ("GroundingDinoImageProcessor", "GroundingDinoImageProcessorFast")),
-            ("mobilenet_v1", ("MobileNetV1ImageProcessor", "MobileNetV1ImageProcessorFast")),
-            ("mobilenet_v2", ("MobileNetV2ImageProcessor", "MobileNetV2ImageProcessorFast")),
-            ("mobilevit", ("MobileViTImageProcessor", "MobileViTImageProcessorFast")),
-            ("mobilevitv2", ("MobileViTImageProcessor", "MobileViTImageProcessorFast")),
-            ("nougat", ("NougatImageProcessor", "NougatImageProcessorFast")),
-            ("omdet-turbo", ("DetrImageProcessor", "DetrImageProcessorFast")),
-            ("oneformer", ("OneFormerImageProcessor", "OneFormerImageProcessorFast")),
-            ("ovis2", ("Ovis2ImageProcessor", "Ovis2ImageProcessorFast")),
-            ("owlv2", ("Owlv2ImageProcessor", "Owlv2ImageProcessorFast")),
-            ("owlvit", ("OwlViTImageProcessor", "OwlViTImageProcessorFast")),
-            ("paddleocr_vl", ("PaddleOCRVLImageProcessor", "PaddleOCRVLImageProcessorFast")),
-            ("paligemma", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
-            ("perceiver", ("PerceiverImageProcessor", "PerceiverImageProcessorFast")),
-            ("perception_lm", (None, "PerceptionLMImageProcessorFast")),
-            ("phi4_multimodal", (None, "Phi4MultimodalImageProcessorFast")),
-            ("pix2struct", ("Pix2StructImageProcessor", "Pix2StructImageProcessorFast")),
-            ("pixio", ("BitImageProcessor", "BitImageProcessorFast")),
-            ("pixtral", ("PixtralImageProcessor", "PixtralImageProcessorFast")),
-            ("poolformer", ("PoolFormerImageProcessor", "PoolFormerImageProcessorFast")),
-            ("pp_doclayout_v3", (None, "PPDocLayoutV3ImageProcessorFast")),
-            ("prompt_depth_anything", ("PromptDepthAnythingImageProcessor", "PromptDepthAnythingImageProcessorFast")),
-            ("pvt", ("PvtImageProcessor", "PvtImageProcessorFast")),
-            ("pvt_v2", ("PvtImageProcessor", "PvtImageProcessorFast")),
-            ("qwen2_5_omni", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("qwen2_5_vl", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("qwen2_vl", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("qwen3_omni_moe", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("qwen3_vl", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
-            ("regnet", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
-            ("resnet", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
-            ("rt_detr", ("RTDetrImageProcessor", "RTDetrImageProcessorFast")),
-            ("sam", ("SamImageProcessor", "SamImageProcessorFast")),
-            ("sam2", (None, "Sam2ImageProcessorFast")),
-            ("sam2_video", (None, "Sam2ImageProcessorFast")),
-            ("sam3", (None, "Sam3ImageProcessorFast")),
-            ("sam3_tracker", (None, "Sam3ImageProcessorFast")),
-            ("sam3_tracker_video", (None, "Sam3ImageProcessorFast")),
-            ("sam3_video", (None, "Sam3ImageProcessorFast")),
-            ("sam_hq", ("SamImageProcessor", "SamImageProcessorFast")),
-            ("segformer", ("SegformerImageProcessor", "SegformerImageProcessorFast")),
-            ("seggpt", ("SegGptImageProcessor", None)),
-            ("shieldgemma2", ("Gemma3ImageProcessor", "Gemma3ImageProcessorFast")),
-            ("siglip", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
-            ("siglip2", ("Siglip2ImageProcessor", "Siglip2ImageProcessorFast")),
-            ("smolvlm", ("SmolVLMImageProcessor", "SmolVLMImageProcessorFast")),
-            ("superglue", ("SuperGlueImageProcessor", "SuperGlueImageProcessorFast")),
-            ("superpoint", ("SuperPointImageProcessor", "SuperPointImageProcessorFast")),
-            ("swiftformer", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("swin", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("swin2sr", ("Swin2SRImageProcessor", "Swin2SRImageProcessorFast")),
-            ("swinv2", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("t5gemma2", ("Gemma3ImageProcessor", "Gemma3ImageProcessorFast")),
-            ("table-transformer", ("DetrImageProcessor", "DetrImageProcessorFast")),
-            ("textnet", ("TextNetImageProcessor", "TextNetImageProcessorFast")),
-            ("timesformer", ("VideoMAEImageProcessor", None)),
-            ("timm_wrapper", ("TimmWrapperImageProcessor", None)),
-            ("trocr", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("tvp", ("TvpImageProcessor", "TvpImageProcessorFast")),
-            ("udop", ("LayoutLMv3ImageProcessor", "LayoutLMv3ImageProcessorFast")),
-            ("upernet", ("SegformerImageProcessor", "SegformerImageProcessorFast")),
-            ("video_llama_3", ("VideoLlama3ImageProcessor", "VideoLlama3ImageProcessorFast")),
-            ("video_llava", ("VideoLlavaImageProcessor", None)),
-            ("videomae", ("VideoMAEImageProcessor", None)),
-            ("vilt", ("ViltImageProcessor", "ViltImageProcessorFast")),
-            ("vipllava", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("vit", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("vit_mae", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("vit_msn", ("ViTImageProcessor", "ViTImageProcessorFast")),
-            ("vitmatte", ("VitMatteImageProcessor", "VitMatteImageProcessorFast")),
-            ("vitpose", ("VitPoseImageProcessor", "VitPoseImageProcessorFast")),
-            ("xclip", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
-            ("yolos", ("YolosImageProcessor", "YolosImageProcessorFast")),
-            ("zoedepth", ("ZoeDepthImageProcessor", "ZoeDepthImageProcessorFast")),
-        ]
+    IMAGE_PROCESSOR_MAPPING_NAMES: OrderedDict[str, tuple[str | None, str | None]]
+    IMAGE_PROCESSOR_MAPPING_NAMES = build_image_processor_mapping()
+    IMAGE_PROCESSOR_MAPPING_NAMES.update(
+        OrderedDict(
+            [
+                ("aimv2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("aimv2_vision_model", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("align", ("EfficientNetImageProcessor", "EfficientNetImageProcessorFast")),
+                ("altclip", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("aya_vision", ("GotOcr2ImageProcessor", "GotOcr2ImageProcessorFast")),
+                ("blip-2", ("BlipImageProcessor", "BlipImageProcessorFast")),
+                ("clipseg", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("colpali", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
+                ("colqwen2", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
+                ("convnextv2", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
+                ("cvt", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
+                ("data2vec-vision", ("BeitImageProcessor", "BeitImageProcessorFast")),
+                ("depth_anything", ("DPTImageProcessor", "DPTImageProcessorFast")),
+                ("dinat", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("dinov2", ("BitImageProcessor", "BitImageProcessorFast")),
+                ("edgetam", (None, "Sam2ImageProcessorFast")),
+                ("florence2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("focalnet", ("BitImageProcessor", "BitImageProcessorFast")),
+                ("gemma3n", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
+                ("git", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("groupvit", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("hiera", ("BitImageProcessor", "BitImageProcessorFast")),
+                ("ijepa", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("instructblip", ("BlipImageProcessor", "BlipImageProcessorFast")),
+                ("internvl", ("GotOcr2ImageProcessor", "GotOcr2ImageProcessorFast")),
+                ("kosmos-2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("lighton_ocr", ("PixtralImageProcessor", "PixtralImageProcessorFast")),
+                ("lw_detr", ("DeformableDetrImageProcessor", "DeformableDetrImageProcessorFast")),
+                ("metaclip_2", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("mgp-str", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("mistral3", ("PixtralImageProcessor", "PixtralImageProcessorFast")),
+                ("mlcd", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("mm-grounding-dino", ("GroundingDinoImageProcessor", "GroundingDinoImageProcessorFast")),
+                ("mobilevitv2", ("MobileViTImageProcessor", "MobileViTImageProcessorFast")),
+                ("omdet-turbo", ("DetrImageProcessor", "DetrImageProcessorFast")),
+                ("paligemma", ("SiglipImageProcessor", "SiglipImageProcessorFast")),
+                ("pixio", ("BitImageProcessor", "BitImageProcessorFast")),
+                ("pvt_v2", ("PvtImageProcessor", "PvtImageProcessorFast")),
+                ("qwen2_5_omni", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
+                ("qwen2_5_vl", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
+                ("qwen3_omni_moe", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
+                ("qwen3_vl", ("Qwen2VLImageProcessor", "Qwen2VLImageProcessorFast")),
+                ("regnet", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
+                ("resnet", ("ConvNextImageProcessor", "ConvNextImageProcessorFast")),
+                ("sam2_video", (None, "Sam2ImageProcessorFast")),
+                ("sam3_tracker", (None, "Sam3ImageProcessorFast")),
+                ("sam3_tracker_video", (None, "Sam3ImageProcessorFast")),
+                ("sam3_video", (None, "Sam3ImageProcessorFast")),
+                ("sam_hq", ("SamImageProcessor", "SamImageProcessorFast")),
+                ("shieldgemma2", ("Gemma3ImageProcessor", "Gemma3ImageProcessorFast")),
+                ("swiftformer", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("swin", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("swinv2", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("t5gemma2", ("Gemma3ImageProcessor", "Gemma3ImageProcessorFast")),
+                ("table-transformer", ("DetrImageProcessor", "DetrImageProcessorFast")),
+                ("timesformer", ("VideoMAEImageProcessor", None)),
+                ("trocr", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("udop", ("LayoutLMv3ImageProcessor", "LayoutLMv3ImageProcessorFast")),
+                ("upernet", ("SegformerImageProcessor", "SegformerImageProcessorFast")),
+                ("vipllava", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+                ("vit_mae", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("vit_msn", ("ViTImageProcessor", "ViTImageProcessorFast")),
+                ("xclip", ("CLIPImageProcessor", "CLIPImageProcessorFast")),
+            ]
+        )
     )
 
 # Override to None if the packages are not available

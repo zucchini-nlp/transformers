@@ -1059,6 +1059,7 @@ SHOULD_HAVE_THEIR_OWN_PAGE = [
     "RoFormerTokenizerFast",  # An alias
 ]
 
+
 def ignore_undocumented(name: str) -> bool:
     """Rules to determine if `name` should be undocumented (returns `True` if it should not be documented)."""
     # NOT DOCUMENTED ON PURPOSE.
