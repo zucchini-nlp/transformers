@@ -203,11 +203,14 @@ class Gemma2Config(PreTrainedConfig):
         self.attn_logit_softcapping = attn_logit_softcapping
         self.layer_types = layer_types
         self.use_bidirectional_attention = use_bidirectional_attention
+        self.rope_parameters = rope_parameters
 
         if self.layer_types is None:
             self.layer_types = [
                 "sliding_attention" if bool((i + 1) % 2) else "full_attention" for i in range(self.num_hidden_layers)
             ]
+
+        super().__init__(**kwargs)
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
@@ -216,10 +219,6 @@ class Gemma2Config(PreTrainedConfig):
                 f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
                 f"heads ({self.num_attention_heads})."
             )
-
-        self.rope_parameters = rope_parameters
-
-        super().__init__(**kwargs)
 
 
 class Gemma2RMSNorm(GemmaRMSNorm):

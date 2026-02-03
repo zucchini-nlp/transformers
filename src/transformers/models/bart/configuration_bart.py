@@ -13,15 +13,10 @@
 # limitations under the License.
 """BART model configuration"""
 
-import warnings
-from collections import OrderedDict
-from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Optional
 
 from huggingface_hub.dataclasses import strict
 
-from ... import PreTrainedTokenizer
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -108,31 +103,31 @@ class BartConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
     attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
 
-    vocab_size: Optional[int] = 50265
-    max_position_embeddings: Optional[int] = 1024
-    encoder_layers: Optional[int] = 12
-    encoder_ffn_dim: Optional[int] = 4096
-    encoder_attention_heads: Optional[int] = 16
-    decoder_layers: Optional[int] = 12
-    decoder_ffn_dim: Optional[int] = 4096
-    decoder_attention_heads: Optional[int] = 16
-    encoder_layerdrop: Optional[float] = 0.0
-    decoder_layerdrop: Optional[float] = 0.0
-    activation_function: Optional[str] = "gelu"
-    d_model: Optional[int] = 1024
-    dropout: Optional[float] = 0.1
-    attention_dropout: Optional[float] = 0.0
-    activation_dropout: Optional[float] = 0.0
-    init_std: Optional[float] = 0.02
-    classifier_dropout: Optional[float] = 0.0
-    scale_embedding: Optional[bool] = False
-    use_cache: Optional[bool] = True
-    pad_token_id: Optional[int] = 1
-    bos_token_id: Optional[int] = 0
-    eos_token_id: Optional[int] = 2
-    is_encoder_decoder: Optional[bool] = True
-    decoder_start_token_id: Optional[int] = 2
-    forced_eos_token_id: Optional[int] = 2
+    vocab_size: int | None = 50265
+    max_position_embeddings: int | None = 1024
+    encoder_layers: int | None = 12
+    encoder_ffn_dim: int | None = 4096
+    encoder_attention_heads: int | None = 16
+    decoder_layers: int | None = 12
+    decoder_ffn_dim: int | None = 4096
+    decoder_attention_heads: int | None = 16
+    encoder_layerdrop: float | None = 0.0
+    decoder_layerdrop: float | None = 0.0
+    activation_function: str | None = "gelu"
+    d_model: int | None = 1024
+    dropout: float | None = 0.1
+    attention_dropout: float | None = 0.0
+    activation_dropout: float | None = 0.0
+    init_std: float | None = 0.02
+    classifier_dropout: float | None = 0.0
+    scale_embedding: bool | None = False
+    use_cache: bool | None = True
+    pad_token_id: int | None = 1
+    bos_token_id: int | None = 0
+    eos_token_id: int | None = 2
+    is_encoder_decoder: bool | None = True
+    decoder_start_token_id: int | None = 2
+    forced_eos_token_id: int | None = 2
     is_decoder: bool | None = False
     tie_word_embeddings: bool | None = True
 

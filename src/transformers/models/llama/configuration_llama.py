@@ -19,12 +19,11 @@
 """LLaMA model configuration"""
 
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any
 
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_rope_utils import RopeParameters
 
 
 @strict(accept_kwargs=True)
@@ -129,28 +128,28 @@ class LlamaConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: Optional[int] = 32000
-    hidden_size: Optional[int] = 4096
-    intermediate_size: Optional[int] = 11008
-    num_hidden_layers: Optional[int] = 32
-    num_attention_heads: Optional[int] = 32
-    num_key_value_heads: Optional[int] = None
-    hidden_act: Optional[str] = "silu"
-    max_position_embeddings: Optional[int] = 2048
-    initializer_range: Optional[float] = 0.02
-    rms_norm_eps: Optional[float] = 1e-6
-    use_cache: Optional[bool] = True
-    pad_token_id: Optional[int] = None
-    bos_token_id: Optional[int] = 1
-    eos_token_id: Optional[int] = 2
-    pretraining_tp: Optional[int] = 1
-    tie_word_embeddings: Optional[bool] = False
-    rope_theta: Optional[Union[int, float]] = 10000.0
-    rope_scaling: Optional[dict[str, Any]] = None
-    attention_bias: Optional[bool] = False
-    attention_dropout: Optional[Union[int, float]] = 0.0
-    mlp_bias: Optional[bool] = False
-    head_dim: Optional[int] = None
+    vocab_size: int | None = 32000
+    hidden_size: int | None = 4096
+    intermediate_size: int | None = 11008
+    num_hidden_layers: int | None = 32
+    num_attention_heads: int | None = 32
+    num_key_value_heads: int | None = None
+    hidden_act: str | None = "silu"
+    max_position_embeddings: int | None = 2048
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-6
+    use_cache: bool | None = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = 1
+    eos_token_id: int | None = 2
+    pretraining_tp: int | None = 1
+    tie_word_embeddings: bool | None = False
+    rope_theta: int | float | None = 10000.0
+    rope_scaling: dict[str, Any] | None = None
+    attention_bias: bool | None = False
+    attention_dropout: int | float | None = 0.0
+    mlp_bias: bool | None = False
+    head_dim: int | None = None
 
     def __post_init__(self, **kwargs):
         if self.rope_scaling is not None and "type" in self.rope_scaling:

@@ -19,7 +19,6 @@
 # limitations under the License.
 
 from dataclasses import dataclass
-from typing import Optional
 
 from huggingface_hub.dataclasses import strict
 
@@ -92,19 +91,19 @@ class LightGlueConfig(PreTrainedConfig):
     model_type = "lightglue"
     sub_configs = {"keypoint_detector_config": AutoConfig}
 
-    keypoint_detector_config: Optional[SuperPointConfig | dict] = None
-    descriptor_dim: Optional[int] = 256
-    num_hidden_layers: Optional[int] = 9
-    num_attention_heads: Optional[int] = 4
-    num_key_value_heads: Optional[int] = None
-    depth_confidence: Optional[float] = 0.95
-    width_confidence: Optional[float] = 0.99
-    filter_threshold: Optional[float] = 0.1
-    initializer_range: Optional[float] = 0.02
-    hidden_act: Optional[str] = "gelu"
-    attention_dropout: Optional[float] = 0.0
-    attention_bias: Optional[bool] = True
-    trust_remote_code: Optional[bool] = False
+    keypoint_detector_config: SuperPointConfig | dict | None = None
+    descriptor_dim: int | None = 256
+    num_hidden_layers: int | None = 9
+    num_attention_heads: int | None = 4
+    num_key_value_heads: int | None = None
+    depth_confidence: float | None = 0.95
+    width_confidence: float | None = 0.99
+    filter_threshold: float | None = 0.1
+    initializer_range: float | None = 0.02
+    hidden_act: str | None = "gelu"
+    attention_dropout: float | None = 0.0
+    attention_bias: bool | None = True
+    trust_remote_code: bool | None = False
 
     def __post_init__(self, **kwargs):
         # Keypoint Detector is forced into eager attention mode because SuperPoint does not have Attention

@@ -1,7 +1,7 @@
 from collections.abc import Callable, Sequence
 from dataclasses import MISSING, field, make_dataclass
 from functools import partial
-from typing import Annotated, ForwardRef, Optional, TypedDict, Union, get_args, get_origin
+from typing import Annotated, ForwardRef, TypedDict, Union, get_args, get_origin
 
 from huggingface_hub.dataclasses import as_validated_field, strict
 
@@ -74,9 +74,9 @@ class TypedDictAdapter:
     def validate_fields(self, **kwargs):
         # If not all kwargs are set, dataclass raises an error in python <= 3.9
         # In newer python we can bypass by creating a dataclass with `kw_only=True`
-        for field in self.fields:
-            if field[0] not in kwargs:
-                kwargs[field[0]] = None
+        for f in self.fields:
+            if f[0] not in kwargs:
+                kwargs[f[0]] = None
         self.dataclass(**kwargs)
 
     def create_dataclass(self):
@@ -110,19 +110,19 @@ class TypedDictAdapter:
 
 
 @as_validated_field
-def positive_any_number(value: Optional[Union[int, float]] = None):
+def positive_any_number(value: int | float | None = None):
     if value is not None and (not isinstance(value, (int, float)) or not value >= 0):
         raise ValueError(f"Value must be a positive integer or floating number, got {value}")
 
 
 @as_validated_field
-def positive_int(value: Optional[int] = None):
+def positive_int(value: int | None = None):
     if value is not None and (not isinstance(value, int) or not value >= 0):
         raise ValueError(f"Value must be a positive integer, got {value}")
 
 
 @as_validated_field
-def padding_validator(value: Optional[Union[bool, str, PaddingStrategy]] = None):
+def padding_validator(value: bool | str | PaddingStrategy | None = None):
     possible_names = ["longest", "max_length", "do_not_pad"]
     if value is None:
         pass
@@ -133,7 +133,7 @@ def padding_validator(value: Optional[Union[bool, str, PaddingStrategy]] = None)
 
 
 @as_validated_field
-def truncation_validator(value: Optional[Union[bool, str, TruncationStrategy]] = None):
+def truncation_validator(value: bool | str | TruncationStrategy | None = None):
     possible_names = ["only_first", "only_second", "longest_first", "do_not_truncate"]
     if value is None:
         pass
@@ -144,7 +144,7 @@ def truncation_validator(value: Optional[Union[bool, str, TruncationStrategy]] =
 
 
 @as_validated_field
-def image_size_validator(value: Optional[Union[int, Sequence[int], dict[str, int]]] = None):
+def image_size_validator(value: int | Sequence[int] | dict[str, int] | None = None):
     possible_keys = ["height", "width", "longest_edge", "shortest_edge", "max_height", "max_width"]
     if value is None:
         pass
@@ -153,7 +153,7 @@ def image_size_validator(value: Optional[Union[int, Sequence[int], dict[str, int
 
 
 @as_validated_field
-def device_validator(value: Optional[Union[str, int]] = None):
+def device_validator(value: str | int | None = None):
     possible_names = ["cpu", "cuda", "xla", "xpu", "mps", "meta"]
     if value is None:
         pass
@@ -170,7 +170,7 @@ def device_validator(value: Optional[Union[str, int]] = None):
 
 
 @as_validated_field
-def resampling_validator(value: Optional[Union[int, "PILImageResampling"]] = None):
+def resampling_validator(value: Union[int, "PILImageResampling"] | None = None):
     if value is None:
         pass
     elif isinstance(value, int) and value not in list(range(6)):
@@ -182,7 +182,7 @@ def resampling_validator(value: Optional[Union[int, "PILImageResampling"]] = Non
 
 
 @as_validated_field
-def video_metadata_validator(value: Optional[VideoMetadata] = None):
+def video_metadata_validator(value: VideoMetadata | None = None):
     if value is None:
         return
 
@@ -214,7 +214,7 @@ def video_metadata_validator(value: Optional[VideoMetadata] = None):
 
 
 @as_validated_field
-def tensor_type_validator(value: Optional[Union[str, TensorType]] = None):
+def tensor_type_validator(value: str | TensorType | None = None):
     possible_names = ["pt", "np", "mlx"]
     if value is None:
         pass
@@ -223,7 +223,7 @@ def tensor_type_validator(value: Optional[Union[str, TensorType]] = None):
 
 
 @as_validated_field
-def label_to_id_validation(value: Optional[Union[str, TensorType]] = None):
+def label_to_id_validation(value: str | TensorType | None = None):
     possible_names = ["pt", "np", "mlx"]
     if value is None:
         pass
@@ -232,8 +232,8 @@ def label_to_id_validation(value: Optional[Union[str, TensorType]] = None):
 
 
 def interval(
-    min: Optional[Union[int, float]] = None,
-    max: Optional[Union[int, float]] = None,
+    min: int | float | None = None,
+    max: int | float | None = None,
     exclude_min: bool = False,
     exclude_max: bool = False,
 ) -> Callable:
@@ -270,7 +270,7 @@ def interval(
     max = max or float("inf")
 
     @as_validated_field
-    def _inner(value: Union[int, float]):
+    def _inner(value: int | float):
         min_valid = min <= value if not exclude_min else min < value
         max_valid = value <= max if not exclude_max else value < max
         if not (min_valid and max_valid):
@@ -286,9 +286,9 @@ def probability(value: float):
         raise ValueError(f"Value must be a probability between 0.0 and 1.0, got {value}.")
 
 
-def is_divisible_by(divisor: Union[int, float]):
+def is_divisible_by(divisor: int | float):
     @as_validated_field
-    def _inner(value: Union[int, float]):
+    def _inner(value: int | float):
         if value % divisor != 0:
             raise ValueError(f"Value has to be divisble by {divisor} but got value={value}")
 
@@ -307,7 +307,7 @@ def activation_fn_key(value: str):
             )
 
 
-def tensor_shape(shape: tuple[Union[int, str]], length: Optional[int] = None):
+def tensor_shape(shape: tuple[int | str], length: int | None = None):
     @as_validated_field
     def validator(value: Union[Sequence["torch.Tensor"], "torch.Tensor"]):
         if value is None:

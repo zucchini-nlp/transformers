@@ -19,11 +19,11 @@ import inspect
 import json
 import math
 import os
-import warnings
 from collections.abc import Sequence
-from dataclasses import dataclass, field, fields, is_dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, TypeVar, Union
+from dataclasses import dataclass, fields, is_dataclass
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, Union
 
+from huggingface_hub import create_repo
 from huggingface_hub.dataclasses import strict
 from packaging import version
 
@@ -56,6 +56,7 @@ SpecificPreTrainedConfigType = TypeVar("SpecificPreTrainedConfigType", bound="Pr
 
 _FLOAT_TAG_KEY = "__float__"
 _FLOAT_TAG_VALUES = {"Infinity": float("inf"), "-Infinity": float("-inf"), "NaN": float("nan")}
+
 
 @strict(accept_kwargs=True)
 @dataclass
@@ -151,33 +152,33 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     base_config_key: ClassVar[str] = ""
     sub_configs: ClassVar[dict[str, type["PretrainedConfig"]]] = {}
     has_no_defaults_at_init: ClassVar[bool] = False
-    keys_to_ignore_at_inference: ClassVar[Optional[list[str]]] = None
+    keys_to_ignore_at_inference: ClassVar[list[str] | None] = None
     attribute_map: ClassVar[dict[str, str]] = {}
-    base_model_tp_plan: ClassVar[Optional[dict[str, Any]]] = None
-    base_model_pp_plan: ClassVar[Optional[dict[str, Sequence[list[str]]]]] = None
-    base_model_ep_plan: ClassVar[Optional[dict[str, Sequence[list[str]]]]] = None
-    _auto_class: ClassVar[Optional[str]] = None
+    base_model_tp_plan: ClassVar[dict[str, Any] | None] = None
+    base_model_pp_plan: ClassVar[dict[str, Sequence[list[str]]] | None] = None
+    base_model_ep_plan: ClassVar[dict[str, Sequence[list[str]]] | None] = None
+    _auto_class: ClassVar[str | None] = None
 
     # Common attributes for all models which are not a `ClassVar`
     model_type: ClassVar[str] = ""
-    transformers_version: Optional[str] = None
+    transformers_version: str | None = None
 
-    output_hidden_states: Optional[bool] = False
-    _output_attentions: Optional[bool] = False
-    return_dict: Optional[bool] = True
-    dtype: Optional[Union[str, "torch.dtype"]] = None
+    output_hidden_states: bool | None = False
+    _output_attentions: bool | None = False
+    return_dict: bool | None = True
+    dtype: Union[str, "torch.dtype"] | None = None
 
-    chunk_size_feed_forward: Optional[int] = 0
-    is_encoder_decoder: Optional[bool] = False
+    chunk_size_feed_forward: int | None = 0
+    is_encoder_decoder: bool | None = False
 
     # Fine-tuning task arguments
-    architectures: Optional[list[str]] = None
-    id2label: Optional[Union[dict[int, str], dict[str, str]]] = None
-    label2id: Optional[Union[dict[str, int], dict[str, str]]] = None
-    problem_type: Optional[Literal["regression", "single_label_classification", "multi_label_classification"]] = None
+    architectures: list[str] | None = None
+    id2label: dict[int, str] | dict[str, str] | None = None
+    label2id: dict[str, int] | dict[str, str] | None = None
+    problem_type: Literal["regression", "single_label_classification", "multi_label_classification"] | None = None
 
     # Tokenizer kwargs
-    tokenizer_class: Optional[str] = None
+    tokenizer_class: str | None = None
 
     def __post_init__(self, **kwargs):
         # BC for the `torch_dtype` argument instead of the simpler `dtype`
@@ -383,18 +384,20 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """Check that `layer_types` is correctly defined."""
         if not (hasattr(self, "layer_types") and hasattr(self, "num_hidden_layers")):
             return
-        elif not all(layer_type in ALLOWED_LAYER_TYPES for layer_type in self.layer_types):
-            raise ValueError(f"The `layer_types` entries must be in {ALLOWED_LAYER_TYPES} but got {self.layer_types}")
+        elif not all(layer_type in ALLOWED_ATTENTION_LAYER_TYPES for layer_type in self.layer_types):
+            raise ValueError(
+                f"The `layer_types` entries must be in {ALLOWED_ATTENTION_LAYER_TYPES} but got {self.layer_types}"
+            )
         elif self.num_hidden_layers is not None and self.num_hidden_layers != len(self.layer_types):
             raise ValueError(
                 f"`num_hidden_layers` ({self.num_hidden_layers}) must be equal to the number of layer types "
                 f"({len(self.layer_types)})"
             )
 
-    def validate_rope_parameters(self):
-        """Check that `layer_types` is correctly defined."""
-        if hasattr(self, "rope_scaling"):
-            rope_config_validation(self)
+    # def validate_rope_parameters(self):
+    #     """Check that `layer_types` is correctly defined."""
+    #     if hasattr(self, "rope_scaling"):
+    #         rope_config_validation(self)
 
     @property
     def rope_scaling(self):
@@ -729,7 +732,16 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
             sig = inspect.signature(cls.__init__)
             valid_fields = [name for name, param in sig.parameters.items() if name != "self"]
 
-        valid_fields.extend(["num_labels", "attn_implementation", "experts_implementation", "output_attentions", "torch_dtype", "name_or_path"])
+        valid_fields.extend(
+            [
+                "num_labels",
+                "attn_implementation",
+                "experts_implementation",
+                "output_attentions",
+                "torch_dtype",
+                "name_or_path",
+            ]
+        )
         for key, value in kwargs.items():
             if key in valid_fields:
                 if key != "dtype":

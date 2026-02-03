@@ -13,16 +13,14 @@
 # limitations under the License.
 """CLIP model configuration"""
 
-from collections import OrderedDict
-from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING
 
 from huggingface_hub.dataclasses import strict
 
 
 if TYPE_CHECKING:
-    from ...processing_utils import ProcessorMixin
+    pass
 
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
@@ -97,24 +95,24 @@ class CLIPTextConfig(PreTrainedConfig):
     model_type = "clip_text_model"
     base_config_key = "text_config"
 
-    vocab_size: Optional[int] = 49408
-    hidden_size: Optional[int] = 512
-    intermediate_size: Optional[int] = 2048
-    projection_dim: Optional[int] = 512
-    num_hidden_layers: Optional[int] = 12
-    num_attention_heads: Optional[int] = 8
-    max_position_embeddings: Optional[int] = 77
-    hidden_act: Optional[str] = "quick_gelu"
-    layer_norm_eps: Optional[float] = 1e-5
-    attention_dropout: Optional[Union[int, float]] = 0.0
-    initializer_range: Optional[float] = 0.02
-    initializer_factor: Optional[float] = 1.0
+    vocab_size: int | None = 49408
+    hidden_size: int | None = 512
+    intermediate_size: int | None = 2048
+    projection_dim: int | None = 512
+    num_hidden_layers: int | None = 12
+    num_attention_heads: int | None = 8
+    max_position_embeddings: int | None = 77
+    hidden_act: str | None = "quick_gelu"
+    layer_norm_eps: float | None = 1e-5
+    attention_dropout: int | float | None = 0.0
+    initializer_range: float | None = 0.02
+    initializer_factor: float | None = 1.0
 
     # This differs from `CLIPTokenizer`'s default and from openai/clip
     # See https://github.com/huggingface/transformers/pull/24773#issuecomment-1632287538
-    pad_token_id: Optional[int] = 1
-    bos_token_id: Optional[int] = 49406
-    eos_token_id: Optional[int] = 49407
+    pad_token_id: int | None = 1
+    bos_token_id: int | None = 49406
+    eos_token_id: int | None = 49407
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
@@ -185,19 +183,19 @@ class CLIPVisionConfig(PreTrainedConfig):
     model_type = "clip_vision_model"
     base_config_key = "vision_config"
 
-    hidden_size: Optional[int] = 768
-    intermediate_size: Optional[int] = 3072
-    projection_dim: Optional[int] = 512
-    num_hidden_layers: Optional[int] = 12
-    num_attention_heads: Optional[int] = 12
-    num_channels: Optional[int] = 3
-    image_size: Optional[int] = 224
-    patch_size: Optional[int] = 32
-    hidden_act: Optional[str] = "quick_gelu"
-    layer_norm_eps: Optional[float] = 1e-5
-    attention_dropout: Optional[Union[int, float]] = 0.0
-    initializer_range: Optional[float] = 0.02
-    initializer_factor: Optional[float] = 1.0
+    hidden_size: int | None = 768
+    intermediate_size: int | None = 3072
+    projection_dim: int | None = 512
+    num_hidden_layers: int | None = 12
+    num_attention_heads: int | None = 12
+    num_channels: int | None = 3
+    image_size: int | None = 224
+    patch_size: int | None = 32
+    hidden_act: str | None = "quick_gelu"
+    layer_norm_eps: float | None = 1e-5
+    attention_dropout: int | float | None = 0.0
+    initializer_range: float | None = 0.02
+    initializer_factor: float | None = 1.0
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
@@ -259,11 +257,11 @@ class CLIPConfig(PreTrainedConfig):
     model_type = "clip"
     sub_configs = {"text_config": CLIPTextConfig, "vision_config": CLIPVisionConfig}
 
-    text_config: Optional[Union[dict, CLIPTextConfig]] = None
-    vision_config: Optional[Union[dict, CLIPVisionConfig]] = None
-    projection_dim: Optional[int] = 512
-    logit_scale_init_value: Optional[float | int] = 2.6592
-    initializer_factor: Optional[float] = 1.0
+    text_config: dict | CLIPTextConfig | None = None
+    vision_config: dict | CLIPVisionConfig | None = None
+    projection_dim: int | None = 512
+    logit_scale_init_value: float | int | None = 2.6592
+    initializer_factor: float | None = 1.0
 
     def __post_init__(self, **kwargs):
         if self.text_config is None:

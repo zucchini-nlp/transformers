@@ -13,8 +13,8 @@
 # limitations under the License.
 """ESM model configuration"""
 
-from dataclasses import asdict, dataclass
-from typing import Optional, Union
+from dataclasses import dataclass
+from typing import Union
 
 from huggingface_hub.dataclasses import strict
 
@@ -29,16 +29,16 @@ logger = logging.get_logger(__name__)
 @strict(accept_kwargs=True)
 @dataclass
 class EsmFoldConfig(PreTrainedConfig):
-    esm_type: Optional[str] = None
-    fp16_esm: Optional[bool] = True
-    use_esm_attn_map: Optional[bool] = False
-    esm_ablate_pairwise: Optional[bool] = False
-    esm_ablate_sequence: Optional[bool] = False
-    esm_input_dropout: Optional[float] = 0.0
-    embed_aa: Optional[bool] = True
-    bypass_lm: Optional[bool] = False
-    lddt_head_hid_dim: Optional[int] = 128
-    trunk: Optional[Union[dict, "TrunkConfig"]] = None
+    esm_type: str | None = None
+    fp16_esm: bool | None = True
+    use_esm_attn_map: bool | None = False
+    esm_ablate_pairwise: bool | None = False
+    esm_ablate_sequence: bool | None = False
+    esm_input_dropout: float | None = 0.0
+    embed_aa: bool | None = True
+    bypass_lm: bool | None = False
+    lddt_head_hid_dim: int | None = 128
+    trunk: Union[dict, "TrunkConfig"] | None = None
 
     def __post_init__(self, **kwargs):
         if self.trunk is None:
@@ -51,18 +51,18 @@ class EsmFoldConfig(PreTrainedConfig):
 @strict(accept_kwargs=True)
 @dataclass
 class TrunkConfig(PreTrainedConfig):
-    num_blocks: Optional[int] = 48
-    sequence_state_dim: Optional[int] = 1024
-    pairwise_state_dim: Optional[int] = is_divisible_by(divisor=2)(default=128)
-    sequence_head_width: Optional[int] = 32
-    pairwise_head_width: Optional[int] = 32
-    position_bins: Optional[int] = 32
-    dropout: Optional[float] = interval(max=0.4)(default=0.0)
-    layer_drop: Optional[float] = 0.0
-    cpu_grad_checkpoint: Optional[bool] = False
-    max_recycles: Optional[int] = interval(min=0)(default=4)
-    chunk_size: Optional[int] = 128
-    structure_module: Optional[Union[dict, "StructureModuleConfig"]] = None
+    num_blocks: int | None = 48
+    sequence_state_dim: int | None = 1024
+    pairwise_state_dim: int | None = is_divisible_by(divisor=2)(default=128)
+    sequence_head_width: int | None = 32
+    pairwise_head_width: int | None = 32
+    position_bins: int | None = 32
+    dropout: float | None = interval(max=0.4)(default=0.0)
+    layer_drop: float | None = 0.0
+    cpu_grad_checkpoint: bool | None = False
+    max_recycles: int | None = interval(min=0)(default=4)
+    chunk_size: int | None = 128
+    structure_module: Union[dict, "StructureModuleConfig"] | None = None
 
     def __post_init__(self, **kwargs):
         if self.structure_module is None:
@@ -134,21 +134,21 @@ class StructureModuleConfig(PreTrainedConfig):
             Large number used for attention masking
     """
 
-    sequence_dim: Optional[int] = 384
-    pairwise_dim: Optional[int] = 128
-    ipa_dim: Optional[int] = 16
-    resnet_dim: Optional[int] = 128
-    num_heads_ipa: Optional[int] = 12
-    num_qk_points: Optional[int] = 4
-    num_v_points: Optional[int] = 8
-    dropout_rate: Optional[float] = 0.1
-    num_blocks: Optional[int] = 8
-    num_transition_layers: Optional[int] = 1
-    num_resnet_blocks: Optional[int] = 2
-    num_angles: Optional[int] = 7
-    trans_scale_factor: Optional[int] = 10
-    epsilon: Optional[float] = 1e-8
-    inf: Optional[float] = 1e5
+    sequence_dim: int | None = 384
+    pairwise_dim: int | None = 128
+    ipa_dim: int | None = 16
+    resnet_dim: int | None = 128
+    num_heads_ipa: int | None = 12
+    num_qk_points: int | None = 4
+    num_v_points: int | None = 8
+    dropout_rate: float | None = 0.1
+    num_blocks: int | None = 8
+    num_transition_layers: int | None = 1
+    num_resnet_blocks: int | None = 2
+    num_angles: int | None = 7
+    trans_scale_factor: int | None = 10
+    epsilon: float | None = 1e-8
+    inf: float | None = 1e5
 
 
 @strict(accept_kwargs=True)
@@ -223,25 +223,25 @@ class EsmConfig(PreTrainedConfig):
     model_type = "esm"
     sub_configs = {"esmfold_config": EsmFoldConfig}
 
-    vocab_size: Optional[int] = None
-    mask_token_id: Optional[int] = None
-    pad_token_id: Optional[int] = None
-    hidden_size: Optional[int] = 768
-    num_hidden_layers: Optional[int] = 12
-    num_attention_heads: Optional[int] = 12
-    intermediate_size: Optional[int] = 3072
-    hidden_dropout_prob: Optional[float] = 0.1
-    attention_probs_dropout_prob: Optional[float] = 0.1
-    max_position_embeddings: Optional[int] = 1026
-    initializer_range: Optional[float] = 0.02
-    layer_norm_eps: Optional[float] = 1e-12
-    position_embedding_type: Optional[str] = "absolute"
-    use_cache: Optional[bool] = True
-    emb_layer_norm_before: Optional[bool] = None
-    token_dropout: Optional[bool] = False
-    is_folding_model: Optional[bool] = False
-    esmfold_config: Optional[Union[dict, EsmFoldConfig]] = None
-    vocab_list: Optional[list[str] | tuple[str, ...]] = None
+    vocab_size: int | None = None
+    mask_token_id: int | None = None
+    pad_token_id: int | None = None
+    hidden_size: int | None = 768
+    num_hidden_layers: int | None = 12
+    num_attention_heads: int | None = 12
+    intermediate_size: int | None = 3072
+    hidden_dropout_prob: float | None = 0.1
+    attention_probs_dropout_prob: float | None = 0.1
+    max_position_embeddings: int | None = 1026
+    initializer_range: float | None = 0.02
+    layer_norm_eps: float | None = 1e-12
+    position_embedding_type: str | None = "absolute"
+    use_cache: bool | None = True
+    emb_layer_norm_before: bool | None = None
+    token_dropout: bool | None = False
+    is_folding_model: bool | None = False
+    esmfold_config: dict | EsmFoldConfig | None = None
+    vocab_list: list[str] | tuple[str, ...] | None = None
     is_decoder: bool | None = False
     add_cross_attention: bool | None = False
     tie_word_embeddings: bool | None = True
