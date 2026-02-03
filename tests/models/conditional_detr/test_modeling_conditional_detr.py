@@ -187,11 +187,9 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         else {}
     )
     is_encoder_decoder = True
-    test_torchscript = False
 
     test_missing_keys = False
     zero_init_hidden_state = True
-    test_torch_exportable = True
 
     # special case for head models
     def _prepare_for_class(self, inputs_dict, model_class, return_labels=False):
@@ -460,13 +458,13 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
                 )
                 self.assertEqual(outputs.logits.shape, expected_shape)
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.model.backbone.intermediate_channel_sizes), 3)
             elif model_class.__name__ == "ConditionalDetrForSegmentation":
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.conditional_detr.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.conditional_detr.model.backbone.intermediate_channel_sizes), 3)
             else:
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.backbone.intermediate_channel_sizes), 3)
 
             self.assertTrue(outputs)
 
@@ -496,13 +494,13 @@ class ConditionalDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
                 )
                 self.assertEqual(outputs.logits.shape, expected_shape)
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.model.backbone.intermediate_channel_sizes), 3)
             elif model_class.__name__ == "ConditionalDetrForSegmentation":
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.conditional_detr.model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.conditional_detr.model.backbone.intermediate_channel_sizes), 3)
             else:
                 # Confirm out_indices was propagated to backbone
-                self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 3)
+                self.assertEqual(len(model.backbone.intermediate_channel_sizes), 3)
 
             self.assertTrue(outputs)
 
@@ -598,4 +596,5 @@ class ConditionalDetrModelIntegrationTests(unittest.TestCase):
         self.assertEqual(len(results["scores"]), 5)
         torch.testing.assert_close(results["scores"], expected_scores, rtol=2e-4, atol=2e-4)
         self.assertSequenceEqual(results["labels"].tolist(), expected_labels)
-        torch.testing.assert_close(results["boxes"][0, :], expected_slice_boxes)
+        # increase tolerance for boxes to 2e-4 as now using sdpa attention by
+        torch.testing.assert_close(results["boxes"][0, :], expected_slice_boxes, rtol=2e-4, atol=2e-4)

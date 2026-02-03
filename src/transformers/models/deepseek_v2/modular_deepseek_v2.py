@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2025 HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings
 from collections.abc import Callable
-from typing import Optional
 
 import torch
 import torch.nn.functional as F
 from torch import nn
 
+from ... import initialization as init
 from ...cache_utils import Cache
+from ...modeling_rope_utils import RopeParameters, dynamic_rope_update
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
-from ...utils import (
-    logging,
-)
+from ...utils import is_grouped_mm_available, logging
+from ...utils.generic import is_flash_attention_requested, maybe_autocast
 from ..llama.configuration_llama import LlamaConfig
 from ..llama.modeling_llama import (
     LlamaDecoderLayer,
@@ -35,9 +33,9 @@ from ..llama.modeling_llama import (
     LlamaModel,
     LlamaPreTrainedModel,
     LlamaRMSNorm,
+    LlamaRotaryEmbedding,
     eager_attention_forward,
 )
-from ..llama4.modeling_llama4 import Llama4TextRotaryEmbedding
 from ..qwen2_moe.modeling_qwen2_moe import Qwen2MoeExperts
 
 
@@ -86,10 +84,10 @@ class DeepseekV2Config(LlamaConfig):
             End-of-sequence token ID.
         tie_word_embeddings (`bool`, *optional*, defaults to `False`):
             Whether to tie input and output embeddings.
-        rope_theta (`float`, *optional*, defaults to 10000.0):
-            The base period of the Rotary Position Embeddings (RoPE).
-        rope_scaling (`Dict`, *optional*):
-            Configuration for scaling RoPE embeddings. Supports `linear` and `dynamic` scaling strategies.
+        rope_parameters (`RopeParameters`, *optional*):
+            Dictionary containing the configuration parameters for the RoPE embeddings. The dictionary should contain
+            a value for `rope_theta` and optionally parameters used for scaling in case you want to use RoPE
+            with longer `max_position_embeddings`.
         attention_bias (`bool`, *optional*, defaults to `False`):
             Whether to use a bias in the query, key, value, and output projection layers during self-attention.
         attention_dropout (`float`, *optional*, defaults to 0.0):
@@ -120,6 +118,9 @@ class DeepseekV2Config(LlamaConfig):
             Number of selected groups per token for expert selection.
         topk_method (`str`, *optional*, defaults to `"greedy"`):
             The method used for selecting top-k experts in the routed gate mechanism.
+        norm_topk_prob (`bool`, *optional*, defaults to `False`):
+            Whether to renormalize the router probabilities when `top_k > 1`. This flag is kept for backward
+            compatibility with previously released checkpoints and runtimes relying on the legacy DeepSeek config.
         v_head_dim (`int`, *optional*, defaults to 128):
             The dimension of value projections in the attention layers.
         num_experts_per_tok (`int`, *optional*):
@@ -143,9 +144,8 @@ class DeepseekV2Config(LlamaConfig):
         "layers.*.self_attn.q_b_proj": "colwise",
         "layers.*.self_attn.kv_b_proj": "colwise",
         "layers.*.self_attn.o_proj": "rowwise",
-        "layers.*.mlp.gate_proj": "colwise",
-        "layers.*.mlp.up_proj": "colwise",
-        "layers.*.mlp.down_proj": "rowwise",
+        "layers.*.mlp.experts.gate_up_proj": "packed_colwise",
+        "layers.*.mlp.experts.down_proj": "rowwise",
     }
 
     model_type = "deepseek_v2"
@@ -153,40 +153,40 @@ class DeepseekV2Config(LlamaConfig):
 
     def __init__(
         self,
-        vocab_size=32000,
-        hidden_size=4096,
-        intermediate_size=11008,
-        num_hidden_layers=32,
-        num_attention_heads=32,
-        num_key_value_heads=None,
-        hidden_act="silu",
-        max_position_embeddings=2048,
-        initializer_range=0.02,
-        rms_norm_eps=1e-6,
-        use_cache=True,
-        pad_token_id=None,
-        bos_token_id=1,
-        eos_token_id=2,
-        tie_word_embeddings=False,
-        rope_theta=10000.0,
-        rope_scaling=None,
-        attention_bias=False,
-        attention_dropout=0.0,
-        mlp_bias=False,
-        first_k_dense_replace=0,
-        kv_lora_rank=512,
-        q_lora_rank=1536,
-        n_group=None,
-        n_routed_experts=64,
-        n_shared_experts=2,
-        qk_nope_head_dim=128,
-        qk_rope_head_dim=64,
-        routed_scaling_factor=1.0,
-        topk_group=None,
-        topk_method="greedy",
-        v_head_dim=128,
-        num_experts_per_tok=None,
-        moe_intermediate_size=1407,
+        vocab_size: int | None = 32000,
+        hidden_size: int | None = 4096,
+        intermediate_size: int | None = 11008,
+        num_hidden_layers: int | None = 32,
+        num_attention_heads: int | None = 32,
+        num_key_value_heads: int | None = None,
+        hidden_act: str | None = "silu",
+        max_position_embeddings: int | None = 2048,
+        initializer_range: float | None = 0.02,
+        rms_norm_eps: int | None = 1e-6,
+        use_cache: bool | None = True,
+        pad_token_id: int | None = None,
+        bos_token_id: int | None = 1,
+        eos_token_id: int | None = 2,
+        tie_word_embeddings: bool | None = False,
+        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
+        attention_bias: bool | None = False,
+        attention_dropout: float | None = 0.0,
+        mlp_bias: bool | None = False,
+        first_k_dense_replace: int | None = 0,
+        kv_lora_rank: int | None = 512,
+        q_lora_rank: int | None = 1536,
+        n_group: int | None = None,
+        n_routed_experts: int | None = 64,
+        n_shared_experts: int | None = 2,
+        qk_nope_head_dim: int | None = 128,
+        qk_rope_head_dim: int | None = 64,
+        routed_scaling_factor: float | None = 1.0,
+        topk_group: int | None = None,
+        topk_method: str | None = "greedy",
+        norm_topk_prob: bool | None = False,
+        v_head_dim: int | None = 128,
+        num_experts_per_tok: int | None = None,
+        moe_intermediate_size: int | None = 1407,
         **kwargs,
     ):
         self.first_k_dense_replace = first_k_dense_replace
@@ -200,6 +200,7 @@ class DeepseekV2Config(LlamaConfig):
         self.routed_scaling_factor = routed_scaling_factor
         self.topk_group = topk_group
         self.topk_method = topk_method
+        self.norm_topk_prob = norm_topk_prob
         self.v_head_dim = v_head_dim
         self.num_experts_per_tok = num_experts_per_tok
         self.moe_intermediate_size = moe_intermediate_size
@@ -226,12 +227,10 @@ def apply_rotary_emb(
     return xq_out, xk_out
 
 
-class DeepseekV2Experts(Qwen2MoeExperts, nn.ModuleList):
+class DeepseekV2Experts(Qwen2MoeExperts):
     def __init__(self, config):
-        nn.ModuleList.__init__(self)
+        super().__init__(config)
         self.num_experts = config.n_routed_experts
-        for _ in range(config.n_routed_experts):
-            self.append(DeepseekV2MLP(config, intermediate_size=config.moe_intermediate_size))
 
 
 class DeepseekV2Moe(nn.Module):
@@ -275,7 +274,6 @@ class DeepseekV2Moe(nn.Module):
         residuals = hidden_states
         orig_shape = hidden_states.shape
         router_logits = nn.functional.linear(hidden_states.type(torch.float32), self.gate.weight.type(torch.float32))
-        router_logits = self.gate(hidden_states)
         topk_indices, topk_weights = self.route_tokens_to_experts(router_logits)
         hidden_states = hidden_states.view(-1, hidden_states.shape[-1])
         hidden_states = self.experts(hidden_states, topk_indices, topk_weights).view(*orig_shape)
@@ -294,21 +292,26 @@ class DeepseekV2RMSNorm(LlamaRMSNorm):
     pass
 
 
-class DeepseekV2RotaryEmbedding(Llama4TextRotaryEmbedding):
-    def __init__(self, config: DeepseekV2Config, device=None):
-        super().__init__(config=config, device=device)
-        # BC: "rope_type" was originally "type"
-        self.rope_type = (
-            config.rope_scaling.get("rope_type", config.rope_scaling.get("type"))
-            if config.rope_scaling is not None
-            else "default"
-        )
+class DeepseekV2RotaryEmbedding(LlamaRotaryEmbedding):
+    @torch.no_grad()
+    @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
+    def forward(self, x, position_ids):
+        inv_freq_expanded = self.inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1)
+        position_ids_expanded = position_ids[:, None, :].float()
+
+        device_type = x.device.type if isinstance(x.device.type, str) and x.device.type != "mps" else "cpu"
+        with maybe_autocast(device_type=device_type, enabled=False):  # Force float32
+            freqs = (inv_freq_expanded.to(x.device) @ position_ids_expanded).transpose(1, 2)
+            freqs_cis = torch.polar(torch.ones_like(freqs), freqs)  # Convert to complex representation
+            freqs_cis = freqs_cis * self.attention_scaling
+
+        return freqs_cis
 
 
 class DeepseekV2Attention(nn.Module):
     """Multi-headed attention from 'Attention Is All You Need' paper"""
 
-    def __init__(self, config: DeepseekV2Config, layer_idx: Optional[int] = None):
+    def __init__(self, config: DeepseekV2Config, layer_idx: int | None = None):
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -317,7 +320,7 @@ class DeepseekV2Attention(nn.Module):
         self.num_heads = config.num_attention_heads
         self.head_dim = config.head_dim
         self.max_position_embeddings = config.max_position_embeddings
-        self.rope_theta = config.rope_theta
+
         self.q_lora_rank = config.q_lora_rank
         self.qk_rope_head_dim = config.qk_rope_head_dim
         self.kv_lora_rank = config.kv_lora_rank
@@ -358,17 +361,12 @@ class DeepseekV2Attention(nn.Module):
     def forward(
         self,
         hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        past_key_values: Optional[Cache] = None,
-        cache_position: Optional[torch.LongTensor] = None,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = None,
-        position_ids: Optional[torch.Tensor] = None,
+        attention_mask: torch.Tensor | None = None,
+        past_key_values: Cache | None = None,
+        cache_position: torch.LongTensor | None = None,
+        position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs,
-    ) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[tuple[torch.Tensor]]]:
-        if "padding_mask" in kwargs:
-            warnings.warn(
-                "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
-            )
+    ) -> tuple[torch.Tensor, torch.Tensor | None, tuple[torch.Tensor] | None]:
         batch_size, seq_length = hidden_states.shape[:-1]
         query_shape = (batch_size, seq_length, -1, self.qk_head_dim)
         key_shape = (batch_size, seq_length, -1, self.qk_nope_head_dim + self.v_head_dim)
@@ -397,12 +395,12 @@ class DeepseekV2Attention(nn.Module):
             cache_kwargs = {"cache_position": cache_position}
             key_states, value_states = past_key_values.update(key_states, value_states, self.layer_idx, cache_kwargs)
 
-        if self.config._attn_implementation == "flash_attention_2" and self.qk_head_dim != self.v_head_dim:
+        if is_flash_attention_requested(self.config) and self.qk_head_dim != self.v_head_dim:
             value_states = F.pad(value_states, [0, self.qk_head_dim - self.v_head_dim])
 
-        attention_interface: Callable = eager_attention_forward
-        if self.config._attn_implementation != "eager":
-            attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
+        attention_interface: Callable = ALL_ATTENTION_FUNCTIONS.get_interface(
+            self.config._attn_implementation, eager_attention_forward
+        )
 
         attn_output, attn_weights = attention_interface(
             self,
@@ -415,7 +413,7 @@ class DeepseekV2Attention(nn.Module):
             **kwargs,
         )
 
-        if self.config._attn_implementation == "flash_attention_2" and self.qk_head_dim != self.v_head_dim:
+        if is_flash_attention_requested(self.config) and self.qk_head_dim != self.v_head_dim:
             attn_output = attn_output[:, :, :, : self.v_head_dim]
 
         attn_output = attn_output.reshape(batch_size, seq_length, -1).contiguous()
@@ -435,12 +433,16 @@ class DeepseekV2DecoderLayer(LlamaDecoderLayer):
 
 
 class DeepseekV2PreTrainedModel(LlamaPreTrainedModel):
-    _can_compile_fullgraph = False
+    _can_compile_fullgraph = (
+        is_grouped_mm_available()
+    )  # https://huggingface.co/docs/transformers/experts_interface#torchcompile
 
+    @torch.no_grad()
     def _init_weights(self, module):
         PreTrainedModel._init_weights(self, module)
-        if isinstance(module, DeepseekV2Moe):
-            module.gate.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
+        if isinstance(module, DeepseekV2Experts):
+            init.normal_(module.gate_up_proj, mean=0.0, std=self.config.initializer_range)
+            init.normal_(module.down_proj, mean=0.0, std=self.config.initializer_range)
 
 
 class DeepseekV2Model(LlamaModel):

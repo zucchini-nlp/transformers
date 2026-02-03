@@ -4,7 +4,6 @@
 #             the file from the modular. If any change should be done, please apply the change to the
 #                          modular_minimax.py file directly. One of our CI enforces this.
 #                🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
-# coding=utf-8
 # Copyright 2025 MiniMaxAI and HuggingFace Inc. teams. All rights reserved.
 #
 #
@@ -19,7 +18,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from ...configuration_utils import PreTrainedConfig
+from ...configuration_utils import PreTrainedConfig, layer_type_validation
+from ...modeling_rope_utils import RopeParameters
 
 
 class MiniMaxConfig(PreTrainedConfig):
@@ -75,8 +75,6 @@ class MiniMaxConfig(PreTrainedConfig):
             The id of the "end-of-sequence" token.
         tie_word_embeddings (`bool`, *optional*, defaults to `False`):
             Whether the model's input and output word embeddings should be tied.
-        rope_theta (`float`, *optional*, defaults to 1000000.0):
-            The base period of the RoPE embeddings.
         sliding_window (`int`, *optional*):
             Sliding window attention window size. If not specified, will default to `4096`.
         attention_dropout (`float`, *optional*, defaults to 0.0):
@@ -93,6 +91,10 @@ class MiniMaxConfig(PreTrainedConfig):
             The aux loss factor for the total loss.
         router_jitter_noise (`float`, *optional*, defaults to 0.0):
             Amount of noise to add to the router.
+        rope_parameters (`RopeParameters`, *optional*):
+            Dictionary containing the configuration parameters for the RoPE embeddings. The dictionary should contain
+            a value for `rope_theta` and optionally parameters used for scaling in case you want to use RoPE
+            with longer `max_position_embeddings`.
         layer_types (`list`, *optional*):
             Attention pattern for each layer.
         block_size (`int`, *optional*, defaults to 256):
@@ -126,15 +128,15 @@ class MiniMaxConfig(PreTrainedConfig):
 
     model_type = "minimax"
     keys_to_ignore_at_inference = ["past_key_values"]
+    default_theta = 1000000.0
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
         "layers.*.self_attn.k_proj": "colwise",
         "layers.*.self_attn.v_proj": "colwise",
         "layers.*.self_attn.o_proj": "rowwise",
-        "layers.*.block_sparse_moe.gate": "colwise_rep",  # we need to replicate here to correctly route experts
-        "layers.*.block_sparse_moe.experts.*.w1": "colwise",
-        "layers.*.block_sparse_moe.experts.*.w2": "rowwise",
-        "layers.*.block_sparse_moe.experts.*.w3": "colwise",
+        "layers.*.mlp.gate": "colwise_gather_output",  # we need to replicate here to correctly route experts
+        "layers.*.mlp.experts.gate_up_proj": "packed_colwise",
+        "layers.*.mlp.experts.down_proj": "rowwise",
     }
     base_model_pp_plan = {
         "embed_tokens": (["input_ids"], ["inputs_embeds"]),
@@ -147,48 +149,40 @@ class MiniMaxConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vocab_size=32000,
-        hidden_size=4096,
-        intermediate_size=14336,
-        num_hidden_layers=32,
-        num_attention_heads=32,
-        num_key_value_heads=8,
-        head_dim=None,
-        hidden_act="silu",
-        max_position_embeddings=4096 * 32,
-        initializer_range=0.02,
-        rms_norm_eps=1e-5,
-        use_cache=True,
-        pad_token_id=None,
-        bos_token_id=1,
-        eos_token_id=2,
-        tie_word_embeddings=False,
-        rope_theta=1e6,
-        sliding_window=None,
-        attention_dropout=0.0,
-        num_experts_per_tok=2,
-        num_local_experts=8,
-        output_router_logits=False,
-        router_aux_loss_coef=0.001,
-        router_jitter_noise=0.0,
-        layer_types=None,
-        block_size=256,
-        full_attn_alpha_factor=1,
-        full_attn_beta_factor=1,
-        linear_attn_alpha_factor=1,
-        linear_attn_beta_factor=1,
-        mlp_alpha_factor=1,
-        mlp_beta_factor=1,
+        vocab_size: int | None = 32000,
+        hidden_size: int | None = 4096,
+        intermediate_size: int | None = 14336,
+        num_hidden_layers: int | None = 32,
+        num_attention_heads: int | None = 32,
+        num_key_value_heads: int | None = 8,
+        head_dim: int | None = None,
+        hidden_act: str | None = "silu",
+        max_position_embeddings: int | None = 4096 * 32,
+        initializer_range: float | None = 0.02,
+        rms_norm_eps: int | None = 1e-5,
+        use_cache: bool | None = True,
+        pad_token_id: int | None = None,
+        bos_token_id: int | None = 1,
+        eos_token_id: int | None = 2,
+        tie_word_embeddings: bool | None = False,
+        sliding_window: int | None = None,
+        attention_dropout: float | None = 0.0,
+        num_experts_per_tok: int | None = 2,
+        num_local_experts: int | None = 8,
+        output_router_logits: bool | None = False,
+        router_aux_loss_coef: float | None = 0.001,
+        router_jitter_noise: float | None = 0.0,
+        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
+        layer_types: list[str] | None = None,
+        block_size: int | None = 256,
+        full_attn_alpha_factor: int | None = 1,
+        full_attn_beta_factor: int | None = 1,
+        linear_attn_alpha_factor: int | None = 1,
+        linear_attn_beta_factor: int | None = 1,
+        mlp_alpha_factor: int | None = 1,
+        mlp_beta_factor: int | None = 1,
         **kwargs,
     ):
-        self.layer_types = layer_types
-        self.block_size = block_size
-        self.full_attn_alpha_factor = full_attn_alpha_factor
-        self.full_attn_beta_factor = full_attn_beta_factor
-        self.linear_attn_alpha_factor = linear_attn_alpha_factor
-        self.linear_attn_beta_factor = linear_attn_beta_factor
-        self.mlp_alpha_factor = mlp_alpha_factor
-        self.mlp_beta_factor = mlp_beta_factor
         self.vocab_size = vocab_size
         self.max_position_embeddings = max_position_embeddings
         self.hidden_size = hidden_size
@@ -206,7 +200,6 @@ class MiniMaxConfig(PreTrainedConfig):
         self.initializer_range = initializer_range
         self.rms_norm_eps = rms_norm_eps
         self.use_cache = use_cache
-        self.rope_theta = rope_theta
         self.attention_dropout = attention_dropout
         self.head_dim = head_dim
 
@@ -215,17 +208,27 @@ class MiniMaxConfig(PreTrainedConfig):
         self.output_router_logits = output_router_logits
         self.router_aux_loss_coef = router_aux_loss_coef
         self.router_jitter_noise = router_jitter_noise
-        super().__init__(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
+        self.tie_word_embeddings = tie_word_embeddings
+        self.pad_token_id = pad_token_id
+        self.bos_token_id = bos_token_id
+        self.eos_token_id = eos_token_id
+
+        self.layer_types = layer_types
+        self.block_size = block_size
+        self.full_attn_alpha_factor = full_attn_alpha_factor
+        self.full_attn_beta_factor = full_attn_beta_factor
+        self.linear_attn_alpha_factor = linear_attn_alpha_factor
+        self.linear_attn_beta_factor = linear_attn_beta_factor
+        self.mlp_alpha_factor = mlp_alpha_factor
+        self.mlp_beta_factor = mlp_beta_factor
+
         if self.layer_types is None:
             self.layer_types = [
                 "full_attention" if bool((i + 1) % 2) else "linear_attention" for i in range(self.num_hidden_layers)
             ]
+
+        self.rope_parameters = rope_parameters
+        super().__init__(**kwargs)
 
 
 __all__ = ["MiniMaxConfig"]

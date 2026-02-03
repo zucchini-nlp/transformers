@@ -25,7 +25,6 @@ from transformers.testing_utils import (
     cleanup,
     get_device_properties,
     require_deterministic_for_xpu,
-    require_read_token,
     require_torch,
     require_torch_accelerator,
     slow,
@@ -153,13 +152,12 @@ class Cohere2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
     pipeline_model_mapping = (
         {
             "image-text-to-text": Cohere2VisionForConditionalGeneration,
+            "any-to-any": Cohere2VisionForConditionalGeneration,
         }
         if is_torch_available()
         else {}
     )
-    fx_compatible = False
 
-    test_torchscript = False
     _is_composite = True
 
     def setUp(self):
@@ -170,7 +168,6 @@ class Cohere2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         self.config_tester.run_common_tests()
 
 
-@require_read_token
 @require_torch
 class Cohere2IntegrationTest(unittest.TestCase):
     def setUp(self):

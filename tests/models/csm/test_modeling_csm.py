@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2024, The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,7 +27,6 @@ from transformers import (
 )
 from transformers.testing_utils import (
     cleanup,
-    require_read_token,
     require_torch_accelerator,
     slow,
     torch_device,
@@ -265,10 +263,6 @@ class CsmForConditionalGenerationTest(ModelTesterMixin, GenerationTesterMixin, u
     def test_model_get_set_embeddings(self):
         pass
 
-    @pytest.mark.skip(reason="CSM has custom embedding approach (text and audio embeddings).")
-    def test_tie_model_weights(self):
-        pass
-
     @pytest.mark.generate
     @unittest.skip(reason="CSM does not support beam search.")
     def test_generate_from_inputs_embeds_1_beam_search(self, _, num_beams):
@@ -281,6 +275,10 @@ class CsmForConditionalGenerationTest(ModelTesterMixin, GenerationTesterMixin, u
 
     @unittest.skip(reason="CSM has special embeddings that can never be tied")
     def test_tied_weights_keys(self):
+        pass
+
+    @unittest.skip(reason="CSM has no separate base model without a head.")
+    def test_model_base_model_prefix(self):
         pass
 
     def _get_custom_4d_mask_test_data(self):
@@ -321,7 +319,6 @@ class CsmForConditionalGenerationTest(ModelTesterMixin, GenerationTesterMixin, u
         return input_ids, position_ids, input_ids_shared_prefix, mask_shared_prefix, position_ids_shared_prefix
 
 
-@require_read_token
 class CsmForConditionalGenerationIntegrationTest(unittest.TestCase):
     def setUp(self):
         # TODO: @eustlb, update with correct sesame's repo

@@ -224,7 +224,6 @@ class BlenderbotModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTeste
         else {}
     )
     is_encoder_decoder = True
-    fx_compatible = False
     test_missing_keys = False
 
     def setUp(self):
@@ -242,7 +241,7 @@ class BlenderbotModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTeste
             with tempfile.TemporaryDirectory() as tmpdirname:
                 model.save_pretrained(tmpdirname)
                 model2, info = model_class.from_pretrained(tmpdirname, output_loading_info=True)
-            self.assertEqual(info["missing_keys"], [])
+            self.assertEqual(info["missing_keys"], set())
 
     def test_decoder_model_past_with_large_inputs(self):
         config_and_inputs = self.model_tester.prepare_config_and_inputs()
@@ -270,7 +269,7 @@ def assert_tensors_close(a, b, atol=1e-12, prefix=""):
     try:
         if torch.allclose(a, b, atol=atol):
             return True
-        raise
+        raise Exception
     except Exception:
         pct_different = (torch.gt((a - b).abs(), atol)).float().mean().item()
         if a.numel() > 100:
@@ -320,7 +319,7 @@ class Blenderbot3BIntegrationTests(unittest.TestCase):
         generated_ids = model.generate(**model_inputs, **FASTER_GEN_KWARGS)[0]
         reply = self.tokenizer.decode(generated_ids, **TOK_DECODE_KW)
 
-        assert "I think it's because we are so worried about what people think of us." == reply.strip()
+        assert reply.strip() == "I think it's because we are so worried about what people think of us."
         del model
 
 

@@ -235,6 +235,7 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
     is_encoder_decoder = False
 
     test_missing_keys = False
+    test_torch_exportable = False
 
     # TODO: Fix the failed tests when this model gets more usage
     def is_pipeline_test_to_skip(
@@ -279,18 +280,6 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
             # The main input is the name of the argument after `self`
             observed_main_input_name = list(model_signature.parameters.keys())[1:3]
             self.assertEqual(model_class.main_input_name, observed_main_input_name)
-
-    @unittest.skip(reason="OneFormer uses two main inputs")
-    def test_torchscript_simple(self):
-        pass
-
-    @unittest.skip(reason="OneFormer uses two main inputs")
-    def test_torchscript_output_attentions(self):
-        pass
-
-    @unittest.skip(reason="OneFormer uses two main inputs")
-    def test_torchscript_output_hidden_state(self):
-        pass
 
     @unittest.skip(reason="OneFormer does not use inputs_embeds")
     def test_inputs_embeds(self):

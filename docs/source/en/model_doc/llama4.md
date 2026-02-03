@@ -416,6 +416,7 @@ model = Llama4ForConditionalGeneration.from_pretrained(
 ## Llama4Processor
 
 [[autodoc]] Llama4Processor
+    - __call__
 
 ## Llama4ImageProcessorFast
 
@@ -425,6 +426,7 @@ model = Llama4ForConditionalGeneration.from_pretrained(
 
 [[autodoc]] Llama4ForConditionalGeneration
     - forward
+    - get_image_features
 
 ## Llama4ForCausalLM
 
@@ -434,11 +436,6 @@ model = Llama4ForConditionalGeneration.from_pretrained(
 ## Llama4TextModel
 
 [[autodoc]] Llama4TextModel
-    - forward
-
-## Llama4ForCausalLM
-
-[[autodoc]] Llama4ForCausalLM
     - forward
 
 ## Llama4VisionModel

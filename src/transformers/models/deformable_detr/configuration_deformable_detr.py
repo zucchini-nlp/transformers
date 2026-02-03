@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2022 SenseTime and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +36,7 @@ class DeformableDetrConfig(PreTrainedConfig):
         use_timm_backbone (`bool`, *optional*, defaults to `True`):
             Whether or not to use the `timm` library for the backbone. If set to `False`, will use the [`AutoBackbone`]
             API.
-        backbone_config (`PreTrainedConfig` or `dict`, *optional*):
+        backbone_config (`Union[dict, "PreTrainedConfig"]`, *optional*, defaults to `ResNetConfig()`):
             The configuration of the backbone model. Only used in case `use_timm_backbone` is set to `False` in which
             case it will default to `ResNetConfig()`.
         num_channels (`int`, *optional*, defaults to 3):
@@ -127,6 +126,8 @@ class DeformableDetrConfig(PreTrainedConfig):
         disable_custom_kernels (`bool`, *optional*, defaults to `False`):
             Disable the use of custom CUDA and CPU kernels. This option is necessary for the ONNX export, as custom
             kernels are not supported by PyTorch ONNX export.
+        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
+            Whether to tie weight embeddings
 
     Examples:
 
@@ -195,6 +196,7 @@ class DeformableDetrConfig(PreTrainedConfig):
         eos_coefficient=0.1,
         focal_alpha=0.25,
         disable_custom_kernels=False,
+        tie_word_embeddings=True,
         **kwargs,
     ):
         # We default to values which were previously hard-coded in the model. This enables configurability of the config
@@ -269,6 +271,8 @@ class DeformableDetrConfig(PreTrainedConfig):
         self.eos_coefficient = eos_coefficient
         self.focal_alpha = focal_alpha
         self.disable_custom_kernels = disable_custom_kernels
+        self.tie_word_embeddings = tie_word_embeddings
+
         super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
 
 

@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2023 The Intel AIA Team Authors, and HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License=, Version 2.0 (the "License");
@@ -35,7 +34,7 @@ class TvpConfig(PreTrainedConfig):
 
 
     Args:
-        backbone_config (`PreTrainedConfig` or `dict`, *optional*):
+        backbone_config (`Union[dict, "PreTrainedConfig"]`, *optional*, defaults to `ResNetConfig()`):
             The configuration of the backbone model.
         backbone (`str`, *optional*):
             Name of backbone to use when `backbone_config` is `None`. If `use_pretrained_backbone` is `True`, this
@@ -68,6 +67,8 @@ class TvpConfig(PreTrainedConfig):
         vocab_size (`int`, *optional*, defaults to 30522):
             Vocabulary size of the Tvp text model. Defines the number of different tokens that can be represented by
             the `inputs_ids` passed when calling [`TvpModel`].
+        type_vocab_size (`int`, *optional*, defaults to 2):
+            The vocabulary size of the `token_type_ids` passed when calling [`TvpModel`].
         hidden_size (`int`, *optional*, defaults to 768):
             Dimensionality of the encoder layers.
         intermediate_size (`int`, *optional*, defaults to 3072):
@@ -94,6 +95,8 @@ class TvpConfig(PreTrainedConfig):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
         attention_probs_dropout_prob (`float`, *optional*, defaults to 0.1):
             The dropout probability of attention layers.
+        pad_token_id (`int`, *optional*):
+            The id of a PAD token in the vocabulary.
     """
 
     model_type = "tvp"
@@ -114,6 +117,7 @@ class TvpConfig(PreTrainedConfig):
         max_img_size=448,
         num_frames=48,
         vocab_size=30522,
+        type_vocab_size=2,
         hidden_size=768,
         intermediate_size=3072,
         num_hidden_layers=12,
@@ -126,6 +130,7 @@ class TvpConfig(PreTrainedConfig):
         layer_norm_eps=1e-12,
         initializer_range=0.02,
         attention_probs_dropout_prob=0.1,
+        pad_token_id=None,
         **kwargs,
     ):
         if backbone_config is None and backbone is None:
@@ -157,6 +162,7 @@ class TvpConfig(PreTrainedConfig):
         self.max_img_size = max_img_size
         self.num_frames = num_frames
         self.vocab_size = vocab_size
+        self.type_vocab_size = type_vocab_size
         self.hidden_size = hidden_size
         self.intermediate_size = intermediate_size
         self.num_hidden_layers = num_hidden_layers
@@ -169,6 +175,7 @@ class TvpConfig(PreTrainedConfig):
         self.hidden_act = hidden_act
         self.initializer_range = initializer_range
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
+        self.pad_token_id = pad_token_id
 
         super().__init__(**kwargs)
 

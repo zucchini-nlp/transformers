@@ -35,7 +35,6 @@ if is_torch_available():
     from transformers import (
         AutoTokenizer,
         PhimoeForCausalLM,
-        PhimoeForSequenceClassification,
         PhimoeModel,
     )
 
@@ -93,16 +92,6 @@ class PhimoeModelTester(CausalLMModelTester):
 class PhimoeModelTest(CausalLMModelTest, unittest.TestCase):
     test_all_params_have_gradient = False
     model_tester_class = PhimoeModelTester
-    pipeline_model_mapping = (
-        {
-            "feature-extraction": PhimoeModel,
-            "text-classification": PhimoeForSequenceClassification,
-            "text-generation": PhimoeForCausalLM,
-            "zero-shot": PhimoeForSequenceClassification,
-        }
-        if is_torch_available()
-        else {}
-    )
 
     # TODO (ydshieh): Check this. See https://app.circleci.com/pipelines/github/huggingface/transformers/79292/workflows/fa2ba644-8953-44a6-8f67-ccd69ca6a476/jobs/1012905
     def is_pipeline_test_to_skip(
@@ -129,7 +118,7 @@ class PhimoeIntegrationTest(unittest.TestCase):
     def get_model(cls):
         if cls.model is None:
             cls.model = PhimoeForCausalLM.from_pretrained(
-                "microsoft/Phi-3.5-MoE-instruct", dtype="auto", device_map="auto"
+                "microsoft/Phi-3.5-MoE-instruct", experts_implementation="eager", dtype="auto", device_map="auto"
             )
         return cls.model
 
@@ -175,7 +164,7 @@ class PhimoeIntegrationTest(unittest.TestCase):
         ]
         inputs = tokenizer.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt")
 
-        outputs = model.generate(inputs, max_new_tokens=30)
+        outputs = model.generate(**inputs, max_new_tokens=30)
         output_text = tokenizer.batch_decode(outputs)
 
         EXPECTED_OUTPUT = [
@@ -198,7 +187,7 @@ class PhimoeIntegrationTest(unittest.TestCase):
             torch_device
         )
 
-        response_tokens = PhimoeMiniWithStaticCache.generate(model, inputs, max_seq_len=30)
+        response_tokens = PhimoeMiniWithStaticCache.generate(model, inputs["input_ids"], max_seq_len=30)
         output_text = tokenizer.batch_decode(torch.tensor([response_tokens], dtype=torch.long, device=torch_device))
 
         EXPECTED_OUTPUT = [

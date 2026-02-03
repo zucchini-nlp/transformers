@@ -247,7 +247,6 @@ class GroundingDinoModelTester:
 class GroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
     all_model_classes = (GroundingDinoModel, GroundingDinoForObjectDetection) if is_torch_available() else ()
     is_encoder_decoder = True
-    test_torchscript = False
 
     test_missing_keys = False
     pipeline_model_mapping = (
@@ -318,6 +317,23 @@ class GroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Tes
     @unittest.skip(reason="Feed forward chunking is not implemented")
     def test_feed_forward_chunking(self):
         pass
+
+    @unittest.skip(reason="Weight tying is hardcoded (module_x = module_y) and always `True`")
+    def test_load_save_without_tied_weights(self):
+        pass
+
+    def test_tie_weights_is_not_modified(self):
+        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config.tie_word_embeddings = True
+
+        config.decoder_bbox_embed_share = False
+        model = GroundingDinoForObjectDetection(config)
+        self.assertFalse(r"bbox_embed.(?![0])\d+" in model._tied_weights_keys)
+
+        # if we update config attr, model's tied weights keys also change
+        config.decoder_bbox_embed_share = True
+        model = GroundingDinoForObjectDetection(config)
+        self.assertTrue(r"bbox_embed.(?![0])\d+" in model._tied_weights_keys)
 
     def test_attention_outputs(self):
         config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
@@ -683,7 +699,7 @@ class GroundingDinoModelIntegrationTests(unittest.TestCase):
 
         expectations = Expectations(
             {
-                (None, None): [[0.4526, 0.4082]],
+                (None, None): [0.4526, 0.4082],
                 ("cuda", 8): [0.4524, 0.4074],
             }
         )

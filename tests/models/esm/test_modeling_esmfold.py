@@ -170,6 +170,7 @@ class EsmFoldModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
     all_model_classes = (EsmForProteinFolding,) if is_torch_available() else ()
     pipeline_model_mapping = {} if is_torch_available() else {}
     test_sequence_classification_problem_types = False
+    test_torch_exportable = False
 
     def setUp(self):
         self.model_tester = EsmFoldModelTester(self)
@@ -222,18 +223,6 @@ class EsmFoldModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
 
     @unittest.skip(reason="ESMFold does not support input chunking.")
     def test_feed_forward_chunking(self):
-        pass
-
-    @unittest.skip(reason="ESMFold doesn't support torchscript compilation.")
-    def test_torchscript_output_attentions(self):
-        pass
-
-    @unittest.skip(reason="ESMFold doesn't support torchscript compilation.")
-    def test_torchscript_output_hidden_state(self):
-        pass
-
-    @unittest.skip(reason="ESMFold doesn't support torchscript compilation.")
-    def test_torchscript_simple(self):
         pass
 
     @unittest.skip(reason="ESMFold doesn't support data parallel.")

@@ -1,4 +1,3 @@
-# coding=utf-8
 # Copyright 2022 Meta and The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,7 +13,7 @@
 # limitations under the License.
 """ESM model configuration"""
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Optional, Union
 
 from huggingface_hub.dataclasses import strict
@@ -243,6 +242,9 @@ class EsmConfig(PreTrainedConfig):
     is_folding_model: Optional[bool] = False
     esmfold_config: Optional[Union[dict, EsmFoldConfig]] = None
     vocab_list: Optional[list[str] | tuple[str, ...]] = None
+    is_decoder: bool | None = False
+    add_cross_attention: bool | None = False
+    tie_word_embeddings: bool | None = True
 
     def __post_init__(self, **kwargs):
         if self.is_folding_model:

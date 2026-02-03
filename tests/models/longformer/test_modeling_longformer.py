@@ -304,8 +304,6 @@ class LongformerModelTester:
 
 @require_torch
 class LongformerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
-    test_torchscript = False
-
     all_model_classes = (
         (
             LongformerModel,
@@ -333,6 +331,7 @@ class LongformerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
 
     # Need to use `0.6` instead of `0.5` for `test_disk_offload`
     model_split_percents = [0.6, 0.7, 0.9]
+    test_torch_exportable = False
 
     # TODO: Fix the failed tests
     def is_pipeline_test_to_skip(
