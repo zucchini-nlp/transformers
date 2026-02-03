@@ -17,16 +17,23 @@ import copy
 import unittest
 
 import pytest
+import requests
 
 from transformers import (
+    AutoProcessor,
     T5Gemma2Config,
     T5Gemma2DecoderConfig,
     T5Gemma2EncoderConfig,
     T5Gemma2TextConfig,
     is_torch_available,
+    is_vision_available,
 )
 from transformers.testing_utils import (
+    Expectations,
+    cleanup,
     require_torch,
+    require_torch_accelerator,
+    slow,
     torch_device,
 )
 
@@ -45,6 +52,9 @@ if is_torch_available():
         T5Gemma2ForTokenClassification,
         T5Gemma2Model,
     )
+
+if is_vision_available():
+    from PIL import Image
 
 
 class T5Gemma2ModelTester:
@@ -1013,3 +1023,33 @@ class T5Gemma2ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
     )
     def test_sdpa_can_dispatch_on_flash(self):
         pass
+
+
+@require_torch_accelerator
+@slow
+class t5Gemma2IntegrationTest(unittest.TestCase):
+    def setup(self):
+        self.processor = AutoProcessor.from_pretrained("google/t5gemma-2-270m-270m")
+        url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/bee.jpg"
+        self.image = Image.open(requests.get(url, stream=True).raw)
+
+    def tearDown(self):
+        cleanup(torch_device, gc_collect=True)
+
+    def test_model_generation_270m(self):
+        expected_texts = Expectations(
+            {
+                ("cuda", None): 'in this image, there is',
+            }
+        )  # fmt: skip
+        EXPECTED_TEXT = expected_texts.get_expectation()
+
+        model = T5Gemma2ForConditionalGeneration.from_pretrained(
+            "google/t5gemma-2-270m-270m", device_map="auto", dtype=torch.bfloat16
+        )
+
+        prompt = "<start_of_image> in this image, there is"
+        model_inputs = self.processor(text=prompt, images=self.image, return_tensors="pt").to(model.device)
+        generated_ids = model.generate(**model_inputs, max_new_tokens=30, do_sample=False)
+        generated_text = self.processor.decode(generated_ids[0], skip_special_tokens=True)
+        self.assertEqual(generated_text, EXPECTED_TEXT)
