@@ -14,13 +14,8 @@
 """CLIP model configuration"""
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from huggingface_hub.dataclasses import strict
-
-
-if TYPE_CHECKING:
-    pass
 
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging

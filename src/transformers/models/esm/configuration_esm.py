@@ -20,7 +20,7 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
-from ...utils.type_validation import interval, is_divisible_by
+from ...utils.type_validators import interval, is_divisible_by
 
 
 logger = logging.get_logger(__name__)

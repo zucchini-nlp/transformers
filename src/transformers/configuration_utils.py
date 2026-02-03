@@ -164,7 +164,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     transformers_version: str | None = None
 
     output_hidden_states: bool | None = False
-    _output_attentions: bool | None = False
+    output_attentions: bool | None = False
     return_dict: bool | None = True
     dtype: Union[str, "torch.dtype"] | None = None
 
@@ -204,6 +204,13 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 )
             self.id2label = {int(key): value for key, value in self.id2label.items()}
 
+        # BC for rotary embeddings. We will pop out legacy keys from kwargs and rename to new format
+        if hasattr(self, "rope_parameters"):
+            ignore_keys_at_rope_validation = kwargs.pop("ignore_keys_at_rope_validation", None)
+            kwargs = self.convert_rope_params_to_dict(
+                ignore_keys_at_rope_validation=ignore_keys_at_rope_validation, **kwargs
+            )
+
         # Parameters for sequence generation saved in the config are popped instead of loading them.
         for parameter_name in GenerationConfig._get_default_generation_params().keys():
             kwargs.pop(parameter_name, None)
@@ -215,7 +222,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         # Attention/Experts implementation to use, if relevant (it sets it recursively on sub-configs)
         self._attn_implementation: str | None = kwargs.pop("attn_implementation", None)
         self._experts_implementation: str | None = kwargs.pop("experts_implementation", None)
-        self.output_attentions = kwargs.pop("output_attentions", self._output_attentions)
 
         # Additional attributes without default values
         for key, value in kwargs.items():
@@ -236,25 +242,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     @name_or_path.setter
     def name_or_path(self, value):
         self._name_or_path = str(value)  # Make sure that name_or_path is a string (for JSON encoding)
-
-    @property
-    def output_attentions(self):
-        """
-        `bool`: Whether or not the model should returns all attentions.
-        """
-        return self._output_attentions
-
-    @output_attentions.setter
-    def output_attentions(self, value: bool):
-        # If we set `output_attentions` explicitly before the attn implementation, dispatch eager
-        if value and self._attn_implementation is None:
-            self._attn_implementation = "eager"
-        if value and self._attn_implementation != "eager":
-            raise ValueError(
-                "The `output_attentions` attribute is not supported when using the `attn_implementation` set to "
-                f"{self._attn_implementation}. Please set it to 'eager' instead."
-            )
-        self._output_attentions = value
 
     @property
     def use_return_dict(self) -> bool:
@@ -341,7 +328,13 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
             key = super().__getattribute__("attribute_map")[key]
         return super().__getattribute__(key)
 
-    # tests/models/reformer/test_modeling_reformer.py::ReformerLocalAttnModelTest::test_can_load_with_global_device_set
+    def validate_output_attentions(self):
+        if self.output_attentions and self._attn_implementation not in ["eager", None]:
+            raise ValueError(
+                "The `output_attentions` attribute is not supported when using the `attn_implementation` set to "
+                f"{self._attn_implementation}. Please set it to 'eager' instead."
+            )
+
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
         # if (
@@ -1261,13 +1254,10 @@ ALLOWED_ATTENTION_LAYER_TYPES = (
     "conv",  # used in LFMv2
     "mamba",
     "attention",
-)
-
-ALLOWED_MLP_LAYER_TYPES = (
     "sparse",
     "dense",
 )
 
 
-def layer_type_validation():
+def layer_type_validation(*args, **kwargs):
     pass

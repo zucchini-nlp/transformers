@@ -20,10 +20,6 @@ from typing import TYPE_CHECKING, Optional, TypedDict
 from .utils import is_torch_available, logging
 
 
-if TYPE_CHECKING:
-    from .configuration_utils import PreTrainedConfig
-
-
 logger = logging.get_logger(__name__)
 
 

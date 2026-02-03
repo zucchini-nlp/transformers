@@ -19,11 +19,11 @@
 """LLaMA model configuration"""
 
 from dataclasses import dataclass
-from typing import Any
 
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
+from ...modeling_rope_utils import RopeParameters
 
 
 @strict(accept_kwargs=True)
@@ -144,17 +144,13 @@ class LlamaConfig(PreTrainedConfig):
     eos_token_id: int | None = 2
     pretraining_tp: int | None = 1
     tie_word_embeddings: bool | None = False
-    rope_theta: int | float | None = 10000.0
-    rope_scaling: dict[str, Any] | None = None
+    rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
     attention_dropout: int | float | None = 0.0
     mlp_bias: bool | None = False
     head_dim: int | None = None
 
     def __post_init__(self, **kwargs):
-        if self.rope_scaling is not None and "type" in self.rope_scaling:
-            self.rope_scaling["rope_type"] = self.rope_scaling["type"]
-
         if self.head_dim is None:
             self.head_dim = self.hidden_size // self.num_attention_heads
         if self.num_key_value_heads is None:

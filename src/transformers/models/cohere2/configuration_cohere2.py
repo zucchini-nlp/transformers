@@ -176,18 +176,12 @@ class Cohere2Config(PreTrainedConfig):
         self._sliding_window_pattern = kwargs.get("sliding_window_pattern", 4)
 
         if self.layer_types is None:
+            # BC -> the pattern used to be a simple int, and it's still present in configs on the Hub
+            self._sliding_window_pattern = getattr(self, "sliding_window_pattern", 4)
             self.layer_types = [
                 "sliding_attention" if bool((i + 1) % self._sliding_window_pattern) else "full_attention"
                 for i in range(self.num_hidden_layers)
             ]
-
-        super().__init__(
-            pad_token_id=pad_token_id,
-            bos_token_id=bos_token_id,
-            eos_token_id=eos_token_id,
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
 
         self.rope_parameters = rope_parameters
         super().__init__(**kwargs)
