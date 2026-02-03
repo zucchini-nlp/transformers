@@ -133,7 +133,7 @@ class GPTNeoXJapaneseConfig(PreTrainedConfig):
         self.rope_parameters.setdefault("rope_theta", kwargs.pop("rotary_emb_base", self.default_theta))
         self.rope_parameters["partial_rotary_factor"] = kwargs.pop("rotary_pct", 1.0)
         self.standardize_rope_params()
-        self.validate_rope(ignore_keys=ignore_keys_at_rope_validation)
+        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 

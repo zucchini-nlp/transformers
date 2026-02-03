@@ -394,11 +394,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 f"({len(self.layer_types)})"
             )
 
-    # def validate_rope_parameters(self):
-    #     """Check that `layer_types` is correctly defined."""
-    #     if hasattr(self, "rope_scaling"):
-    #         rope_config_validation(self)
-
     @property
     def rope_scaling(self):
         return self.rope_parameters

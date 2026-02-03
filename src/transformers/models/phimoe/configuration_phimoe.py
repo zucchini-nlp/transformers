@@ -173,11 +173,11 @@ class PhimoeConfig(PreTrainedConfig):
         self.eos_token_id = eos_token_id
         super().__init__(**kwargs)
 
-    def validate_rope(self, ignore_keys=None):
+    def _validate_rope(self, ignore_keys=None):
         """
         Validate the `rope_parameters` configuration.
         """
-        super().validate_rope(ignore_keys=ignore_keys)
+        super()._validate_rope(ignore_keys=ignore_keys)
 
         # Run model-specific rope validation
         if self.rope_parameters["rope_type"] != "default":

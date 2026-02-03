@@ -285,7 +285,7 @@ class Gemma3nTextConfig(PreTrainedConfig):
 
         # Standardize and validate the correctness of rotary position embeddings parameters
         self.standardize_rope_params()
-        self.validate_rope(ignore_keys=ignore_keys_at_rope_validation)
+        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 

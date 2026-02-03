@@ -646,7 +646,7 @@ class RotaryEmbeddingConfigMixin:
             ignore_keys_at_rope_validation = {"partial_rotary_factor"}
 
         self.standardize_rope_params()
-        self.validate_rope(ignore_keys=ignore_keys_at_rope_validation)
+        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
     def standardize_rope_params(self):
@@ -697,7 +697,7 @@ class RotaryEmbeddingConfigMixin:
 
         self.rope_parameters = rope_parameters
 
-    def validate_rope(self: "PreTrainedConfig", ignore_keys: set | None = None):
+    def _validate_rope(self: "PreTrainedConfig", ignore_keys: set | None = None):
         """
         Validate the RoPE config arguments, given a `"PreTrainedConfig"` object
         """
@@ -930,11 +930,11 @@ def rope_config_validation(config: RotaryEmbeddingConfigMixin, ignore_keys: set 
     """
     warnings.warn(
         "`rope_config_validation` is deprecated and has been removed. "
-        "Its functionality has been moved to RotaryEmbeddingConfigMixin.validate_rope method. "
-        "PreTrainedConfig inherits this class, so please call self.validate_rope() instead. "
+        "Its functionality has been moved to RotaryEmbeddingConfigMixin._validate_rope method. "
+        "PreTrainedConfig inherits this class, so please call self._validate_rope() instead. "
         "Also, make sure to use the new rope_parameters syntax. "
         "You can call self.standardize_rope_params() in the meantime.",
         FutureWarning,
     )
     config.standardize_rope_params()
-    config.validate_rope(ignore_keys=ignore_keys)
+    config._validate_rope(ignore_keys=ignore_keys)

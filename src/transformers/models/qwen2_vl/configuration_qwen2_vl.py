@@ -225,7 +225,7 @@ class Qwen2VLTextConfig(PreTrainedConfig):
         if self.rope_parameters.get("rope_type", self.rope_parameters.get("type")) == "mrope":
             self.rope_parameters["rope_type"] = "default"
         self.standardize_rope_params()
-        self.validate_rope(ignore_keys=ignore_keys_at_rope_validation)
+        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 

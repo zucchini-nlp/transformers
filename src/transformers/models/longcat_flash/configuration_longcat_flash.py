@@ -223,7 +223,7 @@ class LongcatFlashConfig(PreTrainedConfig):
         # Standardize and validate the correctness of rotary position embeddings parameters
         self.rope_parameters.setdefault("rope_theta", kwargs.pop("rope_theta", self.default_theta))
         self.standardize_rope_params()
-        self.validate_rope(ignore_keys=ignore_keys_at_rope_validation)
+        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
 
         # Convert to float because RoPE fn expect a float. Models on the hub were saved as int
         for key in ["beta_fast", "beta_slow", "factor"]:
