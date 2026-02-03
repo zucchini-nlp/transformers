@@ -69,7 +69,6 @@ class DeformableDetrModelTester:
         num_feature_levels=4,
         encoder_n_points=2,
         decoder_n_points=6,
-        tie_word_embeddings=False,
     ):
         self.parent = parent
         self.batch_size = batch_size
@@ -90,7 +89,6 @@ class DeformableDetrModelTester:
         self.num_feature_levels = num_feature_levels
         self.encoder_n_points = encoder_n_points
         self.decoder_n_points = decoder_n_points
-        self.tie_word_embeddings = tie_word_embeddings
 
         # we also set the expected seq length for both encoder and decoder
         self.encoder_seq_length = (
@@ -152,9 +150,6 @@ class DeformableDetrModelTester:
             backbone=None,
             backbone_config=resnet_config,
             use_pretrained_backbone=False,
-            # FIXME; cls attr `toed_weihgt_keys` must not be modified in __init__
-            # Several models affected so for now just let it be and fix in separate PR
-            tie_word_embeddings=self.tie_word_embeddings,
         )
 
     def prepare_config_and_inputs_for_common(self):
@@ -248,6 +243,25 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
     def test_deformable_detr_object_detection_head_model(self):
         config_and_inputs = self.model_tester.prepare_config_and_inputs()
         self.model_tester.create_and_check_deformable_detr_object_detection_head_model(*config_and_inputs)
+
+    def test_tie_weights_is_not_modified(self):
+        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config.tie_word_embeddings = True
+
+        config.with_box_refine = True
+        config.two_stage = True
+
+        model = DeformableDetrForObjectDetection(config)
+        self.assertTrue("bbox_embed" in model._tied_weights_keys)
+        self.assertTrue("class_embed" in model._tied_weights_keys)
+
+        # if we update config attr, model's tied weights keys also change
+        config.with_box_refine = False
+        config.two_stage = False
+
+        model = DeformableDetrForObjectDetection(config)
+        self.assertFalse("bbox_embed" in model._tied_weights_keys)
+        self.assertFalse("class_embed" in model._tied_weights_keys)
 
     @unittest.skip(reason="Deformable DETR does not use inputs_embeds")
     def test_inputs_embeds(self):
@@ -412,7 +426,6 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
                 recursive_check(tuple_output, dict_output)
 
         for model_class in self.all_model_classes:
-            print("Model class:", model_class)
             model = model_class(config)
             model.to(torch_device)
             model.eval()
@@ -687,18 +700,10 @@ class DeformableDetrModelIntegrationTests(unittest.TestCase):
         self.assertEqual(outputs.logits.shape, expected_shape_logits)
 
         expected_logits = torch.tensor(
-            [
-                [-6.7108, -4.3213, -6.3777],
-                [-8.9014, -6.1799, -6.7240],
-                [-6.9315, -4.4735, -6.2298],
-            ]
+            [[-6.7109, -4.3212, -6.3780], [-8.9010, -6.1812, -6.7245], [-6.9317, -4.4730, -6.2288]]
         ).to(torch_device)
         expected_boxes = torch.tensor(
-            [
-                [0.2583, 0.5499, 0.4683],
-                [0.7652, 0.9068, 0.4882],
-                [0.5490, 0.2763, 0.0564],
-            ]
+            [[0.2582, 0.5499, 0.4683], [0.7652, 0.9060, 0.4881], [0.5490, 0.2763, 0.0564]]
         ).to(torch_device)
 
         torch.testing.assert_close(outputs.logits[0, :3, :3], expected_logits, rtol=2e-4, atol=2e-4)
@@ -733,10 +738,6 @@ class DeformableDetrModelIntegrationTests(unittest.TestCase):
             torch.testing.assert_close(cpu_outputs[key], gpu_outputs[key].cpu(), atol=2e-2, rtol=2e-2)
 
         expected_logits = torch.tensor(
-            [
-                [-9.9051, -4.2541, -6.4852],
-                [-9.6947, -4.0854, -6.8033],
-                [-10.0665, -5.8470, -7.7003],
-            ]
+            [[-9.9160, -4.2876, -6.4985], [-9.6945, -4.0855, -6.8031], [-10.0665, -5.8471, -7.7001]]
         )
         assert torch.allclose(cpu_outputs.logits[0, :3, :3], expected_logits, atol=2e-4)

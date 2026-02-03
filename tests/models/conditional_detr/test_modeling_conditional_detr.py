@@ -580,4 +580,5 @@ class ConditionalDetrModelIntegrationTests(unittest.TestCase):
         self.assertEqual(len(results["scores"]), 5)
         torch.testing.assert_close(results["scores"], expected_scores, rtol=2e-4, atol=2e-4)
         self.assertSequenceEqual(results["labels"].tolist(), expected_labels)
-        torch.testing.assert_close(results["boxes"][0, :], expected_slice_boxes)
+        # increase tolerance for boxes to 2e-4 as now using sdpa attention by
+        torch.testing.assert_close(results["boxes"][0, :], expected_slice_boxes, rtol=2e-4, atol=2e-4)
