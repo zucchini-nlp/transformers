@@ -874,7 +874,7 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
     ):
         super().__init__(config)
 
-        self.text_encoder = T5Gemma2TextEncoderModel._from_config(config.text_config, eoi_token_index=eoi_token_index)
+        self.text_model = T5Gemma2TextEncoderModel._from_config(config.text_config, eoi_token_index=eoi_token_index)
         self.vision_tower = AutoModel.from_config(config=config.vision_config)
         self.multi_modal_projector = T5Gemma2MultiModalProjector(config)
 
