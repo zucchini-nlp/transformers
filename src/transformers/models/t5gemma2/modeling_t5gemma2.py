@@ -763,7 +763,7 @@ def sliding_window_mask_function(sliding_window: int, is_causal=True) -> Callabl
     return inner_mask
 
 
-class T5Gemma2TextEncoderModel(T5Gemma2PreTrainedModel):
+class T5Gemma2TextEncoder(T5Gemma2PreTrainedModel):
     config: T5Gemma2TextConfig
     _can_record_outputs = {
         "attentions": T5Gemma2SelfAttention,
@@ -874,7 +874,7 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
     ):
         super().__init__(config)
 
-        self.text_model = T5Gemma2TextEncoderModel._from_config(config.text_config, eoi_token_index=eoi_token_index)
+        self.text_model = T5Gemma2TextEncoder._from_config(config.text_config, eoi_token_index=eoi_token_index)
         self.vision_tower = AutoModel.from_config(config=config.vision_config)
         self.multi_modal_projector = T5Gemma2MultiModalProjector(config)
 
