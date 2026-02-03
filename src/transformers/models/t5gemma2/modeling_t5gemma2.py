@@ -881,6 +881,12 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
+    def get_input_embeddings(self):
+        return self.text_model.get_input_embeddings()
+
+    def set_input_embeddings(self, new_embeddings):
+        return self.text_model.set_input_embeddings(new_embeddings)
+
     @can_return_tuple
     @auto_docstring
     def get_image_features(
