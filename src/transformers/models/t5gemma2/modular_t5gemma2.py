@@ -840,7 +840,6 @@ class T5Gemma2TextEncoder(T5Gemma2PreTrainedModel):
         token_type_ids: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutput:
-        del token_type_ids
         if (input_ids is None) ^ (inputs_embeds is not None):
             raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
