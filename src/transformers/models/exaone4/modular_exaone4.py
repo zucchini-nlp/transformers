@@ -28,7 +28,7 @@ from ...modeling_outputs import (
     BaseModelOutputWithPast,
     CausalLMOutputWithPast,
 )
-from ...modeling_rope_utils import RopeParameters, RotaryEmbeddingConfigMixin
+from ...modeling_rope_utils import RopeParameters
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS
 from ...processing_utils import Unpack
 from ...utils import (
@@ -56,7 +56,7 @@ _CHECKPOINT_FOR_DOC = "LGAI-EXAONE/EXAONE-4.0-32B"
 _CONFIG_FOR_DOC = "Exaone4Config"
 
 
-class Exaone4Config(PreTrainedConfig, RotaryEmbeddingConfigMixin):
+class Exaone4Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Exaone4Model`]. It is used to
     instantiate a EXAONE 4.0 model according to the specified arguments, defining the model architecture. Instantiating a
@@ -213,8 +213,6 @@ class Exaone4Config(PreTrainedConfig, RotaryEmbeddingConfigMixin):
                 else "full_attention"
                 for i in range(self.num_hidden_layers)
             ]
-        if "sliding_window" in self.layer_types:
-            self.cache_implementation = "hybrid"
         layer_type_validation(self.layer_types, self.num_hidden_layers)
 
         self.rope_parameters = rope_parameters
@@ -287,9 +285,9 @@ class Exaone4Attention(nn.Module):
             }
             key_states, value_states = past_key_values.update(key_states, value_states, self.layer_idx, cache_kwargs)
 
-        attention_interface: Callable = eager_attention_forward
-        if self.config._attn_implementation != "eager":
-            attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
+        attention_interface: Callable = ALL_ATTENTION_FUNCTIONS.get_interface(
+            self.config._attn_implementation, eager_attention_forward
+        )
 
         attn_output, attn_weights = attention_interface(
             self,
