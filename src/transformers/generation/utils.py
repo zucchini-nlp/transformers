@@ -1061,16 +1061,14 @@ class GenerationMixin(ContinuousMixin):
             model_kwargs["token_type_ids"] = torch.cat([token_type_ids, token_type_ids[:, -1].unsqueeze(-1)], dim=-1)
 
         position_ids_key = "position_ids" if not is_encoder_decoder else "decoder_position_ids"
-        if position_ids_key in model_kwargs:
-            position_ids = model_kwargs[position_ids_key]
-            next_position_ids = position_ids[:, -1:] + 1
+        if (position_ids := model_kwargs.get(position_ids_key)) is not None:
+            next_position_ids = position_ids[..., -1:] + 1
             if not use_cache:
                 next_position_ids = torch.cat([position_ids, next_position_ids], dim=-1)
             model_kwargs[position_ids_key] = next_position_ids
 
         attention_mask_key = "attention_mask" if not is_encoder_decoder else "decoder_attention_mask"
-        if attention_mask_key in model_kwargs:
-            attention_mask = model_kwargs[attention_mask_key]
+        if (attention_mask := model_kwargs.get(attention_mask_key)) is not None:
             model_kwargs[attention_mask_key] = torch.cat(
                 [attention_mask, attention_mask.new_ones((attention_mask.shape[0], 1))], dim=-1
             )
@@ -2537,7 +2535,6 @@ class GenerationMixin(ContinuousMixin):
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
 
         accepts_attention_mask = "attention_mask" in set(inspect.signature(self.forward).parameters.keys())
-        is_not_encoder_decoder = "encoder_outputs" not in model_kwargs
         kwargs_has_attention_mask = model_kwargs.get("attention_mask", None) is not None
 
         # 3. Define model inputs
@@ -2573,7 +2570,7 @@ class GenerationMixin(ContinuousMixin):
         if not self.config.is_encoder_decoder and model_input_name == "inputs_embeds":
             generation_config.use_cache = True
 
-        if not kwargs_has_attention_mask and is_not_encoder_decoder and accepts_attention_mask:
+        if not kwargs_has_attention_mask and not self.config.is_encoder_decoder and accepts_attention_mask:
             model_kwargs["attention_mask"] = self._prepare_attention_mask_for_generation(
                 inputs_tensor, generation_config, model_kwargs
             )
@@ -2584,7 +2581,7 @@ class GenerationMixin(ContinuousMixin):
 
         kwargs_has_position_ids = model_kwargs.get("position_ids", None) is not None
         accepts_position_ids = "position_ids" in set(inspect.signature(self.forward).parameters.keys())
-        if not kwargs_has_position_ids and accepts_position_ids and is_not_encoder_decoder:
+        if not kwargs_has_position_ids and accepts_position_ids and not self.config.is_encoder_decoder:
             model_kwargs["position_ids"] = self._prepare_position_ids_for_generation(inputs_tensor, model_kwargs)
 
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
