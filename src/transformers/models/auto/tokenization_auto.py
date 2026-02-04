@@ -113,7 +113,6 @@ TOKENIZER_MAPPING_NAMES = OrderedDict[str, str | None](
         ("emu3", "GPT2Tokenizer" if is_tokenizers_available() else None),
         ("ernie", "BertTokenizer" if is_tokenizers_available() else None),
         ("esm", "EsmTokenizer"),
-        ("exaone4", "GPT2Tokenizer" if is_tokenizers_available() else None),
         ("falcon_mamba", "GPTNeoXTokenizer" if is_tokenizers_available() else None),
         ("fastspeech2_conformer", "FastSpeech2ConformerTokenizer" if is_g2p_en_available() else None),
         ("flaubert", "FlaubertTokenizer"),
@@ -169,6 +168,7 @@ TOKENIZER_MAPPING_NAMES = OrderedDict[str, str | None](
         ("layoutlmv3", "LayoutLMv3Tokenizer" if is_tokenizers_available() else None),
         ("layoutxlm", "LayoutXLMTokenizer" if is_tokenizers_available() else None),
         ("led", "LEDTokenizer" if is_tokenizers_available() else None),
+        ("lighton_ocr", "Qwen2TokenizerFast" if is_tokenizers_available() else None),
         ("lilt", "RobertaTokenizer" if is_tokenizers_available() else None),
         ("longformer", "RobertaTokenizer" if is_tokenizers_available() else None),
         ("longt5", "T5Tokenizer" if is_tokenizers_available() else None),
@@ -280,7 +280,7 @@ TOKENIZER_MAPPING_NAMES = OrderedDict[str, str | None](
         ("seamless_m4t_v2", "SeamlessM4TTokenizer" if is_tokenizers_available() else None),
         ("shieldgemma2", "GemmaTokenizer" if is_tokenizers_available() else None),
         ("siglip", "SiglipTokenizer" if is_sentencepiece_available() else None),
-        ("siglip2", "GemmaTokenizer" if is_tokenizers_available() else None),
+        ("siglip2", "Siglip2Tokenizer" if is_tokenizers_available() else None),
         ("speech_to_text", "Speech2TextTokenizer" if is_sentencepiece_available() else None),
         ("speecht5", "SpeechT5Tokenizer" if is_sentencepiece_available() else None),
         ("splinter", "SplinterTokenizer"),
@@ -581,18 +581,6 @@ class AutoTokenizer:
         >>> # Explicitly use the sentencepiece backend
         >>> tokenizer = AutoTokenizer.from_pretrained("hf-internal-testing/llama-tokenizer", backend="sentencepiece")
         ```"""
-        use_auth_token = kwargs.pop("use_auth_token", None)
-        if use_auth_token is not None:
-            logger.warning(
-                "The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers. Please use `token` instead.",
-                FutureWarning,
-            )
-            if kwargs.get("token") is not None:
-                raise ValueError(
-                    "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
-                )
-            kwargs["token"] = use_auth_token
-
         config = kwargs.pop("config", None)
         kwargs["_from_auto"] = True
 
@@ -636,9 +624,21 @@ class AutoTokenizer:
         # Next, let's try to use the tokenizer_config file to get the tokenizer class.
         tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
         tokenizer_config_class = tokenizer_config.get("tokenizer_class", None)
-        # if there is a config, we can check that the tokenizer class != than model class and can thus assume we need to use `TokenizersBackend`
+
+        # Check for auto_map early to handle dynamic tokenizers properly
+        tokenizer_auto_map = None
+        if "auto_map" in tokenizer_config:
+            if isinstance(tokenizer_config["auto_map"], (tuple, list)):
+                # Legacy format for dynamic tokenizers
+                tokenizer_auto_map = tokenizer_config["auto_map"]
+            else:
+                tokenizer_auto_map = tokenizer_config["auto_map"].get("AutoTokenizer", None)
+
+        # if there is a config, we can check that the tokenizer class != than model class and can thus assume we need to use TokenizersBackend
+        # Skip this early exit if auto_map is present (custom tokenizer with trust_remote_code)
         if (
-            tokenizer_config_class is not None
+            tokenizer_auto_map is None
+            and tokenizer_config_class is not None
             and config_model_type is not None
             and config_model_type != ""
             and TOKENIZER_MAPPING_NAMES.get(config_model_type, "").replace("Fast", "")
@@ -654,15 +654,6 @@ class AutoTokenizer:
 
         if "_commit_hash" in tokenizer_config:
             kwargs["_commit_hash"] = tokenizer_config["_commit_hash"]
-
-        # Check for auto_map early to handle dynamic tokenizers properly
-        tokenizer_auto_map = None
-        if "auto_map" in tokenizer_config:
-            if isinstance(tokenizer_config["auto_map"], (tuple, list)):
-                # Legacy format for dynamic tokenizers
-                tokenizer_auto_map = tokenizer_config["auto_map"]
-            else:
-                tokenizer_auto_map = tokenizer_config["auto_map"].get("AutoTokenizer", None)
 
         if tokenizer_config_class:
             tokenizer_config_class = tokenizer_config_class.replace("Fast", "")
@@ -708,7 +699,7 @@ class AutoTokenizer:
                 tokenizer_class = TokenizersBackend
 
             return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
-        elif getattr(config, "tokenizer_class"):
+        elif getattr(config, "tokenizer_class", None):
             _class = config.tokenizer_class
             if "PreTrainedTokenizerFast" not in _class:
                 _class = _class.replace("Fast", "")
@@ -727,7 +718,7 @@ class AutoTokenizer:
                 )
             config = config.encoder
 
-        model_type = config_class_to_model_type(type(config).__name__) or config.get("model_type", None)
+        model_type = config_class_to_model_type(type(config).__name__) or getattr(config, "model_type", None)
         if model_type is not None:
             tokenizer_class = TOKENIZER_MAPPING.get(type(config), TokenizersBackend)
             if tokenizer_class is not None:
