@@ -5168,11 +5168,14 @@ class ModelTesterMixin:
 
             # check that output_hidden_states also work using config
             del inputs_dict["output_hidden_states"]
-            config.output_hidden_states = True
-            for k in config.sub_configs:
-                if getattr(config, k) is not None:
-                    getattr(config, k).output_hidden_states = True
 
+            def set_value_subconfigs(config, key, value):
+                setattr(config, key, value)
+                for k in config.sub_configs:
+                    if (subconfig := getattr(config, k)) is not None:
+                        set_value_subconfigs(subconfig, key, value)
+
+            set_value_subconfigs(config, "output_hidden_states", True)
             check_hidden_states_output(inputs_dict, config, model_class)
 
     def test_get_image_features_attentions(self):
@@ -5204,11 +5207,14 @@ class ModelTesterMixin:
 
             # check that output_attentions also work using config
             del inputs_dict["output_attentions"]
-            config.output_attentions = True
-            for k in config.sub_configs:
-                if getattr(config, k) is not None:
-                    getattr(config, k).output_attentions = True
 
+            def set_value_subconfigs(config, key, value):
+                setattr(config, key, value)
+                for k in config.sub_configs:
+                    if (subconfig := getattr(config, k)) is not None:
+                        set_value_subconfigs(subconfig, key, value)
+
+            set_value_subconfigs(config, "output_attentions", True)
             check_attentions_output(inputs_dict, config, model_class)
 
     @parameterized.expand([True, False, None])
