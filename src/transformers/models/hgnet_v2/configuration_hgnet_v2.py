@@ -19,8 +19,8 @@
 # limitations under the License.
 
 
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin
 
 
 # TODO: Modular conversion for resnet must be fixed as

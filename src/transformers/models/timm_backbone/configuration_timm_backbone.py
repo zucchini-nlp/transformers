@@ -14,8 +14,8 @@
 
 """Configuration for Backbone models"""
 
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin
 from ...utils import logging
 
 

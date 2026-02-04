@@ -20,7 +20,7 @@ import torch
 from torch import nn
 
 from ...activations import ACT2FN
-from ...modeling_backbone_utils import BackboneMixin
+from ...backbone_utils import BackboneMixin
 from ...modeling_outputs import BackboneOutput
 from ...modeling_utils import PreTrainedModel
 from ...utils import (

@@ -26,8 +26,8 @@ from ....transformers.models.dinov2.modeling_dinov2 import (
     Dinov2PreTrainedModel,
 )
 from ... import initialization as init
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin
 from ...modeling_outputs import BackboneOutput, BaseModelOutput, BaseModelOutputWithPooling, ImageClassifierOutput
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, logging, torch_int

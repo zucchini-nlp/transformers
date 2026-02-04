@@ -19,8 +19,8 @@
 # limitations under the License.
 import math
 
+from ...backbone_utils import BackboneConfigMixin, consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin, consolidate_backbone_kwargs_to_config
 from ..auto import AutoConfig
 
 

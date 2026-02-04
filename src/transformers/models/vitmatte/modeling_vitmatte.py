@@ -19,7 +19,7 @@ import torch
 from torch import nn
 
 from ... import initialization as init
-from ...modeling_backbone_utils import load_backbone
+from ...backbone_utils import load_backbone
 from ...modeling_utils import PreTrainedModel
 from ...utils import ModelOutput, auto_docstring
 from .configuration_vitmatte import VitMatteConfig

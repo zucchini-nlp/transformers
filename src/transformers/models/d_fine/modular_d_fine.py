@@ -19,9 +19,9 @@ import torch.nn.functional as F
 
 from ... import initialization as init
 from ...activations import ACT2CLS
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
 from ...image_transforms import corners_to_center_format
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, logging, torch_compilable_check
 from ..auto import AutoConfig

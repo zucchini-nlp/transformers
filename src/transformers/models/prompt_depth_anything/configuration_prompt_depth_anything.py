@@ -18,8 +18,8 @@
 # limitations under the License.
 
 
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ..auto.configuration_auto import AutoConfig
 
 

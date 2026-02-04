@@ -23,6 +23,7 @@ from torch import nn
 
 from ... import initialization as init
 from ...activations import ACT2CLS, ACT2FN
+from ...backbone_utils import load_backbone
 from ...image_processing_utils import BatchFeature
 from ...image_processing_utils_fast import BaseImageProcessorFast, SizeDict, get_max_height_width
 from ...image_transforms import center_to_corners_format, corners_to_center_format
@@ -36,7 +37,6 @@ from ...image_utils import (
     get_image_size,
     validate_annotations,
 )
-from ...modeling_backbone_utils import load_backbone
 from ...modeling_outputs import BaseModelOutput
 from ...modeling_utils import PreTrainedModel
 from ...processing_utils import Unpack

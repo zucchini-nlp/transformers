@@ -19,7 +19,7 @@ import torch
 from torch import nn
 
 from ... import initialization as init
-from ...modeling_backbone_utils import load_backbone
+from ...backbone_utils import load_backbone
 from ...modeling_outputs import BackboneOutput
 from ...modeling_utils import PreTrainedModel
 from ...processing_utils import Unpack

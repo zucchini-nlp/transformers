@@ -13,8 +13,8 @@
 # limitations under the License.
 """Table Transformer model configuration"""
 
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...utils import logging
 from ..auto import AutoConfig
 

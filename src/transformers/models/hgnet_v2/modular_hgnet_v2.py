@@ -18,8 +18,8 @@ import torch.nn.functional as F
 from torch import Tensor, nn
 
 from ... import initialization as init
+from ...backbone_utils import BackboneConfigMixin, BackboneMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin, BackboneMixin
 from ...modeling_outputs import (
     BackboneOutput,
     BaseModelOutputWithNoAttention,

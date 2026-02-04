@@ -19,8 +19,8 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ... import initialization as init
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, logging, torch_compilable_check
 from ..auto import AutoConfig

@@ -13,8 +13,8 @@
 # limitations under the License.
 """DINOv3 model configuration"""
 
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin
 from ...utils import logging
 
 

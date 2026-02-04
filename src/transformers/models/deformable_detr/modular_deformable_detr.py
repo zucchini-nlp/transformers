@@ -21,9 +21,9 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from ... import initialization as init
+from ...backbone_utils import load_backbone
 from ...image_transforms import center_to_corners_format
 from ...integrations import use_kernel_forward_from_hub
-from ...modeling_backbone_utils import load_backbone
 from ...modeling_outputs import BaseModelOutput
 from ...modeling_utils import PreTrainedModel
 from ...processing_utils import Unpack

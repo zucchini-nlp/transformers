@@ -17,7 +17,7 @@ import unittest
 import pytest
 
 from transformers import DetrConfig, MaskFormerConfig, PreTrainedConfig, ResNetBackbone, ResNetConfig, TimmBackbone
-from transformers.modeling_backbone_utils import (
+from transformers.backbone_utils import (
     BackboneConfigMixin,
     BackboneMixin,
     load_backbone,

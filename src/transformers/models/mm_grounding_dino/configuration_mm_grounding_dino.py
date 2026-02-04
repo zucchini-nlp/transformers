@@ -17,8 +17,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 

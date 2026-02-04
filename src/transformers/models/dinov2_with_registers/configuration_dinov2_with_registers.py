@@ -20,8 +20,8 @@
 # limitations under the License.
 
 
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_backbone_utils import BackboneConfigMixin
 
 
 class Dinov2WithRegistersConfig(BackboneConfigMixin, PreTrainedConfig):

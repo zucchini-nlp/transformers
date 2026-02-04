@@ -23,6 +23,7 @@ import torchvision.transforms.v2.functional as tvF
 from torch import nn
 
 from ... import initialization as init
+from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
 from ...image_processing_utils_fast import (
     BaseImageProcessorFast,
@@ -33,7 +34,6 @@ from ...image_transforms import (
     reorder_images,
 )
 from ...image_utils import PILImageResampling, SizeDict
-from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...modeling_outputs import BaseModelOutput
 from ...processing_utils import Unpack
 from ...utils import (

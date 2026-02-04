@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from ...activations import ACT2CLS
-from ...modeling_backbone_utils import BackboneMixin
+from ...backbone_utils import BackboneMixin
 from ...modeling_outputs import (
     BackboneOutput,
     BaseModelOutputWithNoAttention,

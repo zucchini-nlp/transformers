@@ -28,8 +28,8 @@ from torch import Tensor
 
 from ... import initialization as init
 from ...activations import ACT2CLS
+from ...backbone_utils import load_backbone
 from ...image_transforms import center_to_corners_format, corners_to_center_format
-from ...modeling_backbone_utils import load_backbone
 from ...modeling_outputs import BaseModelOutput
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
