@@ -1063,7 +1063,7 @@ class GenerationMixin(ContinuousMixin):
 
         position_ids_key = "position_ids" if not is_encoder_decoder else "decoder_position_ids"
         if (position_ids := model_kwargs.get(position_ids_key)) is not None:
-            next_position_ids = position_ids.max(-1, keepdim=True).values + 1
+            next_position_ids = position_ids.max(-1, keepdim=True).values + num_new_tokens
             if not use_cache:
                 next_position_ids = torch.cat([position_ids, next_position_ids], dim=-1)
             model_kwargs[position_ids_key] = next_position_ids
