@@ -1525,7 +1525,6 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
                     video_grid_thw=video_grid_thw,
                     attention_mask=attention_mask,
                 )
-                print(vision_positions, rope_deltas)
                 self.model.rope_deltas = rope_deltas
             # then use the prev pre-calculated rope-deltas to get the correct position ids
             elif "position_ids" in model_inputs:
