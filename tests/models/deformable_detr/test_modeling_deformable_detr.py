@@ -548,10 +548,10 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
                     )
                     self.assertEqual(outputs.logits.shape, expected_shape)
                     # Confirm out_indices was propagated to backbone
-                    self.assertEqual(len(model.model.backbone.conv_encoder.intermediate_channel_sizes), 4)
+                    self.assertEqual(len(model.model.backbone.intermediate_channel_sizes), 4)
                 else:
                     # Confirm out_indices was propagated to backbone
-                    self.assertEqual(len(model.backbone.conv_encoder.intermediate_channel_sizes), 4)
+                    self.assertEqual(len(model.backbone.intermediate_channel_sizes), 4)
 
                 self.assertTrue(outputs)
 
