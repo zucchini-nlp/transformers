@@ -1028,6 +1028,9 @@ class T5Gemma2ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
 @require_torch_accelerator
 @slow
 class T5Gemma2IntegrationTest(unittest.TestCase):
+    def setUp(self):
+        cleanup(torch_device, gc_collect=True)
+
     def tearDown(self):
         cleanup(torch_device, gc_collect=True)
 
