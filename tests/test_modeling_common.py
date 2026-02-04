@@ -2308,8 +2308,10 @@ class ModelTesterMixin:
         original_config.tie_word_embeddings = False
         try:
             original_config.get_text_config().tie_word_embeddings = False
-        except Exception as _:
-            pass
+        except Exception as e:
+            model_type = getattr(original_config, "model_type", "unknown")
+            # Config may not have a text config
+            print(f"Could not set text config's `tie_word_embeddings` for model type `{model_type}`: {e}")
         inputs_dict.pop("labels", None)
 
         # if model cannot untied embeddings -> leave test
@@ -3263,6 +3265,9 @@ class ModelTesterMixin:
                     if "image_grid_thw" in inputs_dict:
                         continue
                     first_inputs["pixel_values"] = inputs_dict["pixel_values"][:1].to(torch.bfloat16)
+                # Some VLMs require image_sizes alongside pixel_values, e.g. lighton_ocr, llava_onevision
+                if "image_sizes" in inputs_dict:
+                    first_inputs["image_sizes"] = inputs_dict["image_sizes"][:1]
                 if model.config.is_encoder_decoder:
                     decoder_input_ids = inputs_dict.get("decoder_input_ids", first_inputs.get("input_ids"))
                     if decoder_input_ids is not None:
@@ -4159,8 +4164,10 @@ class ModelTesterMixin:
             if model._can_set_attn_implementation() and model.config.model_type != "videomae":
                 try:
                     model.set_attn_implementation("sdpa")
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(
+                        f"Could not set attention implementation to sdpa for {model} of type {model.config.model_type} : {e}"
+                    )
 
             for module in model.modules():
                 if hasattr(module, "config"):
