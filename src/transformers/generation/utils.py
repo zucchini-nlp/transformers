@@ -62,6 +62,7 @@ from .candidate_generator import (
     PromptLookupCandidateGenerator,
     UniversalSpeculativeDecodingGenerator,
     _prepare_attention_mask,
+    _prepare_position_ids,
     _prepare_token_type_ids,
 )
 from .configuration_utils import (
@@ -1062,7 +1063,7 @@ class GenerationMixin(ContinuousMixin):
 
         position_ids_key = "position_ids" if not is_encoder_decoder else "decoder_position_ids"
         if (position_ids := model_kwargs.get(position_ids_key)) is not None:
-            next_position_ids = position_ids[..., -1:] + 1
+            next_position_ids = position_ids.max(-1, keepdim=True).values + 1
             if not use_cache:
                 next_position_ids = torch.cat([position_ids, next_position_ids], dim=-1)
             model_kwargs[position_ids_key] = next_position_ids
@@ -3692,6 +3693,10 @@ class GenerationMixin(ContinuousMixin):
                 candidate_kwargs, candidate_input_ids.shape[1], self.config.is_encoder_decoder
             )
             candidate_kwargs = _prepare_token_type_ids(candidate_kwargs, candidate_input_ids.shape[1])
+            if (position_ids := candidate_kwargs.get("position_ids")) is not None and candidate_length > 0:
+                new_length = candidate_length + position_ids.shape[-1]
+                candidate_kwargs = _prepare_position_ids(candidate_kwargs, new_length, self.config.is_encoder_decoder)
+
             if "cache_position" in candidate_kwargs:
                 candidate_kwargs["cache_position"] = torch.cat(
                     (
@@ -3704,6 +3709,7 @@ class GenerationMixin(ContinuousMixin):
             model_inputs = self.prepare_inputs_for_generation(
                 candidate_input_ids, is_first_iteration=is_first_iteration, **candidate_kwargs
             )
+
             if "logits_to_keep" in model_inputs:
                 model_inputs["logits_to_keep"] = candidate_length + 1
 
