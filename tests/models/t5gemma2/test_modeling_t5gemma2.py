@@ -779,7 +779,7 @@ class T5Gemma2ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
         self.model_tester.create_and_check_model_fp16_forward(*config_and_inputs)
 
     # Failing job for ref: https://github.com/huggingface/transformers/pull/43633/checks?check_run_id=62485281160
-    @unittest.skipIf("Fails in CI run and isn't reproducible locally/in A10 runners. FIXME @raushan")
+    @unittest.skip("Fails in CI run and isn't reproducible locally/in A10 runners. FIXME @raushan")
     def test_forward_full_mask(self):
         config_and_inputs = self.model_tester.prepare_config_and_inputs()
         self.model_tester.create_and_create_and_check_forward_full_mask(*config_and_inputs)
