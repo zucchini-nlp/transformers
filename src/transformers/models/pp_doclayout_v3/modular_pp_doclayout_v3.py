@@ -45,7 +45,7 @@ from ...utils import (
     requires_backends,
 )
 from ...utils.generic import TensorType, can_return_tuple
-from ..auto import CONFIG_MAPPING, AutoConfig
+from ..auto import AutoConfig
 from ..resnet.modeling_resnet import ResNetConvLayer
 from ..rt_detr.modeling_rt_detr import (
     RTDetrDecoder,

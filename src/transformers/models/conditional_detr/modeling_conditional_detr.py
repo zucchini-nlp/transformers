@@ -17,7 +17,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import contextlib
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -34,12 +33,9 @@ from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithCrossAttenti
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
 from ...pytorch_utils import compile_compatible_method_lru_cache
-from ...utils import ModelOutput, TransformersKwargs, auto_docstring, is_timm_available, requires_backends
+from ...utils import ModelOutput, TransformersKwargs, auto_docstring
 from ...utils.generic import OutputRecorder, can_return_tuple, check_model_inputs
 from .configuration_conditional_detr import ConditionalDetrConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @dataclass

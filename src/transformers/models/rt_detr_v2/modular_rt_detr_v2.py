@@ -23,7 +23,7 @@ from ...configuration_utils import PreTrainedConfig
 from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, logging, torch_compilable_check
-from ..auto import CONFIG_MAPPING, AutoConfig
+from ..auto import AutoConfig
 from ..rt_detr.modeling_rt_detr import (
     RTDetrDecoder,
     RTDetrDecoderLayer,

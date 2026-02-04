@@ -17,7 +17,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import contextlib
 import math
 import warnings
 from collections.abc import Callable
@@ -42,7 +41,6 @@ from ...utils import (
     TransformersKwargs,
     auto_docstring,
     is_timm_available,
-    requires_backends,
     torch_compilable_check,
 )
 from ...utils.generic import OutputRecorder, can_return_tuple, check_model_inputs
@@ -50,7 +48,7 @@ from .configuration_deformable_detr import DeformableDetrConfig
 
 
 if is_timm_available():
-    from timm import create_model
+    pass
 
 
 @dataclass

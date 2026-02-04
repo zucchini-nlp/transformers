@@ -21,9 +21,10 @@ from ... import initialization as init
 from ...activations import ACT2CLS
 from ...configuration_utils import PreTrainedConfig
 from ...image_transforms import corners_to_center_format
+from ...modeling_backbone_utils import consolidate_backbone_kwargs_to_config
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, logging, torch_compilable_check
-from ..auto import CONFIG_MAPPING, AutoConfig
+from ..auto import AutoConfig
 from ..rt_detr.modeling_rt_detr import (
     RTDetrAIFILayer,
     RTDetrConvNormLayer,

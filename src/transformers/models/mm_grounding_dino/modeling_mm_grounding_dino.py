@@ -661,7 +661,6 @@ class MMGroundingDinoConvEncoder(nn.Module):
                 if "stage.1" not in name and "stage.2" not in name and "stage.3" not in name:
                     parameter.requires_grad_(False)
 
-    # TODO: use modular - Copied from transformers.models.detr.modeling_detr.DetrConvEncoder.forward with Detr->MMGroundingDino
     def forward(self, pixel_values: torch.Tensor, pixel_mask: torch.Tensor):
         # send pixel_values through the model to get list of feature maps
         features = self.model(pixel_values, return_dict=True).feature_maps
