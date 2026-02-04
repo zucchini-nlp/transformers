@@ -1322,11 +1322,12 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
     def compute_3d_position_ids(
         self,
         input_ids: torch.Tensor | None,
-        image_grid_thw: torch.Tensor | None,
-        video_grid_thw: torch.Tensor | None,
         inputs_embeds: torch.Tensor | None,
-        attention_mask: torch.Tensor | None,
-        past_key_values: torch.Tensor | None,
+        image_grid_thw: torch.Tensor | None = None,
+        video_grid_thw: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        past_key_values: torch.Tensor | None = None,
+        mm_token_type_ids: torch.Tensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
         can_compute_mrope = input_ids is not None and (image_grid_thw is not None or video_grid_thw is not None)
@@ -1337,6 +1338,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
                 image_grid_thw=image_grid_thw,
                 video_grid_thw=video_grid_thw,
                 attention_mask=attention_mask,
+                mm_token_type_ids=mm_token_type_ids,
             )
             self.rope_deltas = rope_deltas
         # Use pre-calculated rope-deltas to infer correct 3D position ids

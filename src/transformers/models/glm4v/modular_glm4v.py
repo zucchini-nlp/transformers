@@ -57,6 +57,7 @@ from ..qwen2_5_vl.modeling_qwen2_5_vl import (
     Qwen2_5_VLVisionAttention,
     Qwen2_5_VLVisionBlock,
 )
+from ..qwen2_vl.modeling_qwen2_vl import Qwen2VLModel
 from ..qwen2_vl.processing_qwen2_vl import (
     Qwen2VLProcessor,
     Qwen2VLProcessorKwargs,
@@ -945,7 +946,7 @@ class Glm4vTextModel(Qwen2_5_VLTextModel):
         )
 
 
-class Glm4vModel(Qwen2_5_VLModel):
+class Glm4vModel(Qwen2VLModel):
     _checkpoint_conversion_mapping = {}
     _no_split_modules = ["Glm4vTextDecoderLayer", "Glm4vVisionBlock"]
 

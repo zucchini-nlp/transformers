@@ -1179,11 +1179,11 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
     def compute_3d_position_ids(
         self,
         input_ids: torch.Tensor | None,
-        image_grid_thw: torch.Tensor | None,
-        video_grid_thw: torch.Tensor | None,
         inputs_embeds: torch.Tensor | None,
-        attention_mask: torch.Tensor | None,
-        past_key_values: torch.Tensor | None,
+        image_grid_thw: torch.Tensor | None = None,
+        video_grid_thw: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        past_key_values: torch.Tensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
         can_compute_mrope = input_ids is not None and (image_grid_thw is not None or video_grid_thw is not None)

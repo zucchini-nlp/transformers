@@ -45,6 +45,7 @@ from ..qwen2_5_vl.modeling_qwen2_5_vl import (
     Qwen2_5_VLModel,
     Qwen2_5_VLVisionBlock,
 )
+from ..qwen2_vl.modeling_qwen2_vl import Qwen2VLModel
 from ..qwen2_vl.modeling_qwen2_vl import (
     PatchEmbed,
     Qwen2VLModelOutputWithPast,
@@ -832,7 +833,7 @@ class Qwen3VLTextModel(Qwen3VLPreTrainedModel, Qwen3Model):
 
 
 @auto_docstring
-class Qwen3VLModel(Qwen2_5_VLModel):
+class Qwen3VLModel(Qwen2VLModel):
     config: Qwen3VLConfig
     base_model_prefix = "model"
     _checkpoint_conversion_mapping = {}

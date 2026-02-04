@@ -1210,11 +1210,11 @@ class Ernie4_5_VL_MoeModel(Qwen2_5_VLModel):
     def compute_3d_position_ids(
         self,
         input_ids: torch.Tensor | None,
-        image_grid_thw: torch.Tensor | None,
-        video_grid_thw: torch.Tensor | None,
         inputs_embeds: torch.Tensor | None,
-        attention_mask: torch.Tensor | None,
-        past_key_values: torch.Tensor | None,
+        image_grid_thw: torch.Tensor | None = None,
+        video_grid_thw: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
+        past_key_values: torch.Tensor | None = None,
         mm_token_type_ids: torch.Tensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
