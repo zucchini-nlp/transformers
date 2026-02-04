@@ -667,7 +667,7 @@ class GenerationMixin(ContinuousMixin):
                         if model_inputs.get("inputs_embeds") is not None
                         else model_inputs[input_ids_key].shape[1]
                     )
-                    model_input = model_input[:, -current_input_length:]
+                    model_input = model_input[..., -current_input_length:]
                     model_input = model_input.clone(memory_format=torch.contiguous_format)
                 model_inputs[model_input_name] = model_input
 
