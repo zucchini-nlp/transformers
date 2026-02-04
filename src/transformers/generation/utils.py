@@ -656,7 +656,7 @@ class GenerationMixin(ContinuousMixin):
             and position_ids_key in set(inspect.signature(self.forward).parameters.keys())
         ):
             position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids.masked_fill_(attention_mask == 0, 1)
+            position_ids.masked_fill_(attention_mask == 0, 0)
             kwargs[position_ids_key] = position_ids  # placed in kwargs for further processing (see below)
 
         # 5. Slice model inputs if it's an input that should have the same length as `input_ids`
@@ -853,7 +853,7 @@ class GenerationMixin(ContinuousMixin):
 
         if (attention_mask := model_kwargs.get("attention_mask")) is not None:
             position_ids = attention_mask.long().cumsum(-1) - 1
-            position_ids = position_ids.masked_fill(attention_mask == 0, 1)
+            position_ids = position_ids.masked_fill(attention_mask == 0, 0)
         else:
             past_length = 0
             if (cache := model_kwargs.get("past_key_values")) is not None:
