@@ -36,19 +36,9 @@ from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithCrossAttenti
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
 from ...pytorch_utils import compile_compatible_method_lru_cache, meshgrid
-from ...utils import (
-    ModelOutput,
-    TransformersKwargs,
-    auto_docstring,
-    is_timm_available,
-    torch_compilable_check,
-)
+from ...utils import ModelOutput, TransformersKwargs, auto_docstring, torch_compilable_check
 from ...utils.generic import OutputRecorder, can_return_tuple, check_model_inputs
 from .configuration_deformable_detr import DeformableDetrConfig
-
-
-if is_timm_available():
-    pass
 
 
 @dataclass

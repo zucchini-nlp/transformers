@@ -33,7 +33,6 @@ from ...utils import (
     TensorType,
     TransformersKwargs,
     auto_docstring,
-    is_timm_available,
     logging,
     torch_compilable_check,
 )
@@ -55,9 +54,6 @@ from ..detr.modeling_detr import (
 )
 from .configuration_deformable_detr import DeformableDetrConfig
 
-
-if is_timm_available():
-    pass
 
 logger = logging.get_logger(__name__)
 
