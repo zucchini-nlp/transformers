@@ -1024,7 +1024,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         total_input_ids = input_ids
         if attention_mask is None:
             attention_mask = torch.ones_like(total_input_ids)
-        position_ids = torch.ones(
+        position_ids = torch.zeros(
             3, input_ids.shape[0], input_ids.shape[1], dtype=input_ids.dtype, device=input_ids.device
         )
         image_index, video_index = 0, 0
@@ -1199,10 +1199,15 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         # Use pre-calculated rope-deltas to infer correct 3D position ids
         elif self.rope_deltas is not None:
             batch_size, seq_length, _ = inputs_embeds.shape
-            position_ids = torch.arange(past_key_values_length, past_key_values_length + seq_length)
-            position_ids = position_ids.view(1, 1, -1).expand(3, batch_size, -1)
+            if attention_mask is not None:
+                position_ids = attention_mask.long().cumsum(-1) - 1
+                position_ids = position_ids.masked_fill(attention_mask == 0, 0)
+                position_ids = position_ids.view(1, batch_size, -1).repeat(3, 1, 1).to(inputs_embeds.device)
+            else:
+                position_ids = torch.arange(past_key_values_length, past_key_values_length + seq_length)
+                position_ids = position_ids.view(1, 1, -1).expand(3, batch_size, -1).to(inputs_embeds.device)
             delta = self.rope_deltas.repeat_interleave(batch_size // self.rope_deltas.shape[0], dim=0)
-            position_ids = (position_ids + delta).to(device=inputs_embeds.device)
+            position_ids = position_ids + delta.to(device=position_ids.device)
         else:
             # Can't build correct 3D positions. Let the model infer it from `cache_position`
             position_ids = None
