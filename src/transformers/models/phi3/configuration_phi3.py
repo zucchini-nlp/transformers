@@ -167,7 +167,7 @@ class Phi3Config(PreTrainedConfig):
         self.eos_token_id = eos_token_id
         self.pad_token_id = pad_token_id
         self.tie_word_embeddings = tie_word_embeddings
-        super().__post_init__(**kwargs)
+        super().__init__(**kwargs)
 
     def convert_rope_params_to_dict(
         self, default_theta: int | float = 10_000.0, ignore_keys: set | None = None, **kwargs

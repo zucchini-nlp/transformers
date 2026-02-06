@@ -28,77 +28,6 @@ logger = logging.get_logger(__name__)
 
 @strict(accept_kwargs=True)
 @dataclass
-class EsmFoldConfig(PreTrainedConfig):
-    esm_type: str | None = None
-    fp16_esm: bool | None = True
-    use_esm_attn_map: bool | None = False
-    esm_ablate_pairwise: bool | None = False
-    esm_ablate_sequence: bool | None = False
-    esm_input_dropout: float | None = 0.0
-    embed_aa: bool | None = True
-    bypass_lm: bool | None = False
-    lddt_head_hid_dim: int | None = 128
-    trunk: Union[dict, "TrunkConfig"] | None = None
-
-    def __post_init__(self, **kwargs):
-        if self.trunk is None:
-            self.trunk = TrunkConfig()
-        elif isinstance(self.trunk, dict):
-            self.trunk = TrunkConfig(**self.trunk)
-        super().__post_init__(**kwargs)
-
-
-@strict(accept_kwargs=True)
-@dataclass
-class TrunkConfig(PreTrainedConfig):
-    num_blocks: int | None = 48
-    sequence_state_dim: int | None = 1024
-    pairwise_state_dim: int | None = is_divisible_by(divisor=2)(default=128)
-    sequence_head_width: int | None = 32
-    pairwise_head_width: int | None = 32
-    position_bins: int | None = 32
-    dropout: float | None = interval(max=0.4)(default=0.0)
-    layer_drop: float | None = 0.0
-    cpu_grad_checkpoint: bool | None = False
-    max_recycles: int | None = interval(min=0)(default=4)
-    chunk_size: int | None = 128
-    structure_module: Union[dict, "StructureModuleConfig"] | None = None
-
-    def __post_init__(self, **kwargs):
-        if self.structure_module is None:
-            self.structure_module = StructureModuleConfig()
-        elif isinstance(self.structure_module, dict):
-            self.structure_module = StructureModuleConfig(**self.structure_module)
-
-        if self.sequence_state_dim % self.sequence_state_dim != 0:
-            raise ValueError(
-                "`sequence_state_dim` should be a round multiple of `sequence_state_dim`, got"
-                f" {self.sequence_state_dim} and {self.sequence_state_dim}."
-            )
-        if self.pairwise_state_dim % self.pairwise_state_dim != 0:
-            raise ValueError(
-                "`pairwise_state_dim` should be a round multiple of `pairwise_state_dim`, got"
-                f" {self.pairwise_state_dim} and {self.pairwise_state_dim}."
-            )
-
-        sequence_num_heads = self.sequence_state_dim // self.sequence_head_width
-        pairwise_num_heads = self.pairwise_state_dim // self.pairwise_head_width
-
-        if self.sequence_state_dim != sequence_num_heads * self.sequence_head_width:
-            raise ValueError(
-                "`sequence_state_dim` should be equal to `sequence_num_heads * sequence_head_width, got"
-                f" {self.sequence_state_dim} != {sequence_num_heads} * {self.sequence_head_width}."
-            )
-        if self.pairwise_state_dim != pairwise_num_heads * self.pairwise_head_width:
-            raise ValueError(
-                "`pairwise_state_dim` should be equal to `pairwise_num_heads * pairwise_head_width, got"
-                f" {self.pairwise_state_dim} != {pairwise_num_heads} * {self.pairwise_head_width}."
-            )
-        super().__post_init__(**kwargs)
-
-
-@strict(accept_kwargs=True)
-@dataclass
 class StructureModuleConfig(PreTrainedConfig):
     """
     Args:
@@ -149,6 +78,82 @@ class StructureModuleConfig(PreTrainedConfig):
     trans_scale_factor: int | None = 10
     epsilon: float | None = 1e-8
     inf: float | None = 1e5
+
+
+@strict(accept_kwargs=True)
+@dataclass
+class TrunkConfig(PreTrainedConfig):
+    sub_configs = {"structure_module": StructureModuleConfig}
+
+    num_blocks: int | None = 48
+    sequence_state_dim: int | None = 1024
+    pairwise_state_dim: int | None = is_divisible_by(divisor=2)(default=128)
+    sequence_head_width: int | None = 32
+    pairwise_head_width: int | None = 32
+    position_bins: int | None = 32
+    dropout: float | None = interval(max=0.4)(default=0.0)
+    layer_drop: float | None = 0.0
+    cpu_grad_checkpoint: bool | None = False
+    max_recycles: int | None = interval(min=0)(default=4)
+    chunk_size: int | None = 128
+    structure_module: Union[dict, "StructureModuleConfig"] | None = None
+
+    def __post_init__(self, **kwargs):
+        if self.structure_module is None:
+            self.structure_module = StructureModuleConfig()
+        elif isinstance(self.structure_module, dict):
+            self.structure_module = StructureModuleConfig(**self.structure_module)
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        if self.sequence_state_dim % self.sequence_state_dim != 0:
+            raise ValueError(
+                "`sequence_state_dim` should be a round multiple of `sequence_state_dim`, got"
+                f" {self.sequence_state_dim} and {self.sequence_state_dim}."
+            )
+        if self.pairwise_state_dim % self.pairwise_state_dim != 0:
+            raise ValueError(
+                "`pairwise_state_dim` should be a round multiple of `pairwise_state_dim`, got"
+                f" {self.pairwise_state_dim} and {self.pairwise_state_dim}."
+            )
+
+        sequence_num_heads = self.sequence_state_dim // self.sequence_head_width
+        pairwise_num_heads = self.pairwise_state_dim // self.pairwise_head_width
+
+        if self.sequence_state_dim != sequence_num_heads * self.sequence_head_width:
+            raise ValueError(
+                "`sequence_state_dim` should be equal to `sequence_num_heads * sequence_head_width, got"
+                f" {self.sequence_state_dim} != {sequence_num_heads} * {self.sequence_head_width}."
+            )
+        if self.pairwise_state_dim != pairwise_num_heads * self.pairwise_head_width:
+            raise ValueError(
+                "`pairwise_state_dim` should be equal to `pairwise_num_heads * pairwise_head_width, got"
+                f" {self.pairwise_state_dim} != {pairwise_num_heads} * {self.pairwise_head_width}."
+            )
+
+
+@strict(accept_kwargs=True)
+@dataclass
+class EsmFoldConfig(PreTrainedConfig):
+    sub_configs = {"trunk": TrunkConfig}
+
+    esm_type: str | None = None
+    fp16_esm: bool | None = True
+    use_esm_attn_map: bool | None = False
+    esm_ablate_pairwise: bool | None = False
+    esm_ablate_sequence: bool | None = False
+    esm_input_dropout: float | None = 0.0
+    embed_aa: bool | None = True
+    bypass_lm: bool | None = False
+    lddt_head_hid_dim: int | None = 128
+    trunk: Union[dict, "TrunkConfig"] | None = None
+
+    def __post_init__(self, **kwargs):
+        if self.trunk is None:
+            self.trunk = TrunkConfig()
+        elif isinstance(self.trunk, dict):
+            self.trunk = TrunkConfig(**self.trunk)
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)

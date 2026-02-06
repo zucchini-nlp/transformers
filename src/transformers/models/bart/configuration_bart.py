@@ -101,7 +101,11 @@ class BartConfig(PreTrainedConfig):
 
     model_type = "bart"
     keys_to_ignore_at_inference = ["past_key_values"]
-    attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
+    attribute_map = {
+        "num_attention_heads": "encoder_attention_heads",
+        "hidden_size": "d_model",
+        "encoder_layers": "num_hidden_layers",
+    }
 
     vocab_size: int | None = 50265
     max_position_embeddings: int | None = 1024
@@ -130,10 +134,13 @@ class BartConfig(PreTrainedConfig):
     forced_eos_token_id: int | None = 2
     is_decoder: bool | None = False
     tie_word_embeddings: bool | None = True
-    num_labels: int | None = 3
 
     def __post_init__(self, **kwargs):
-        self.num_hidden_layers = self.encoder_layers
+        # Set the default `num_labels` only if `id2label` is not
+        # yet set, i.e. user didn't pass `id2label/lable2id` in kwargs
+        if self.id2label is None:
+            self.num_labels = kwargs.pop("num_labels", 3)
+
         super().__post_init__(**kwargs)
 
 

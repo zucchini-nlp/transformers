@@ -94,12 +94,12 @@ class ResNetConfig(BackboneConfigMixin, PreTrainedConfig):
     hidden_act: str | None = "relu"
     downsample_in_first_stage: bool | None = False
     downsample_in_bottleneck: bool | None = False
-    out_features: list[str] | None = None
-    out_indices: list[int] | None = None
 
     def __post_init__(self, **kwargs):
-        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(self.depths) + 1)]
+        self.set_output_features_output_indices(
+            out_indices=kwargs.pop("out_indices", None), out_features=kwargs.pop("out_features", None)
+        )
         super().__post_init__(**kwargs)
 
     def validate_layer_type(self):

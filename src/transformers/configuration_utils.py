@@ -255,7 +255,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """
         `int`: The number of labels for classification models.
         """
-        return len(self.id2label)
+        return len(self.id2label) if self.id2label is not None else None
 
     @num_labels.setter
     def num_labels(self, num_labels: int):
@@ -375,7 +375,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
 
     def validate_layer_type(self):
         """Check that `layer_types` is correctly defined."""
-        if not (hasattr(self, "layer_types") and hasattr(self, "num_hidden_layers")):
+        if not (getattr(self, "layer_types", None) is not None and hasattr(self, "num_hidden_layers")):
             return
         elif not all(layer_type in ALLOWED_ATTENTION_LAYER_TYPES for layer_type in self.layer_types):
             raise ValueError(

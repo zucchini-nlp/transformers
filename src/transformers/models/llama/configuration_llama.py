@@ -24,6 +24,7 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
+from ...utils.type_validators import interval
 
 
 @strict(accept_kwargs=True)
@@ -136,7 +137,7 @@ class LlamaConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     hidden_act: str | None = "silu"
     max_position_embeddings: int | None = 2048
-    initializer_range: float | None = 0.02
+    initializer_range: float | None = interval(min=0.0, max=1.0)(default=0.2)
     rms_norm_eps: float | None = 1e-6
     use_cache: bool | None = True
     pad_token_id: int | None = None
