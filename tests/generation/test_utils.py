@@ -2243,6 +2243,9 @@ class GenerationTesterMixin:
             if "position_ids" not in model_forward_args or "input_ids" not in inputs_dict:
                 self.skipTest("This model doesn't use `position_ids`")
 
+            if config.is_encoder_decoder:
+                self.skipTest("This model doesn't prepare `position_ids` in generate")
+
             input_ids = inputs_dict["input_ids"]
             seq_length = input_ids.shape[1]
             # ensure left padding
@@ -2255,20 +2258,20 @@ class GenerationTesterMixin:
                     input_ids, generation_config, model_kwargs={}
                 )
 
-            out_wo_positions = model.generate(**inputs_dict, max_new_tokens=5, use_cache=True)
+            out_wo_positions = model.generate(**inputs_dict, max_new_tokens=5, use_cache=True, do_sample=False)
 
             # infer position ids from attn mask and generate again
             if "attention_mask" in inputs_dict:
                 attention_mask = inputs_dict["attention_mask"]
                 position_ids = attention_mask.long().cumsum(-1) - 1
-                position_ids = position_ids.masked_fill(attention_mask == 0, 1)
+                position_ids = position_ids.masked_fill(attention_mask == 0, 0)
                 position_ids = position_ids[..., -seq_length:].view(-1, seq_length)
             else:
                 position_ids = torch.arange(0, seq_length, dtype=torch.long, device=torch_device)
                 position_ids = position_ids.unsqueeze(0)
 
             out_w_positions = model.generate(
-                **inputs_dict, position_ids=position_ids, max_new_tokens=5, use_cache=True
+                **inputs_dict, position_ids=position_ids, max_new_tokens=5, use_cache=True, do_sample=False
             )
 
             # The two sets of generated sequences must match, if generate can infer position ids correctly

@@ -1125,7 +1125,7 @@ class Qwen3VLMoeModel(Qwen3VLMoePreTrainedModel):
         total_input_ids = input_ids
         if attention_mask is None:
             attention_mask = torch.ones_like(total_input_ids)
-        position_ids = torch.ones(
+        position_ids = torch.zeros(
             3,
             input_ids.shape[0],
             input_ids.shape[1],
