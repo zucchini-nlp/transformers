@@ -42,12 +42,11 @@ from ..llama.modeling_llama import LlamaRotaryEmbedding
 from ..qwen2_5_vl.modeling_qwen2_5_vl import (
     Qwen2_5_VLCausalLMOutputWithPast,
     Qwen2_5_VLForConditionalGeneration,
-    Qwen2_5_VLModel,
     Qwen2_5_VLVisionBlock,
 )
-from ..qwen2_vl.modeling_qwen2_vl import Qwen2VLModel
 from ..qwen2_vl.modeling_qwen2_vl import (
     PatchEmbed,
+    Qwen2VLModel,
     Qwen2VLModelOutputWithPast,
     Qwen2VLPreTrainedModel,
     TransformersKwargs,
