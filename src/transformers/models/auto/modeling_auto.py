@@ -147,6 +147,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("esm", "EsmModel"),
         ("evolla", "EvollaModel"),
         ("exaone4", "Exaone4Model"),
+        ("exaone_moe", "ExaoneMoeModel"),
         ("falcon", "FalconModel"),
         ("falcon_h1", "FalconH1Model"),
         ("falcon_mamba", "FalconMambaModel"),
@@ -289,6 +290,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("modernbert", "ModernBertModel"),
         ("modernbert-decoder", "ModernBertDecoderModel"),
         ("moonshine", "MoonshineModel"),
+        ("moonshine_streaming", "MoonshineStreamingModel"),
         ("moshi", "MoshiModel"),
         ("mpnet", "MPNetModel"),
         ("mpt", "MptModel"),
@@ -410,6 +412,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("t5", "T5Model"),
         ("t5gemma", "T5GemmaModel"),
         ("t5gemma2", "T5Gemma2Model"),
+        ("t5gemma2_encoder", "T5Gemma2Encoder"),
         ("table-transformer", "TableTransformerModel"),
         ("tapas", "TapasModel"),
         ("textnet", "TextNetModel"),
@@ -425,6 +428,7 @@ MODEL_MAPPING_NAMES = OrderedDict(
         ("unispeech-sat", "UniSpeechSatModel"),
         ("univnet", "UnivNetModel"),
         ("vaultgemma", "VaultGemmaModel"),
+        ("vibevoice_acoustic_tokenizer", "VibeVoiceAcousticTokenizerModel"),
         ("video_llama_3", "VideoLlama3Model"),
         ("video_llama_3_vision", "VideoLlama3VisionModel"),
         ("video_llava", "VideoLlavaModel"),
@@ -485,6 +489,7 @@ MODEL_FOR_PRETRAINING_MAPPING_NAMES = OrderedDict(
         ("ernie", "ErnieForPreTraining"),
         ("evolla", "EvollaForProteinText2Text"),
         ("exaone4", "Exaone4ForCausalLM"),
+        ("exaone_moe", "ExaoneMoeForCausalLM"),
         ("falcon_mamba", "FalconMambaForCausalLM"),
         ("flaubert", "FlaubertWithLMHeadModel"),
         ("flava", "FlavaForPreTraining"),
@@ -596,6 +601,7 @@ MODEL_FOR_CAUSAL_LM_MAPPING_NAMES = OrderedDict(
         ("ernie4_5", "Ernie4_5ForCausalLM"),
         ("ernie4_5_moe", "Ernie4_5_MoeForCausalLM"),
         ("exaone4", "Exaone4ForCausalLM"),
+        ("exaone_moe", "ExaoneMoeForCausalLM"),
         ("falcon", "FalconForCausalLM"),
         ("falcon_h1", "FalconH1ForCausalLM"),
         ("falcon_mamba", "FalconMambaForCausalLM"),
@@ -1111,6 +1117,7 @@ MODEL_FOR_SPEECH_SEQ_2_SEQ_MAPPING_NAMES = OrderedDict(
         ("granite_speech", "GraniteSpeechForConditionalGeneration"),
         ("kyutai_speech_to_text", "KyutaiSpeechToTextForConditionalGeneration"),
         ("moonshine", "MoonshineForConditionalGeneration"),
+        ("moonshine_streaming", "MoonshineStreamingForConditionalGeneration"),
         ("pop2piano", "Pop2PianoForConditionalGeneration"),
         ("seamless_m4t", "SeamlessM4TForSpeechToText"),
         ("seamless_m4t_v2", "SeamlessM4Tv2ForSpeechToText"),
@@ -1710,6 +1717,7 @@ MODEL_FOR_IMAGE_TO_IMAGE_MAPPING_NAMES = OrderedDict(
 MODEL_FOR_AUDIO_TOKENIZATION_NAMES = OrderedDict(
     [
         ("dac", "DacModel"),
+        ("vibevoice_acoustic_tokenizer", "VibeVoiceAcousticTokenizerModel"),
     ]
 )
 

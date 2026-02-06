@@ -18,9 +18,9 @@ from typing import ClassVar
 
 from huggingface_hub.dataclasses import strict
 
+from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
-from ...utils.backbone_utils import BackboneConfigMixin, get_aligned_output_features_output_indices
 
 
 logger = logging.get_logger(__name__)
@@ -98,10 +98,8 @@ class ResNetConfig(BackboneConfigMixin, PreTrainedConfig):
     out_indices: list[int] | None = None
 
     def __post_init__(self, **kwargs):
-        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(self.depths) + 1)]
-        self._out_features, self._out_indices = get_aligned_output_features_output_indices(
-            out_features=self.out_features, out_indices=self.out_indices, stage_names=self.stage_names
-        )
+        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
+        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
         super().__post_init__(**kwargs)
 
     def validate_layer_type(self):
