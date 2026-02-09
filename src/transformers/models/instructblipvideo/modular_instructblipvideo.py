@@ -193,7 +193,7 @@ class InstructBlipVideoModel(InstructBlipModel):
         use_cache: bool | None = None,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple | InstructBlipVideoForConditionalGenerationModelOutput:
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         # step 1: forward the images through the vision encoder,
         # we process in a batched way, later unbatch it back (video has frames=4 always)
@@ -457,7 +457,7 @@ class InstructBlipVideoForConditionalGeneration(InstructBlipForConditionalGenera
         >>> print(generated_text)
         "A person is eating a bowl of pasta, and they are using a fork to eat it. The person is sitting at a table, and the plate of pasta is on the table in front"
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         video_features: BaseModelOutputWithVisionQformerOutputs = self.get_video_features(
             pixel_values,

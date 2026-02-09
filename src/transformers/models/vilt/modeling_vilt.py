@@ -595,7 +595,7 @@ class ViltModel(ViltPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
@@ -777,7 +777,7 @@ class ViltForMaskedLM(ViltPreTrainedModel):
         >>> print(output)
         a bunch of cats laying on a couch.
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.vilt(
             input_ids,
@@ -923,7 +923,7 @@ class ViltForQuestionAnswering(ViltPreTrainedModel):
         >>> print("Predicted answer:", model.config.id2label[idx])
         Predicted answer: 2
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.vilt(
             input_ids,
@@ -1026,7 +1026,7 @@ class ViltForImageAndTextRetrieval(ViltPreTrainedModel):
         ...     outputs = model(**encoding)
         ...     scores[text] = outputs.logits[0, :].item()
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         loss = None
         if labels is not None:
@@ -1143,7 +1143,7 @@ class ViltForImagesAndTextClassification(ViltPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if pixel_values is not None and pixel_values.ndim == 4:
             # add dummy num_images dimension
@@ -1245,7 +1245,7 @@ class ViltForTokenClassification(ViltPreTrainedModel):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
         """
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.vilt(
             input_ids,

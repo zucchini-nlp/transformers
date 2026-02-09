@@ -730,7 +730,7 @@ class LayoutLMv3Model(LayoutLMv3PreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if input_ids is not None:
             input_shape = input_ids.size()
@@ -941,7 +941,7 @@ class LayoutLMv3ForTokenClassification(LayoutLMv3PreTrainedModel):
         >>> loss = outputs.loss
         >>> logits = outputs.logits
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlmv3(
             input_ids,
@@ -1051,7 +1051,7 @@ class LayoutLMv3ForQuestionAnswering(LayoutLMv3PreTrainedModel):
         >>> end_scores = outputs.end_logits
         ```"""
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlmv3(
             input_ids,
@@ -1172,7 +1172,7 @@ class LayoutLMv3ForSequenceClassification(LayoutLMv3PreTrainedModel):
         >>> loss = outputs.loss
         >>> logits = outputs.logits
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlmv3(
             input_ids,

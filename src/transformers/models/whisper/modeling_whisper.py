@@ -640,7 +640,7 @@ class WhisperEncoder(WhisperPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
         inputs_embeds = nn.functional.gelu(self.conv1(input_features))
         inputs_embeds = nn.functional.gelu(self.conv2(inputs_embeds))
 
@@ -783,7 +783,7 @@ class WhisperDecoder(WhisperPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         # retrieve input_ids and inputs_embeds
         if input_ids is not None and inputs_embeds is not None:
@@ -1031,7 +1031,7 @@ class WhisperModel(WhisperPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if encoder_outputs is None:
             input_features = self._mask_input_features(input_features, attention_mask=attention_mask)
@@ -1183,7 +1183,7 @@ class WhisperForConditionalGeneration(WhisperGenerationMixin, WhisperPreTrainedM
         >>> transcription
         ' Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.'
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if labels is not None:
             if labels.shape[1] > self.max_target_positions:
@@ -1343,7 +1343,7 @@ class WhisperForCausalLM(WhisperPreTrainedModel, GenerationMixin):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         # If the user passed a tuple or `BaseModelOutput` for encoder_outputs, we extract only the hidden states
         if isinstance(encoder_outputs, (BaseModelOutput, tuple, list)):
@@ -1471,7 +1471,7 @@ class WhisperForAudioClassification(WhisperPreTrainedModel):
         elif output_hidden_states is None:
             output_hidden_states = self.config.output_hidden_states
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if encoder_outputs is None:
             encoder_outputs = self.encoder(

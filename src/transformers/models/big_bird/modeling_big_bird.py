@@ -1655,7 +1655,7 @@ class BigBirdModel(BigBirdPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if self.config.is_decoder:
             use_cache = use_cache if use_cache is not None else self.config.use_cache
@@ -1949,7 +1949,7 @@ class BigBirdForPreTraining(BigBirdPreTrainedModel):
         >>> prediction_logits = outputs.prediction_logits
         >>> seq_relationship_logits = outputs.seq_relationship_logits
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.bert(
             input_ids,
@@ -2079,7 +2079,7 @@ class BigBirdForMaskedLM(BigBirdPreTrainedModel):
         1.99
         ```
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.bert(
             input_ids,
@@ -2170,7 +2170,7 @@ class BigBirdForCausalLM(BigBirdPreTrainedModel, GenerationMixin):
             `[-100, 0, ..., config.vocab_size]` (see `input_ids` docstring) Tokens with indices set to `-100` are
             ignored (masked), the loss is only computed for the tokens with labels n `[0, ..., config.vocab_size]`.
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.bert(
             input_ids,
@@ -2308,7 +2308,7 @@ class BigBirdForSequenceClassification(BigBirdPreTrainedModel):
         1.13
         ```
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.bert(
             input_ids,
@@ -2415,7 +2415,7 @@ class BigBirdForMultipleChoice(BigBirdPreTrainedModel):
             num_choices-1]` where `num_choices` is the size of the second dimension of the input tensors. (See
             `input_ids` above)
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
         num_choices = input_ids.shape[1] if input_ids is not None else inputs_embeds.shape[1]
 
         input_ids = input_ids.view(-1, input_ids.size(-1)) if input_ids is not None else None
@@ -2496,7 +2496,7 @@ class BigBirdForTokenClassification(BigBirdPreTrainedModel):
         labels (`torch.LongTensor` of shape `(batch_size, sequence_length)`, *optional*):
             Labels for computing the token classification loss. Indices should be in `[0, ..., config.num_labels - 1]`.
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.bert(
             input_ids,
@@ -2625,7 +2625,7 @@ class BigBirdForQuestionAnswering(BigBirdPreTrainedModel):
         >>> loss = outputs.loss
         ```
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         seqlen = input_ids.size(1) if input_ids is not None else inputs_embeds.size(1)
 

@@ -905,7 +905,7 @@ class InformerEncoder(InformerPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         hidden_states = self.value_embedding(inputs_embeds)
         embed_pos = self.embed_positions(inputs_embeds.size())
@@ -1049,7 +1049,7 @@ class InformerDecoder(InformerPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         input_shape = inputs_embeds.size()[:-1]
         # initialize `past_key_values`
@@ -1420,7 +1420,7 @@ class InformerModel(InformerPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         transformer_inputs, loc, scale, static_feat = self.create_network_inputs(
             past_values=past_values,
@@ -1719,7 +1719,7 @@ class InformerForPrediction(InformerPreTrainedModel):
         >>> mean_prediction = outputs.sequences.mean(dim=1)
         ```"""
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
         if future_values is not None:
             use_cache = False
 

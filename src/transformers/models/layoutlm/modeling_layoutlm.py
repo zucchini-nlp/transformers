@@ -509,7 +509,7 @@ class LayoutLMModel(LayoutLMPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
@@ -651,7 +651,7 @@ class LayoutLMForMaskedLM(LayoutLMPreTrainedModel):
 
         >>> loss = outputs.loss
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlm(
             input_ids,
@@ -768,7 +768,7 @@ class LayoutLMForSequenceClassification(LayoutLMPreTrainedModel):
         >>> loss = outputs.loss
         >>> logits = outputs.logits
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlm(
             input_ids=input_ids,
@@ -901,7 +901,7 @@ class LayoutLMForTokenClassification(LayoutLMPreTrainedModel):
         >>> loss = outputs.loss
         >>> logits = outputs.logits
         ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlm(
             input_ids=input_ids,
@@ -1018,7 +1018,7 @@ class LayoutLMForQuestionAnswering(LayoutLMPreTrainedModel):
         M. Hamann P. Harper, P. Martinez
         ```"""
 
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         outputs = self.layoutlm(
             input_ids=input_ids,

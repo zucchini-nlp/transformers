@@ -59,7 +59,7 @@ _FLOAT_TAG_VALUES = {"Infinity": float("inf"), "-Infinity": float("-inf"), "NaN"
 
 
 @strict(accept_kwargs=True)
-@dataclass
+@dataclass(repr=False)
 class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     # no-format
     r"""
@@ -193,15 +193,18 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
 
             self.dtype = getattr(torch, self.dtype)
 
-        # Keys are always strings in JSON so convert ids to int here for id2label and pruned_heads
+        # Keep the default value of `num_labels=2` in case users have saved a classfier with 2 labels
+        # Our config prev wouldn't save `id2label` for 2 labels because it is the default. In all other
+        # cases we except the model to hold an `id2label` field if it's a clf model, or nothing otherwise
         if self.id2label is None:
-            self._create_id_label_maps(kwargs.get("num_labels", 2))
+            self.num_labels = kwargs.get("num_labels", 2)
         else:
             if kwargs.get("num_labels") is not None and len(self.id2label) != kwargs.get("num_labels"):
                 logger.warning(
                     f"You passed `num_labels={kwargs.get('num_labels')}` which is incompatible to "
                     f"the `id2label` map of length `{len(self.id2label)}`."
                 )
+            # Keys are always strings in JSON so convert ids to int
             self.id2label = {int(key): value for key, value in self.id2label.items()}
 
         # BC for rotary embeddings. We will pop out legacy keys from kwargs and rename to new format
@@ -231,10 +234,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 logger.error(f"Can't set {key} with value {value} for {self}")
                 raise err
 
-    def _create_id_label_maps(self, num_labels: int):
-        self.id2label = {i: f"LABEL_{i}" for i in range(num_labels)}
-        self.label2id = dict(zip(self.id2label.values(), self.id2label.keys()))
-
     @property
     def name_or_path(self) -> str | None:
         return getattr(self, "_name_or_path", None)
@@ -242,13 +241,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     @name_or_path.setter
     def name_or_path(self, value):
         self._name_or_path = str(value)  # Make sure that name_or_path is a string (for JSON encoding)
-
-    @property
-    def use_return_dict(self) -> bool:
-        """
-        `bool`: Whether or not return [`~utils.ModelOutput`] instead of tuples.
-        """
-        return self.return_dict
 
     @property
     def num_labels(self) -> int:
@@ -262,7 +254,8 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         # we do not store `num_labels` attribute in config, but instead
         # compute it based on the length of the `id2label` map
         if self.id2label is None or self.num_labels != num_labels:
-            self._create_id_label_maps(num_labels)
+            self.id2label = {i: f"LABEL_{i}" for i in range(num_labels)}
+            self.label2id = dict(zip(self.id2label.values(), self.id2label.keys()))
 
     @property
     def _attn_implementation(self):
@@ -711,7 +704,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """
         return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
 
-        # Update config with kwargs if needed
         # To remove arg here are those passed along for our internal telemetry but we still need to remove them
         to_remove = ["_from_auto", "_from_pipeline"]
 
@@ -730,13 +722,13 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 "experts_implementation",
                 "output_attentions",
                 "torch_dtype",
+                "dtype",
                 "name_or_path",
             ]
         )
         for key, value in kwargs.items():
-            if key in valid_fields:
-                if key != "dtype":
-                    to_remove.append(key)
+            if key in valid_fields and key not in ["torch_dtype", "dtype"]:
+                to_remove.append(key)
 
         config = cls(**config_dict)
 
@@ -754,8 +746,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                     current_attr_updated.update(value)
                     value = current_attr.__class__(**current_attr_updated)
                 setattr(config, key, value)
-                if key != "dtype":
-                    to_remove.append(key)
+
         for key in to_remove:
             kwargs.pop(key, None)
 

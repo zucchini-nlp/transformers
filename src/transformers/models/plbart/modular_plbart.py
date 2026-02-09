@@ -141,7 +141,7 @@ class PLBartModel(PLBartPreTrainedModel):
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         # different to other models, PLBart automatically creates decoder_input_ids from
         # input_ids if no decoder_input_ids are provided
@@ -297,7 +297,7 @@ class PLBartForConditionalGeneration(PLBartPreTrainedModel, GenerationMixin):
         ['first', 'same', 'highest', 'result', 'number']
         ```
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if labels is not None:
             if decoder_input_ids is None and decoder_inputs_embeds is None:

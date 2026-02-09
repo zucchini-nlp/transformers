@@ -394,7 +394,7 @@ class SplinterModel(SplinterPreTrainedModel):
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if input_ids is not None and inputs_embeds is not None:
             raise ValueError("You cannot specify both input_ids and inputs_embeds at the same time")
@@ -544,7 +544,7 @@ class SplinterForQuestionAnswering(SplinterPreTrainedModel):
             the only one for which start_logits and end_logits are calculated and they will be of shape `(batch_size,
             sequence_length)`.
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         question_positions_were_none = False
         if question_positions is None:
@@ -706,7 +706,7 @@ class SplinterForPreTraining(SplinterPreTrainedModel):
             the only one for which start_logits and end_logits are calculated and they will be of shape `(batch_size,
             sequence_length)`.
         """
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        return_dict = return_dict if return_dict is not None else self.config.return_dict
 
         if question_positions is None and start_positions is not None and end_positions is not None:
             raise TypeError("question_positions must be specified in order to calculate the loss")
