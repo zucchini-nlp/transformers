@@ -119,7 +119,7 @@ class NanoChatConfig(PretrainedConfig):
         final_logit_softcapping: float | None = 15.0,
         attention_bias: bool = False,
         bos_token_id: int = 0,
-        eos_token_id: int = 1,
+        eos_token_id: int | list[int] | None = 1,
         pad_token_id: int = 1,
         tie_word_embeddings: bool = False,
         **kwargs,

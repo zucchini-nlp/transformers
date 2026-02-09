@@ -107,7 +107,7 @@ class CLIPTextConfig(PreTrainedConfig):
     # See https://github.com/huggingface/transformers/pull/24773#issuecomment-1632287538
     pad_token_id: int | None = 1
     bos_token_id: int | None = 49406
-    eos_token_id: int | None = 49407
+    eos_token_id: int | list[int] | None = 49407
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""

@@ -202,7 +202,7 @@ class Emu3TextConfig(PreTrainedConfig):
         use_cache: bool = True,
         pad_token_id: int = 151643,
         bos_token_id: int = 151849,
-        eos_token_id: int = 151850,
+        eos_token_id: int | list[int] | None = 151850,
         rope_parameters: RopeParameters | None = None,
         mlp_bias=False,
         attention_bias=False,

@@ -107,7 +107,7 @@ class Jais2Config(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 0,
-        eos_token_id: int | None = 150024,
+        eos_token_id: int | list[int] | None = 150024,
         tie_word_embeddings: bool | None = False,
         attention_bias: bool | None = True,
         attention_dropout: float | None = 0.0,

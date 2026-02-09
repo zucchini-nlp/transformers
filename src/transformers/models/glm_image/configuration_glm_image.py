@@ -243,7 +243,7 @@ class GlmImageTextConfig(PreTrainedConfig):
         pad_token_id: int = 167841,
         vision_vocab_size: int = 16512,
         attention_bias: bool = True,
-        eos_token_id: int = 16385,
+        eos_token_id: int | list[int] | None = 16385,
         **kwargs,
     ):
         self.vocab_size = vocab_size

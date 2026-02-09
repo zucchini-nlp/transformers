@@ -93,7 +93,7 @@ class GPTNeoXJapaneseConfig(PreTrainedConfig):
         layer_norm_eps: int | None = 1e-5,
         use_cache: bool | None = True,
         bos_token_id: int | None = 31996,
-        eos_token_id: int | None = 31999,
+        eos_token_id: int | list[int] | None = 31999,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_dropout: float | None = 0.1,
         hidden_dropout: float | None = 0.0,

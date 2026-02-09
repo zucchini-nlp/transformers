@@ -158,7 +158,7 @@ class ModernBertConfig(PreTrainedConfig):
         norm_eps: float | None = 1e-5,
         norm_bias: bool | None = False,
         pad_token_id: int | None = 50283,
-        eos_token_id: int | None = 50282,
+        eos_token_id: int | list[int] | None = 50282,
         bos_token_id: int | None = 50281,
         cls_token_id: int | None = 50281,
         sep_token_id: int | None = 50282,

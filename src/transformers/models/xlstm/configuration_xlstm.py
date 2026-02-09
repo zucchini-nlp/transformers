@@ -189,7 +189,7 @@ class xLSTMConfig(PreTrainedConfig):
         use_cache: bool = True,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
-        eos_token_id: int = 2,
+        eos_token_id: int | list[int] | None = 2,
         max_inference_chunksize: int = 16384,
         **kwargs,
     ):

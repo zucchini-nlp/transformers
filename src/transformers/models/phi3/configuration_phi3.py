@@ -136,7 +136,7 @@ class Phi3Config(PreTrainedConfig):
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 32000,
+        eos_token_id: int | list[int] | None = 32000,
         pad_token_id: int | None = 32000,
         sliding_window: int | None = None,
         **kwargs,

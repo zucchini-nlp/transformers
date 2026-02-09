@@ -181,7 +181,7 @@ class Aimv2TextConfig(PreTrainedConfig):
         qkv_bias: bool = False,
         mlp_bias: bool = False,
         hidden_act: str = "silu",
-        eos_token_id: int = 49407,
+        eos_token_id: int | list[int] | None = 49407,
         max_position_embeddings: int = 77,
         initializer_range: bool = 0.02,
         **kwargs,

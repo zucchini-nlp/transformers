@@ -144,7 +144,7 @@ class KyutaiSpeechToTextConfig(PreTrainedConfig):
         tie_word_embeddings: bool | None = False,
         pad_token_id: int | None = 3,
         bos_token_id: int | None = 48000,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         codec_config: dict | None = None,
         **kwargs,
     ):

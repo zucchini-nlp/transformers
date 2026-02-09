@@ -89,7 +89,7 @@ class LongformerConfig(PreTrainedConfig):
         sep_token_id: int = 2,
         pad_token_id: int = 1,
         bos_token_id: int = 0,
-        eos_token_id: int = 2,
+        eos_token_id: int | list[int] | None = 2,
         vocab_size: int = 30522,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,

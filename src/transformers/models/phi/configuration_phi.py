@@ -137,7 +137,7 @@ class PhiConfig(PreTrainedConfig):
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         qk_layernorm: bool | None = False,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         pad_token_id: int | None = None,
         **kwargs,
     ):

@@ -200,7 +200,7 @@ class DbrxConfig(PreTrainedConfig):
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         tie_word_embeddings: bool | None = False,
         **kwargs: Any,
     ):

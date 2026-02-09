@@ -128,10 +128,10 @@ class BartConfig(PreTrainedConfig):
     use_cache: bool | None = True
     pad_token_id: int | None = 1
     bos_token_id: int | None = 0
-    eos_token_id: int | None = 2
+    eos_token_id: int | list[int] | None = 2
     is_encoder_decoder: bool | None = True
     decoder_start_token_id: int | None = 2
-    forced_eos_token_id: int | None = 2
+    forced_eos_token_id: int | list[int] | None = 2
     is_decoder: bool | None = False
     tie_word_embeddings: bool | None = True
 

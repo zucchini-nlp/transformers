@@ -140,7 +140,7 @@ class Exaone4Config(PreTrainedConfig):
         rms_norm_eps: int | None = 1e-5,
         use_cache: bool | None = True,
         bos_token_id: int | None = 0,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         pad_token_id: int | None = None,
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,

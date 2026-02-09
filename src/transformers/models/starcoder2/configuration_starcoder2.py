@@ -131,7 +131,7 @@ class Starcoder2Config(PreTrainedConfig):
         norm_epsilon: int | None = 1e-5,
         use_cache: bool | None = True,
         bos_token_id: int | None = 50256,
-        eos_token_id: int | None = 50256,
+        eos_token_id: int | list[int] | None = 50256,
         pad_token_id: int | None = None,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         sliding_window: int | None = None,

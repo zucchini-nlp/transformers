@@ -146,7 +146,7 @@ class MiniMaxM2Config(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 200034,
-        eos_token_id: int | None = 200020,
+        eos_token_id: int | list[int] | None = 200020,
         tie_word_embeddings: bool | None = False,
         attention_dropout: float | None = 0.0,
         num_experts_per_tok: int | None = 8,

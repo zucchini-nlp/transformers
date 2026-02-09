@@ -97,7 +97,7 @@ class BltLocalDecoderConfig(PreTrainedConfig):
         initializer_range: float | None = 0.02,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         tie_word_embeddings: bool | None = False,
         **kwargs,
     ):
@@ -338,7 +338,7 @@ class BltConfig(PreTrainedConfig):
         tie_word_embeddings: bool | None = False,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         initializer_range: float | None = 0.02,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         **kwargs,

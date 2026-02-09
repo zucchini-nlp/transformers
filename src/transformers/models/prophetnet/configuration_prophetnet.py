@@ -125,7 +125,7 @@ class ProphetNetConfig(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         is_decoder: bool | None = False,
         tie_word_embeddings: bool | None = True,
         **kwargs,

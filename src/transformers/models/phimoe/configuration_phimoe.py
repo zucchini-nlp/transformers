@@ -124,7 +124,7 @@ class PhimoeConfig(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         tie_word_embeddings: int | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         sliding_window: int | None = None,

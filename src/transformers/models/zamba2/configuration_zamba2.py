@@ -163,7 +163,7 @@ class Zamba2Config(PreTrainedConfig):
         num_logits_to_keep: int | None = 1,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         use_long_context: bool | None = False,
         tie_word_embeddings: bool | None = True,
         **kwargs,

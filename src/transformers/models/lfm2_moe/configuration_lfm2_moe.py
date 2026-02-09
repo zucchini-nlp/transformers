@@ -115,7 +115,7 @@ class Lfm2MoeConfig(PreTrainedConfig):
         num_hidden_layers: int = 32,
         pad_token_id: int = 0,
         bos_token_id: int = 1,
-        eos_token_id: int = 2,
+        eos_token_id: int | list[int] | None = 2,
         tie_word_embeddings: bool = True,
         rope_parameters: RopeParameters = None,
         max_position_embeddings: int = 128_000,

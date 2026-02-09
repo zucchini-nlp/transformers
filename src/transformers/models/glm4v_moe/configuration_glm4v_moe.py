@@ -158,7 +158,7 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
         first_k_dense_replace: int | None = 1,
         norm_topk_prob: bool | None = True,
         pad_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         bos_token_id: int | None = None,
         router_aux_loss_coef: float | None = 0.0001,
         **kwargs,

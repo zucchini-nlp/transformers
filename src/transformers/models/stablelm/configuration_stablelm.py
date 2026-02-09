@@ -123,7 +123,7 @@ class StableLmConfig(PreTrainedConfig):
         hidden_dropout: float | None = 0.0,
         attention_dropout: float | None = 0.0,
         bos_token_id: int | None = 0,
-        eos_token_id: int | None = 0,
+        eos_token_id: int | list[int] | None = 0,
         pad_token_id: int | None = None,
         **kwargs,
     ):

@@ -122,7 +122,7 @@ class Ernie4_5Config(PreTrainedConfig):
         use_cache: int | None = True,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         tie_word_embeddings: bool | None = True,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         use_bias: bool | None = False,

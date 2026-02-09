@@ -311,7 +311,7 @@ class Qwen3OmniMoeTextConfig(PreTrainedConfig):
         mlp_only_layers: list[int] | None = None,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         self.vocab_size = vocab_size
@@ -470,7 +470,7 @@ class Qwen3OmniMoeTalkerCodePredictorConfig(Qwen3Config):
         num_code_groups: int | None = 32,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         self.num_code_groups = num_code_groups
@@ -534,7 +534,7 @@ class Qwen3OmniMoeTalkerTextConfig(Qwen3MoeConfig):
         mlp_only_layers: list[int] | None = None,
         pad_token_id: int | None = None,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -2631,7 +2631,7 @@ class Qwen3OmniMoeForConditionalGeneration(Qwen3OmniMoePreTrainedModel, Generati
         use_audio_in_video: bool = False,
         return_audio: bool | None = None,
         thinker_max_new_tokens: int = 1024,
-        thinker_eos_token_id: int = 151645,
+        thinker_eos_token_id: int | list[int] | None = 151645,
         talker_max_new_tokens: int = 4096,
         talker_do_sample: bool = True,
         talker_top_k: int = 50,

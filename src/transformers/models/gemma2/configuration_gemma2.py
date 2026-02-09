@@ -136,7 +136,7 @@ class Gemma2Config(PreTrainedConfig):
         rms_norm_eps: int | None = 1e-6,
         use_cache: bool | None = True,
         pad_token_id: int | None = 0,
-        eos_token_id: int | None = 1,
+        eos_token_id: int | list[int] | None = 1,
         bos_token_id: int | None = 2,
         tie_word_embeddings: bool | None = True,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,

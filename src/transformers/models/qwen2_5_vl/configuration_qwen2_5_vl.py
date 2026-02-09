@@ -183,7 +183,7 @@ class Qwen2_5_VLTextConfig(PreTrainedConfig):
         attention_dropout: float | None = 0.0,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         bos_token_id: int | None = 151643,
-        eos_token_id: int | None = 151645,
+        eos_token_id: int | list[int] | None = 151645,
         pad_token_id: int | None = None,
         **kwargs,
     ):

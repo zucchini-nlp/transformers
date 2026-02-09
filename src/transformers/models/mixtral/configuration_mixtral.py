@@ -146,7 +146,7 @@ class MixtralConfig(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         tie_word_embeddings: bool | None = False,
         sliding_window: int | None = None,
         attention_dropout: float | None = 0.0,

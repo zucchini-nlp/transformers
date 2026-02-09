@@ -111,7 +111,7 @@ class BitNetConfig(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 128000,
-        eos_token_id: int | None = 128001,
+        eos_token_id: int | list[int] | None = 128001,
         tie_word_embeddings: bool | None = False,
         attention_bias: bool | None = False,
         attention_dropout: str | None = 0.0,

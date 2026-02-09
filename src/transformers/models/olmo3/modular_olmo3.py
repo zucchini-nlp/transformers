@@ -147,7 +147,7 @@ class Olmo3Config(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = 1,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = 50279,
+        eos_token_id: int | list[int] | None = 50279,
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_bias: bool | None = False,

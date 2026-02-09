@@ -253,7 +253,7 @@ class DiaConfig(PreTrainedConfig):
         norm_eps: float = 1e-5,
         is_encoder_decoder: bool = True,
         pad_token_id: int = 1025,
-        eos_token_id: int = 1024,
+        eos_token_id: int | list[int] | None = 1024,
         bos_token_id: int = 1026,
         delay_pattern: list[int] | None = None,
         initializer_range: float = 0.02,

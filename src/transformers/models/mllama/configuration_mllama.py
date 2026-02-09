@@ -224,7 +224,7 @@ class MllamaTextConfig(PreTrainedConfig):
         cross_attention_layers: list[int] | None = None,
         dropout: float = 0,
         bos_token_id: int = 128000,
-        eos_token_id: int = 128001,
+        eos_token_id: int | list[int] | None = 128001,
         pad_token_id: int | None = 128004,
         **kwargs,
     ):

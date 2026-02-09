@@ -156,7 +156,7 @@ class Cohere2Config(PreTrainedConfig):
         use_cache: int | None = True,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 5,
-        eos_token_id: int | None = 255001,
+        eos_token_id: int | list[int] | None = 255001,
         tie_word_embeddings: bool | None = True,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_bias: bool | None = False,

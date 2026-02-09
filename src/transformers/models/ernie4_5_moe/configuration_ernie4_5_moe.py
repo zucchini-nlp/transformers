@@ -141,7 +141,7 @@ class Ernie4_5_MoeConfig(PreTrainedConfig):
         vocab_size: int | None = 103424,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         hidden_size: int | None = 2560,
         intermediate_size: int | None = 12288,
         num_hidden_layers: int | None = 28,

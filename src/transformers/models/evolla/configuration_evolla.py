@@ -228,7 +228,7 @@ class EvollaConfig(PreTrainedConfig):
         initializer_range: float | None = 0.02,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 128000,
-        eos_token_id: int | None = 128009,
+        eos_token_id: int | list[int] | None = 128009,
         use_cache: bool | None = False,
         tie_word_embeddings: bool | None = False,
         is_decoder: bool | None = False,

@@ -138,7 +138,7 @@ class FlexOlmoConfig(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = 100277,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = 100257,
+        eos_token_id: int | list[int] | None = 100257,
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_bias: bool | None = False,

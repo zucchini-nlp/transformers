@@ -155,7 +155,7 @@ class SmolLM3Config(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = 128004,
         bos_token_id: int | None = 128000,
-        eos_token_id: int | None = 128001,
+        eos_token_id: int | list[int] | None = 128001,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         use_sliding_window: bool | None = False,
         sliding_window: int | None = None,

@@ -240,7 +240,7 @@ class GlmImageTextConfig(Glm4vTextConfig):
         vision_vocab_size: int = 16512,
         attention_bias: bool = True,
         pad_token_id: int = 167841,
-        eos_token_id: int = 16385,
+        eos_token_id: int | list[int] | None = 16385,
         **super_kwargs,
     ):
         super().__init__(

@@ -139,7 +139,7 @@ class SolarOpenConfig(Glm4MoeConfig):
         topk_group: int = 1,
         norm_topk_prob: bool = True,
         bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
+        eos_token_id: int | list[int] | None = None,
         pad_token_id: int | None = None,
         **kwargs,
     ):

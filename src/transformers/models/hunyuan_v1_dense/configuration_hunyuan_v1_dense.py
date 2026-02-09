@@ -109,7 +109,7 @@ class HunYuanDenseV1Config(PreTrainedConfig):
         use_cache: bool | None = True,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         eod_token_id: int | None = 3,
         pretraining_tp: int | None = 1,
         tie_word_embeddings: bool | None = False,

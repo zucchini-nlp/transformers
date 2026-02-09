@@ -133,7 +133,7 @@ class BambaConfig(PreTrainedConfig):
         num_logits_to_keep: int | None = 1,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,
-        eos_token_id: int | None = 2,
+        eos_token_id: int | list[int] | None = 2,
         max_position_embeddings: int | None = 262144,
         attention_dropout: float | None = 0.0,
         attn_layer_indices: list[int] | None = None,

@@ -131,7 +131,7 @@ class FalconConfig(PreTrainedConfig):
         max_position_embeddings: int | None = 2048,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         bos_token_id: int | None = 11,
-        eos_token_id: int | None = 11,
+        eos_token_id: int | list[int] | None = 11,
         pad_token_id: int | None = None,
         ffn_hidden_size: int | None = None,
         activation: str | None = "gelu",

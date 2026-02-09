@@ -176,7 +176,7 @@ class Gemma3nTextConfig(PreTrainedConfig):
         rms_norm_eps: float = 1e-6,
         use_cache: bool = True,
         pad_token_id: int = 0,
-        eos_token_id: int = 1,
+        eos_token_id: int | list[int] | None = 1,
         bos_token_id: int = 2,
         rope_parameters: dict[Literal["sliding_attention", "full_attention"], RopeParameters] | None = None,
         attention_bias: bool = False,

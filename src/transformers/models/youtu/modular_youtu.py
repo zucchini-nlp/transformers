@@ -142,7 +142,7 @@ class YoutuConfig(DeepseekV3Config):
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 128000,
-        eos_token_id: int | None = 128001,
+        eos_token_id: int | list[int] | None = 128001,
         tie_word_embeddings: bool | None = True,
         rope_parameters: RopeParameters | dict[str, RopeParameters] = None,
         rope_interleave: bool | None = True,
