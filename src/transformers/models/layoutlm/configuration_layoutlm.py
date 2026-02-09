@@ -106,7 +106,7 @@ class LayoutLMConfig(PreTrainedConfig):
         initializer_range=0.02,
         layer_norm_eps=1e-12,
         pad_token_id=0,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         bos_token_id=None,
         use_cache=True,
         max_2d_position_embeddings=1024,

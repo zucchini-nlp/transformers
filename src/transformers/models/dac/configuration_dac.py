@@ -14,8 +14,10 @@
 """Dac model configuration"""
 
 import math
+from dataclasses import dataclass
 
 import numpy as np
+from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
@@ -24,6 +26,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class DacConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of an [`DacModel`]. It is used to instantiate a
@@ -72,37 +76,22 @@ class DacConfig(PreTrainedConfig):
 
     model_type = "dac"
 
-    def __init__(
-        self,
-        encoder_hidden_size=64,
-        downsampling_ratios=[2, 4, 8, 8],
-        decoder_hidden_size=1536,
-        n_codebooks=9,
-        codebook_size=1024,
-        codebook_dim=8,
-        quantizer_dropout=0,
-        commitment_loss_weight=0.25,
-        codebook_loss_weight=1.0,
-        sampling_rate=16000,
-        **kwargs,
-    ):
-        self.encoder_hidden_size = encoder_hidden_size
-        self.downsampling_ratios = downsampling_ratios
-        self.decoder_hidden_size = decoder_hidden_size
-        self.upsampling_ratios = downsampling_ratios[::-1]
-        self.n_codebooks = n_codebooks
-        self.codebook_size = codebook_size
-        self.codebook_dim = codebook_dim
-        self.quantizer_dropout = quantizer_dropout
-        self.sampling_rate = sampling_rate
+    encoder_hidden_size: int = 64
+    downsampling_ratios: list[int] | tuple[int, ...] = (2, 4, 8, 8)
+    decoder_hidden_size: int = 1536
+    n_codebooks: int = 9
+    codebook_size: int = 1024
+    codebook_dim: int = 8
+    quantizer_dropout: float = 0.0
+    commitment_loss_weight: float = 0.25
+    codebook_loss_weight: float = 1.0
+    sampling_rate: int = 16000
 
-        self.hidden_size = encoder_hidden_size * (2 ** len(downsampling_ratios))
-
-        self.hop_length = int(np.prod(downsampling_ratios))
-        self.commitment_loss_weight = commitment_loss_weight
-        self.codebook_loss_weight = codebook_loss_weight
-
-        super().__init__(**kwargs)
+    def __post_init__(self, **kwargs):
+        self.upsampling_ratios = self.downsampling_ratios[::-1]
+        self.hidden_size = self.encoder_hidden_size * (2 ** len(self.downsampling_ratios))
+        self.hop_length = int(np.prod(self.downsampling_ratios))
+        super().__post_init__(**kwargs)
 
     @property
     def frame_rate(self) -> int:

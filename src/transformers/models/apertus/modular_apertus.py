@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections.abc import Callable
+from dataclasses import dataclass, field
 
 import torch
+from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ...activations import ACT2CLS
@@ -42,6 +44,8 @@ from ..nemotron.modeling_nemotron import NemotronMLP
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class ApertusConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`ApertusModel`]. It is used to instantiate a Apertus
@@ -131,60 +135,39 @@ class ApertusConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    def __init__(
-        self,
-        vocab_size: int | None = 131072,
-        hidden_size: int | None = 4096,
-        intermediate_size: int | None = 14336,
-        num_hidden_layers: int | None = 32,
-        num_attention_heads: int | None = 32,
-        num_key_value_heads: int | None = None,
-        hidden_act: str | None = "xielu",
-        max_position_embeddings: int | None = 65536,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-5,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = 3,
-        bos_token_id: int | None = 1,
-        eos_token_id: int | list[int] | None = 2,
-        tie_word_embeddings: bool | None = False,
-        rope_parameters: RopeParameters | None = {
+    vocab_size: int | None = 131072
+    hidden_size: int | None = 4096
+    intermediate_size: int | None = 14336
+    num_hidden_layers: int | None = 32
+    num_attention_heads: int | None = 32
+    num_key_value_heads: int | None = None
+    hidden_act: str | None = "xielu"
+    max_position_embeddings: int | None = 65536
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-5
+    use_cache: bool | None = True
+    pad_token_id: int | None = 3
+    bos_token_id: int | None = 1
+    eos_token_id: int | list[int] | None = 2
+    tie_word_embeddings: bool | None = False
+    rope_parameters: RopeParameters | dict | None = field(
+        default_factory=lambda: {
             "rope_type": "llama3",
             "rope_theta": 12000000.0,
             "factor": 8.0,
             "original_max_position_embeddings": 8192,
             "low_freq_factor": 1.0,
             "high_freq_factor": 4.0,
-        },
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
+        }
+    )
+    attention_bias: bool | None = False
+    attention_dropout: float | None = 0.0
 
-        # for backward compatibility
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
+    def __post_init__(self, **kwargs):
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
-        self.rope_parameters = rope_parameters
-
-        self.tie_word_embeddings = tie_word_embeddings
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 class ApertusMLP(NemotronMLP):

@@ -115,7 +115,7 @@ class ImageGPTConfig(PreTrainedConfig):
         add_cross_attention=False,
         pad_token_id=None,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         self.add_cross_attention = add_cross_attention

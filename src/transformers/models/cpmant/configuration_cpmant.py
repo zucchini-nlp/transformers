@@ -13,6 +13,10 @@
 # limitations under the License.
 """CPMAnt model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class CpmAntConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`CpmAntModel`]. It is used to instantiate an
@@ -83,43 +89,22 @@ class CpmAntConfig(PreTrainedConfig):
 
     model_type = "cpmant"
 
-    def __init__(
-        self,
-        vocab_size: int = 30720,
-        hidden_size: int = 4096,
-        num_attention_heads: int = 32,
-        dim_head: int = 128,
-        dim_ff: int = 10240,
-        num_hidden_layers: int = 48,
-        dropout_p: int = 0.0,
-        position_bias_num_buckets: int = 512,
-        position_bias_max_distance: int = 2048,
-        eps: int = 1e-6,
-        init_std: float = 1.0,
-        prompt_types: int = 32,
-        prompt_length: int = 32,
-        segment_types: int = 32,
-        use_cache: bool = True,
-        tie_word_embeddings=True,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.tie_word_embeddings = tie_word_embeddings
-        self.prompt_types = prompt_types
-        self.prompt_length = prompt_length
-        self.segment_types = segment_types
-        self.hidden_size = hidden_size
-        self.num_attention_heads = num_attention_heads
-        self.dim_head = dim_head
-        self.dim_ff = dim_ff
-        self.num_hidden_layers = num_hidden_layers
-        self.position_bias_num_buckets = position_bias_num_buckets
-        self.position_bias_max_distance = position_bias_max_distance
-        self.dropout_p = dropout_p
-        self.eps = eps
-        self.use_cache = use_cache
-        self.vocab_size = vocab_size
-        self.init_std = init_std
+    vocab_size: int = 30720
+    hidden_size: int = 4096
+    num_attention_heads: int = 32
+    dim_head: int = 128
+    dim_ff: int = 10240
+    num_hidden_layers: int = 48
+    dropout_p: float = 0.0
+    position_bias_num_buckets: int = 512
+    position_bias_max_distance: int = 2048
+    eps: float = 1e-6
+    init_std: float = 1.0
+    prompt_types: int = 32
+    prompt_length: int = 32
+    segment_types: int = 32
+    use_cache: bool = True
+    tie_word_embeddings: bool = True
 
 
 __all__ = ["CpmAntConfig"]

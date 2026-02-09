@@ -84,7 +84,7 @@ class RagConfig(PreTrainedConfig):
         prefix=None,
         bos_token_id=None,
         pad_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         decoder_start_token_id=None,
         title_sep=" / ",
         doc_sep=" // ",

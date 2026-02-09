@@ -13,6 +13,10 @@
 # limitations under the License.
 """BARK model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import add_start_docstrings, logging
 from ..auto import CONFIG_MAPPING, AutoConfig
@@ -59,6 +63,8 @@ BARK_SUBMODELCONFIG_START_DOCSTRING = """
 """
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class BarkSubModelConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
 
@@ -69,32 +75,16 @@ class BarkSubModelConfig(PreTrainedConfig):
         "window_size": "block_size",
     }
 
-    def __init__(
-        self,
-        block_size=1024,
-        input_vocab_size=10_048,
-        output_vocab_size=10_048,
-        num_layers=12,
-        num_heads=12,
-        hidden_size=768,
-        dropout=0.0,
-        bias=True,  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
-        initializer_range=0.02,
-        use_cache=True,
-        **kwargs,
-    ):
-        self.block_size = block_size
-        self.input_vocab_size = input_vocab_size
-        self.output_vocab_size = output_vocab_size
-        self.num_layers = num_layers
-        self.num_heads = num_heads
-        self.hidden_size = hidden_size
-        self.dropout = dropout
-        self.bias = bias
-        self.use_cache = use_cache
-        self.initializer_range = initializer_range
-
-        super().__init__(**kwargs)
+    block_size: int = 1024
+    input_vocab_size: int = 10_048
+    output_vocab_size: int = 10_048
+    num_layers: int = 12
+    num_heads: int = 12
+    hidden_size: int = 768
+    dropout: float = 0.0
+    bias: bool = True
+    initializer_range: float = 0.02
+    use_cache: bool = True
 
 
 @add_start_docstrings(
@@ -170,14 +160,13 @@ class BarkFineConfig(BarkSubModelConfig):
     model_type = "fine_acoustics"
     base_config_key = "fine_acoustics_config"
 
-    def __init__(self, tie_word_embeddings=True, n_codes_total=8, n_codes_given=1, **kwargs):
-        self.n_codes_total = n_codes_total
-        self.n_codes_given = n_codes_given
-
-        self.tie_word_embeddings = tie_word_embeddings
-        super().__init__(**kwargs)
+    tie_word_embeddings: bool = True
+    n_codes_total: int = 8
+    n_codes_given: int = 1
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class BarkConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a [`BarkModel`]. It is used to instantiate a Bark
@@ -238,51 +227,41 @@ class BarkConfig(PreTrainedConfig):
         "fine_acoustics_config": BarkFineConfig,
         "codec_config": AutoConfig,
     }
+    semantic_config: dict | PreTrainedConfig | None = None
+    coarse_acoustics_config: dict | PreTrainedConfig | None = None
+    fine_acoustics_config: dict | PreTrainedConfig | None = None
+    codec_config: dict | PreTrainedConfig | None = None
+    initializer_range: float = 0.02
 
-    def __init__(
-        self,
-        semantic_config: dict | None = None,
-        coarse_acoustics_config: dict | None = None,
-        fine_acoustics_config: dict | None = None,
-        codec_config: dict | None = None,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        if semantic_config is None:
-            semantic_config = BarkSemanticConfig()
+    def __post_init__(self, **kwargs):
+        if self.semantic_config is None:
+            self.semantic_config = BarkSemanticConfig()
             logger.info("`semantic_config` is `None`. Initializing the `BarkSemanticConfig` with default values.")
-        elif isinstance(semantic_config, dict):
-            semantic_config = BarkSemanticConfig(**semantic_config)
+        elif isinstance(self.semantic_config, dict):
+            self.semantic_config = BarkSemanticConfig(**self.semantic_config)
 
-        if coarse_acoustics_config is None:
-            coarse_acoustics_config = BarkCoarseConfig()
+        if self.coarse_acoustics_config is None:
+            self.coarse_acoustics_config = BarkCoarseConfig()
             logger.info(
                 "`coarse_acoustics_config` is `None`. Initializing the `BarkCoarseConfig` with default values."
             )
-        elif isinstance(coarse_acoustics_config, dict):
-            coarse_acoustics_config = BarkCoarseConfig(**coarse_acoustics_config)
+        elif isinstance(self.coarse_acoustics_config, dict):
+            self.coarse_acoustics_config = BarkCoarseConfig(**self.coarse_acoustics_config)
 
-        if fine_acoustics_config is None:
-            fine_acoustics_config = BarkFineConfig()
+        if self.fine_acoustics_config is None:
+            self.fine_acoustics_config = BarkFineConfig()
             logger.info("`fine_acoustics_config` is `None`. Initializing the `BarkFineConfig` with default values.")
-        elif isinstance(fine_acoustics_config, dict):
-            fine_acoustics_config = BarkFineConfig(**fine_acoustics_config)
+        elif isinstance(self.fine_acoustics_config, dict):
+            self.fine_acoustics_config = BarkFineConfig(**self.fine_acoustics_config)
 
-        if codec_config is None:
-            codec_config = CONFIG_MAPPING["encodec"]()
+        if self.codec_config is None:
+            self.codec_config = CONFIG_MAPPING["encodec"]()
             logger.info("`codec_config` is `None`. Initializing the `codec_config` with default values.")
-        elif isinstance(codec_config, dict):
-            codec_model_type = codec_config.get("model_type", "encodec")
-            codec_config = CONFIG_MAPPING[codec_model_type](**codec_config)
+        elif isinstance(self.codec_config, dict):
+            codec_model_type = self.codec_config.get("model_type", "encodec")
+            self.codec_config = CONFIG_MAPPING[codec_model_type](**self.codec_config)
 
-        self.semantic_config = semantic_config
-        self.coarse_acoustics_config = coarse_acoustics_config
-        self.fine_acoustics_config = fine_acoustics_config
-        self.codec_config = codec_config
-
-        self.initializer_range = initializer_range
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["BarkCoarseConfig", "BarkConfig", "BarkFineConfig", "BarkSemanticConfig"]

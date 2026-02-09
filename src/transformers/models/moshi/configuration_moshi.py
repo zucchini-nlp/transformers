@@ -129,7 +129,7 @@ class MoshiDepthConfig(PreTrainedConfig):
         tie_word_embeddings=False,
         pad_token_id=None,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         self.vocab_size = vocab_size

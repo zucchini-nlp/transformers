@@ -103,7 +103,7 @@ class RoFormerConfig(PreTrainedConfig):
         layer_norm_eps=1e-12,
         pad_token_id=0,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         rotary_value=False,
         use_cache=True,
         is_decoder=False,

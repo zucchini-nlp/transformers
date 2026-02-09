@@ -152,7 +152,7 @@ class TapasConfig(PreTrainedConfig):
         layer_norm_eps=1e-12,
         pad_token_id=0,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         positive_label_weight=10.0,
         num_aggregation_labels=0,
         aggregation_loss_weight=1.0,

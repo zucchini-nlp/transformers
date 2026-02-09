@@ -201,7 +201,7 @@ class MptConfig(PreTrainedConfig):
         tie_word_embeddings=True,
         pad_token_id=None,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         **kwargs,
     ):
         if attn_config is None:

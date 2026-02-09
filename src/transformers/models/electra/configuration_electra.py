@@ -132,7 +132,7 @@ class ElectraConfig(PreTrainedConfig):
         is_decoder=False,
         add_cross_attention=False,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         tie_word_embeddings=True,
         **kwargs,
     ):

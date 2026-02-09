@@ -139,7 +139,7 @@ class LxmertConfig(PreTrainedConfig):
         visual_feat_loss=True,
         pad_token_id=None,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         tie_word_embeddings=True,
         **kwargs,
     ):

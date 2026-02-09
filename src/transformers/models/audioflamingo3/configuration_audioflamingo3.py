@@ -13,7 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ...configuration_utils import PretrainedConfig
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
+from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
 
@@ -21,7 +25,9 @@ from ..auto import CONFIG_MAPPING, AutoConfig
 logger = logging.get_logger(__name__)
 
 
-class AudioFlamingo3EncoderConfig(PretrainedConfig):
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
+class AudioFlamingo3EncoderConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of an [`AudioFlamingo3Encoder`]. It is used to instantiate an
     AudioFlamingo3 audio encoder according to the specified arguments, defining the model architecture. Instantiating a
@@ -89,42 +95,24 @@ class AudioFlamingo3EncoderConfig(PretrainedConfig):
         "encoder_layerdrop": "layerdrop",
     }
 
-    def __init__(
-        self,
-        num_mel_bins=128,
-        num_hidden_layers=32,
-        num_attention_heads=20,
-        intermediate_size=5120,
-        layerdrop=0.0,
-        activation_function="gelu",
-        hidden_size=1280,
-        dropout=0.0,
-        attention_dropout=0.0,
-        activation_dropout=0.0,
-        initializer_range=0.02,
-        scale_embedding=False,
-        max_source_positions=1500,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-
-        self.num_mel_bins = num_mel_bins
-        self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.intermediate_size = intermediate_size
-        self.dropout = dropout
-        self.attention_dropout = attention_dropout
-        self.activation_dropout = activation_dropout
-        self.activation_function = activation_function
-        self.initializer_range = initializer_range
-        self.layerdrop = layerdrop
-        self.num_hidden_layers = num_hidden_layers
-        self.scale_embedding = scale_embedding
-        self.max_source_positions = max_source_positions
+    num_mel_bins: int = 128
+    num_hidden_layers: int = 32
+    num_attention_heads: int = 20
+    intermediate_size: int = 5120
+    layerdrop: float = 0.0
+    activation_function: str = "gelu"
+    hidden_size: int = 1280
+    dropout: float = 0.0
+    attention_dropout: float = 0.0
+    activation_dropout: float = 0.0
+    initializer_range: float = 0.02
+    scale_embedding: bool = False
+    max_source_positions: int = 1500
 
 
-class AudioFlamingo3Config(PretrainedConfig):
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
+class AudioFlamingo3Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of an [`AudioFlamingo3ForConditionalGeneration`]. It is used to instantiate an
     AudioFlamingo3 model according to the specified arguments, defining the model architecture. Instantiating a configuration
@@ -173,37 +161,26 @@ class AudioFlamingo3Config(PretrainedConfig):
         "audio_config": AudioFlamingo3EncoderConfig,
         "text_config": AutoConfig,
     }
+    audio_config: dict | PreTrainedConfig | None = None
+    text_config: dict | PreTrainedConfig | None = None
+    audio_token_id: int = 151669
+    projector_hidden_act: str = "gelu"
+    projector_bias: bool = True
 
-    def __init__(
-        self,
-        audio_config=None,
-        text_config=None,
-        audio_token_id=151669,
-        projector_hidden_act="gelu",
-        projector_bias=True,
-        **kwargs,
-    ):
-        self.audio_token_id = audio_token_id
+    def __post_init__(self, **kwargs):
+        if isinstance(self.audio_config, dict):
+            self.audio_config["model_type"] = self.audio_config.get("model_type", "audioflamingo3_encoder")
+            self.audio_config = CONFIG_MAPPING[self.audio_config["model_type"]](**self.audio_config)
+        elif self.audio_config is None:
+            self.audio_config = CONFIG_MAPPING["audioflamingo3_encoder"]()
 
-        if isinstance(audio_config, dict):
-            audio_config["model_type"] = audio_config.get("model_type", "audioflamingo3_encoder")
-            audio_config = CONFIG_MAPPING[audio_config["model_type"]](**audio_config)
-        elif audio_config is None:
-            audio_config = CONFIG_MAPPING["audioflamingo3_encoder"]()
+        if isinstance(self.text_config, dict):
+            self.text_config["model_type"] = self.text_config.get("model_type", "qwen2")
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](**self.text_config)
+        elif self.text_config is None:
+            self.text_config = CONFIG_MAPPING["qwen2"]()
 
-        self.audio_config = audio_config
-
-        if isinstance(text_config, dict):
-            text_config["model_type"] = text_config.get("model_type", "qwen2")
-            text_config = CONFIG_MAPPING[text_config["model_type"]](**text_config)
-        elif text_config is None:
-            text_config = CONFIG_MAPPING["qwen2"]()
-
-        self.text_config = text_config
-        self.projector_hidden_act = projector_hidden_act
-        self.projector_bias = projector_bias
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["AudioFlamingo3Config", "AudioFlamingo3EncoderConfig"]

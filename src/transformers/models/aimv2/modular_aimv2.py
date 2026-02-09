@@ -15,9 +15,11 @@
 """Pytorch implementation of AIMv2 Model"""
 
 import math
+from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
+from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ... import initialization as init
@@ -26,11 +28,7 @@ from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithPooling
 from ...modeling_utils import PreTrainedModel
 from ...processing_utils import Unpack
-from ...utils import (
-    TransformersKwargs,
-    auto_docstring,
-    can_return_tuple,
-)
+from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from ...utils.generic import check_model_inputs
 from ..clip.modeling_clip import CLIPModel, CLIPTextEmbeddings, _get_vector_norm
 from ..llama.modeling_llama import LlamaMLP, LlamaRMSNorm
@@ -38,6 +36,8 @@ from ..siglip.configuration_siglip import SiglipConfig, SiglipTextConfig, Siglip
 from ..siglip.modeling_siglip import SiglipAttention, SiglipEncoder, SiglipOutput
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Aimv2VisionConfig(SiglipVisionConfig):
     r"""
     This is the configuration class to store the configuration of a [`Aimv2VisionModel`]. It is used to instantiate a
@@ -95,49 +95,25 @@ class Aimv2VisionConfig(SiglipVisionConfig):
     >>> configuration = model.config
     ```"""
 
-    def __init__(
-        self,
-        hidden_size: int = 1024,
-        intermediate_size: int = 2816,
-        num_hidden_layers: int = 24,
-        num_attention_heads: int = 8,
-        num_channels: int = 3,
-        image_size: int = 224,
-        patch_size: int = 14,
-        rms_norm_eps: float = 1e-5,
-        attention_dropout: float = 0.0,
-        qkv_bias: bool = False,
-        mlp_bias: bool = False,
-        hidden_act: str = "silu",
-        initializer_range: float = 0.02,
-        use_head: bool = True,
-        is_native: bool = False,
-        **kwargs,
-    ):
-        super().__init__(
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            hidden_act=hidden_act,
-            num_channels=num_channels,
-            image_size=image_size,
-            patch_size=patch_size,
-            qkv_bias=qkv_bias,
-            **kwargs,
-        )
+    hidden_size: int = 1024
+    intermediate_size: int = 2816
+    num_hidden_layers: int = 24
+    num_attention_heads: int = 8
+    patch_size: int = 14
+    rms_norm_eps: float = 1e-5
+    attention_dropout: float = 0.0
+    qkv_bias: bool = False
+    mlp_bias: bool = False
+    hidden_act: str = "silu"
+    initializer_range: float = 0.02
+    use_head: bool = True
+    is_native: bool = False
 
-        self.use_head = use_head
-        self.initializer_range = initializer_range
-        self.attention_dropout = attention_dropout
-        self.mlp_bias = mlp_bias
-        self.qkv_bias = qkv_bias
-        self.rms_norm_eps = rms_norm_eps
-        self.is_native = is_native
-
-        del self.layer_norm_eps
+    layer_norm_eps = AttributeError()
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Aimv2TextConfig(SiglipTextConfig):
     r"""
     This is the configuration class to store the configuration of a [`Aimv2TextModel`]. It is used to instantiate a
@@ -180,47 +156,23 @@ class Aimv2TextConfig(SiglipTextConfig):
             The standard deviation of the for initializing all weight matrices.
     """
 
-    def __init__(
-        self,
-        vocab_size: int = 49408,
-        hidden_size: int = 768,
-        intermediate_size: int = 2048,
-        num_hidden_layers: int = 12,
-        num_attention_heads: int = 6,
-        rms_norm_eps: float = 1e-5,
-        attention_dropout: float = 0.0,
-        qkv_bias: bool = False,
-        mlp_bias: bool = False,
-        hidden_act: str = "silu",
-        eos_token_id: int | list[int] | None = 49407,
-        max_position_embeddings: int = 77,
-        initializer_range: bool = 0.02,
-        **kwargs,
-    ):
-        super().__init__(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            hidden_act=hidden_act,
-            max_position_embeddings=max_position_embeddings,
-            eos_token_id=eos_token_id,
-            **kwargs,
-        )
+    vocab_size: int = 49408
+    intermediate_size: int = 2048
+    num_attention_heads: int = 6
+    rms_norm_eps: float = 1e-5
+    qkv_bias: bool = False
+    mlp_bias: bool = False
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 77
+    initializer_range: float = 0.02
 
-        self.initializer_range = initializer_range
-        self.attention_dropout = attention_dropout
-        self.mlp_bias = mlp_bias
-        self.qkv_bias = qkv_bias
-        self.rms_norm_eps = rms_norm_eps
-
-        del self.bos_token_id
-        del self.pad_token_id
-        del self.projection_size
-        del self.layer_norm_eps
+    bos_token_id = AttributeError()
+    pad_token_id = AttributeError()
+    layer_norm_eps = AttributeError()
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Aimv2Config(SiglipConfig):
     r"""
     [`Aimv2Config`] is the configuration class to store the configuration of a [`Aimv2Model`]. It is used to
@@ -267,15 +219,9 @@ class Aimv2Config(SiglipConfig):
     >>> config = Aimv2Config(text_config=config_text, vision_config=config_vision)
     ```"""
 
-    def __init__(
-        self, text_config=None, vision_config=None, projection_dim=512, logit_scale_init_value=2.6592, **kwargs
-    ):
-        self.projection_dim = projection_dim
-        self.logit_scale_init_value = logit_scale_init_value
-        self.max_logit_scale = 100.0
-        super().__init__(text_config, vision_config, **kwargs)
-
-        del self.initializer_factor
+    projection_dim: int = 512
+    logit_scale_init_value: float = 2.6592
+    max_logit_scale: float = 100.0
 
 
 class Aimv2Output(SiglipOutput):

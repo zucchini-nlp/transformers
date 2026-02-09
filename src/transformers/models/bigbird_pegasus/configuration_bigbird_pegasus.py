@@ -13,6 +13,10 @@
 # limitations under the License.
 """BigBirdPegasus model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class BigBirdPegasusConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`BigBirdPegasusModel`]. It is used to instantiate
@@ -109,74 +115,36 @@ class BigBirdPegasusConfig(PreTrainedConfig):
         "attention_probs_dropout_prob": "attention_dropout",
     }
 
-    def __init__(
-        self,
-        vocab_size=96103,
-        max_position_embeddings=4096,
-        encoder_layers=16,
-        encoder_ffn_dim=4096,
-        encoder_attention_heads=16,
-        decoder_layers=16,
-        decoder_ffn_dim=4096,
-        decoder_attention_heads=16,
-        encoder_layerdrop=0.0,
-        decoder_layerdrop=0.0,
-        use_cache=True,
-        is_encoder_decoder=True,
-        activation_function="gelu_new",
-        d_model=1024,
-        dropout=0.1,
-        attention_dropout=0.0,
-        activation_dropout=0.0,
-        init_std=0.02,
-        decoder_start_token_id=2,
-        classifier_dropout=0.0,
-        scale_embedding=True,
-        pad_token_id=0,
-        bos_token_id=2,
-        eos_token_id=1,
-        attention_type="block_sparse",  # only for encoder
-        block_size=64,
-        num_random_blocks=3,
-        use_bias=False,
-        is_decoder=False,
-        tie_word_embeddings=True,
-        **kwargs,
-    ):
-        self.is_decoder = is_decoder
-        self.tie_word_embeddings = tie_word_embeddings
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.d_model = d_model
-        self.encoder_ffn_dim = encoder_ffn_dim
-        self.encoder_layers = encoder_layers
-        self.encoder_attention_heads = encoder_attention_heads
-        self.decoder_ffn_dim = decoder_ffn_dim
-        self.decoder_layers = decoder_layers
-        self.decoder_attention_heads = decoder_attention_heads
-        self.dropout = dropout
-        self.attention_dropout = attention_dropout
-        self.activation_dropout = activation_dropout
-        self.activation_function = activation_function
-        self.init_std = init_std
-        self.encoder_layerdrop = encoder_layerdrop
-        self.decoder_layerdrop = decoder_layerdrop
-        self.classifier_dropout = classifier_dropout
-        self.use_cache = use_cache
-        self.num_hidden_layers = encoder_layers
-        self.scale_embedding = scale_embedding  # scale factor will be sqrt(d_model) if True
-
-        # extra config
-        self.attention_type = attention_type
-        self.block_size = block_size
-        self.num_random_blocks = num_random_blocks
-        self.use_bias = use_bias
-
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.decoder_start_token_id = decoder_start_token_id
-        super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
+    vocab_size: int = 96103
+    max_position_embeddings: int = 4096
+    encoder_layers: int = 16
+    encoder_ffn_dim: int = 4096
+    encoder_attention_heads: int = 16
+    decoder_layers: int = 16
+    decoder_ffn_dim: int = 4096
+    decoder_attention_heads: int = 16
+    encoder_layerdrop: float = 0.0
+    decoder_layerdrop: float = 0.0
+    use_cache: bool = True
+    is_encoder_decoder: bool = True
+    activation_function: str = "gelu_new"
+    d_model: int = 1024
+    dropout: float = 0.1
+    attention_dropout: float = 0.0
+    activation_dropout: float = 0.0
+    init_std: float = 0.02
+    decoder_start_token_id: int = 2
+    classifier_dropout: float = 0.0
+    scale_embedding: bool = True
+    pad_token_id: int | None = 0
+    bos_token_id: int | None = 2
+    eos_token_id: int | list[int] | None = 1
+    attention_type: str = "block_sparse"  # only for encoder
+    block_size: int = 64
+    num_random_blocks: int = 3
+    use_bias: bool = False
+    is_decoder: bool = False
+    tie_word_embeddings: bool = True
 
 
 __all__ = ["BigBirdPegasusConfig"]

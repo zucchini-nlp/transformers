@@ -117,7 +117,7 @@ class SqueezeBertConfig(PreTrainedConfig):
         layer_norm_eps=1e-12,
         pad_token_id=0,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         embedding_size=768,
         q_groups=4,
         k_groups=4,

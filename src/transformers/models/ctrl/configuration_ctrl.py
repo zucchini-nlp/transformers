@@ -13,6 +13,10 @@
 # limitations under the License.
 """Salesforce CTRL configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class CTRLConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a [`CTRLModel`]. It is used to
@@ -89,43 +95,21 @@ class CTRLConfig(PreTrainedConfig):
         "num_hidden_layers": "n_layer",
     }
 
-    def __init__(
-        self,
-        vocab_size=246534,
-        n_positions=256,
-        n_embd=1280,
-        dff=8192,
-        n_layer=48,
-        n_head=16,
-        resid_pdrop=0.1,
-        embd_pdrop=0.1,
-        layer_norm_epsilon=1e-6,
-        initializer_range=0.02,
-        use_cache=True,
-        pad_token_id=None,
-        bos_token_id=None,
-        eos_token_id=None,
-        tie_word_embeddings=True,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.n_positions = n_positions
-        self.n_embd = n_embd
-        self.n_layer = n_layer
-        self.n_head = n_head
-        self.dff = dff
-        self.resid_pdrop = resid_pdrop
-        self.embd_pdrop = embd_pdrop
-        self.layer_norm_epsilon = layer_norm_epsilon
-        self.initializer_range = initializer_range
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-
-        self.use_cache = use_cache
-
-        super().__init__(**kwargs)
+    vocab_size: int = 246534
+    n_positions: int = 256
+    n_embd: int = 1280
+    dff: int = 8192
+    n_layer: int = 48
+    n_head: int = 16
+    resid_pdrop: float = 0.1
+    embd_pdrop: float = 0.1
+    layer_norm_epsilon: float = 1e-6
+    initializer_range: float = 0.02
+    use_cache: bool = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = None
+    eos_token_id: int | list[int] | None = None
+    tie_word_embeddings: bool = True
 
 
 __all__ = ["CTRLConfig"]

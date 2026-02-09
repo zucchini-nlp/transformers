@@ -100,7 +100,7 @@ class DistilBertConfig(PreTrainedConfig):
         qa_dropout=0.1,
         seq_classif_dropout=0.2,
         pad_token_id=0,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         bos_token_id=None,
         tie_word_embeddings=True,
         **kwargs,

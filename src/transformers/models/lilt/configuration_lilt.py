@@ -96,7 +96,7 @@ class LiltConfig(PreTrainedConfig):
         layer_norm_eps=1e-12,
         pad_token_id=0,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         classifier_dropout=None,
         channel_shrink_ratio=4,
         max_2d_position_embeddings=1024,

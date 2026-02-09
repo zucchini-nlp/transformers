@@ -17,11 +17,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
+from ...utils.type_validators import interval
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class AriaTextConfig(PreTrainedConfig):
     r"""
     This class handles the configuration for the text component of the Aria model.
@@ -110,70 +117,53 @@ class AriaTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+
+    vocab_size: int | None = 32000
+    hidden_size: int | None = 4096
+
+    intermediate_size: int = 4096
+    num_hidden_layers: int | None = 32
+    num_attention_heads: int | None = 32
+    num_key_value_heads: int | None = None
+    hidden_act: str | None = "silu"
+    max_position_embeddings: int | None = 2048
+    initializer_range: float | None = interval(min=0.0, max=1.0)(default=0.2)
+    rms_norm_eps: float | None = 1e-6
+    use_cache: bool | None = True
+    pad_token_id: int | None = 2
+    bos_token_id: int | None = 1
+    eos_token_id: int | list[int] | None = 2
+    pretraining_tp: int | None = 1
+    tie_word_embeddings: bool | None = False
+    rope_parameters: RopeParameters | dict | None = None
+    attention_bias: bool | None = False
+    attention_dropout: int | float | None = 0.0
+    mlp_bias: bool | None = False
+    head_dim: int | None = None
     base_config_key = "text_config"
+    moe_num_experts: int = 8
+    moe_topk: int = 2
+    moe_num_shared_experts: int = 2
 
-    def __init__(
-        self,
-        vocab_size: int | None = 32000,
-        hidden_size: int | None = 4096,
-        intermediate_size: int = 4096,
-        num_hidden_layers: int | None = 32,
-        num_attention_heads: int | None = 32,
-        num_key_value_heads: int | None = None,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 2048,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-6,
-        use_cache: bool | None = True,
-        pad_token_id=2,
-        bos_token_id: int | None = 1,
-        eos_token_id: int | list[int] | None = 2,
-        pretraining_tp: int | None = 1,
-        tie_word_embeddings: bool | None = False,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        mlp_bias: bool | None = False,
-        head_dim: int | None = None,
-        moe_num_experts: int = 8,
-        moe_topk: int = 2,
-        moe_num_shared_experts: int = 2,
-        **kwargs,
-    ):
-        self.intermediate_size = intermediate_size
-        self.moe_num_experts = moe_num_experts
-        self.moe_topk = moe_topk
-        self.moe_num_shared_experts = moe_num_shared_experts
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
+    def __post_init__(self, **kwargs):
+        if self.head_dim is None:
+            self.head_dim = self.hidden_size // self.num_attention_heads
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
-        # for backward compatibility
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
+        super().__post_init__(**kwargs)
 
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.pretraining_tp = pretraining_tp
-        self.use_cache = use_cache
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
-        self.mlp_bias = mlp_bias
-        self.head_dim = head_dim if head_dim is not None else self.hidden_size // self.num_attention_heads
-        self.rope_parameters = rope_parameters
-
-        self.tie_word_embeddings = tie_word_embeddings
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        super().__init__(**kwargs)
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.hidden_size % self.num_attention_heads != 0:
+            raise ValueError(
+                f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
+                f"heads ({self.num_attention_heads})."
+            )
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class AriaConfig(PreTrainedConfig):
     r"""
     This class handles the configuration for both vision and text components of the Aria model,
@@ -207,47 +197,37 @@ class AriaConfig(PreTrainedConfig):
     }
     sub_configs = {"text_config": AriaTextConfig, "vision_config": AutoConfig}
 
-    def __init__(
-        self,
-        vision_config=None,
-        vision_feature_layer: int = -1,
-        text_config: AriaTextConfig = None,
-        projector_patch_to_query_dict: dict | None = None,
-        image_token_index: int | None = 9,
-        initializer_range: float | None = 0.02,
-        tie_word_embeddings: bool | None = False,
-        **kwargs,
-    ):
-        self.image_token_index = image_token_index
+    vision_config: dict | PreTrainedConfig | None = None
+    text_config: dict | AriaTextConfig | None = None
+    vision_feature_layer: int = -1
+    projector_patch_to_query_dict: dict | None = None
+    image_token_index: int | None = 9
+    initializer_range: float | None = 0.02
+    tie_word_embeddings: bool | None = False
 
+    def __post_init__(self, **kwargs):
         # Convert the keys and values of projector_patch_to_query_dict to integers
         # This ensures consistency even if they were provided as strings
-        if projector_patch_to_query_dict is None:
-            projector_patch_to_query_dict = {
+        if self.projector_patch_to_query_dict is None:
+            self.projector_patch_to_query_dict = {
                 1225: 128,
                 4900: 256,
             }
-        self.projector_patch_to_query_dict = {int(k): int(v) for k, v in projector_patch_to_query_dict.items()}
+        self.projector_patch_to_query_dict = {int(k): int(v) for k, v in self.projector_patch_to_query_dict.items()}
         self.max_value_projector_patch_to_query_dict = max(self.projector_patch_to_query_dict.values())
-        self.vision_feature_layer = vision_feature_layer
-        if isinstance(vision_config, dict):
-            vision_config["model_type"] = "idefics3_vision"
-            vision_config = CONFIG_MAPPING[vision_config["model_type"]](**vision_config)
-        elif vision_config is None:
-            vision_config = CONFIG_MAPPING["idefics3_vision"]()
 
-        self.vision_config = vision_config
-        self.initializer_range = initializer_range
+        if isinstance(self.vision_config, dict):
+            self.vision_config["model_type"] = "idefics3_vision"
+            self.vision_config = CONFIG_MAPPING[self.vision_config["model_type"]](**self.vision_config)
+        elif self.vision_config is None:
+            self.vision_config = CONFIG_MAPPING["idefics3_vision"]()
 
-        if isinstance(text_config, dict) and "model_type" in text_config:
-            text_config = AriaTextConfig(**text_config)
-        elif text_config is None:
-            text_config = AriaTextConfig()
+        if isinstance(self.text_config, dict) and "model_type" in self.text_config:
+            self.text_config = AriaTextConfig(**self.text_config)
+        elif self.text_config is None:
+            self.text_config = AriaTextConfig()
 
-        self.text_config = text_config
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["AriaConfig", "AriaTextConfig"]

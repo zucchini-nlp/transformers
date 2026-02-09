@@ -112,7 +112,7 @@ class DebertaV2Config(PreTrainedConfig):
         max_relative_positions=-1,
         pad_token_id=0,
         bos_token_id=None,
-        eos_token_id=None,
+        eos_token_id: int | list[int] | None = None,
         position_biased_input=True,
         pos_att_type=None,
         pooler_dropout=0,
