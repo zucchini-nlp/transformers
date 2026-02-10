@@ -667,6 +667,7 @@ class GenerationMixin(ContinuousMixin):
                         if model_inputs.get("inputs_embeds") is not None
                         else model_inputs[input_ids_key].shape[1]
                     )
+                    # Input can be 2D or 3D, and we always slice on `seq-length` (last dim)
                     model_input = model_input[..., -current_input_length:]
                     model_input = model_input.clone(memory_format=torch.contiguous_format)
                 model_inputs[model_input_name] = model_input
@@ -1059,7 +1060,7 @@ class GenerationMixin(ContinuousMixin):
 
         position_ids_key = "position_ids" if not is_encoder_decoder else "decoder_position_ids"
         if (position_ids := model_kwargs.get(position_ids_key)) is not None:
-            next_position_ids = position_ids.max(-1, keepdim=True).values + num_new_tokens
+            next_position_ids = position_ids[..., -1:] + num_new_tokens
             if not use_cache:
                 next_position_ids = torch.cat([position_ids, next_position_ids], dim=-1)
             model_kwargs[position_ids_key] = next_position_ids

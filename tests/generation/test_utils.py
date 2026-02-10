@@ -1280,6 +1280,18 @@ class GenerationTesterMixin:
             if "token_type_ids" in inputs:
                 del inputs["token_type_ids"]
 
+            # Ensure left padding in the mask because otherwise position ids will
+            # not be consecutive. Randomly mask leftmost tokens
+            if (
+                (attention_mask := inputs.get("attention_mask")) is not None
+                and attention_mask.ndim == 2
+                and 0 in attention_mask[:, -1]
+            ):
+                attention_mask = torch.ones_like(attention_mask)
+                attention_mask[0, :1] = 0
+                attention_mask[1:, :2] = 0
+                inputs["attention_mask"] = attention_mask
+
             model = model_class(config).to(torch_device)
             model.eval()
 
