@@ -1315,7 +1315,7 @@ def _prepare_position_ids(model_kwargs: dict[str, Any], new_length: int, is_enco
     elif position_length_diff > 0:
         # Works for 2D and 3D position tensors
         max_position_ids = positions[..., -1:] + 1
-        next_position_ids = max_position_ids.repeat(*(*[1] * (max_position_ids.ndim - 1), position_length_diff))
+        next_position_ids = max_position_ids.repeat((*[1] * (max_position_ids.ndim - 1), position_length_diff))
         next_position_ranges = (
             torch.arange(position_length_diff).expand_as(next_position_ids).to(next_position_ids.device)
         )
