@@ -1169,7 +1169,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
     _can_record_outputs: dict | None = None
 
     @property
-    @torch._dynamo.allow_in_graph
+    @torch.compiler.allow_in_graph
     def can_record_outputs(self) -> dict[str, OutputRecorder]:
         """
          Maps output names (e.g., "attentions", "hidden_states")
