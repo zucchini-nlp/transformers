@@ -372,6 +372,8 @@ class ImageProcessingMixin(PushToHubMixin):
         # Remove kwargs that are used to initialize the image processor attributes
         for key in list(kwargs):
             if hasattr(image_processor, key):
+                if key not in cls.valid_kwargs.__annotations__:
+                    setattr(image_processor, key, kwargs[key])
                 kwargs.pop(key)
 
         logger.info(f"Image processor {image_processor}")
