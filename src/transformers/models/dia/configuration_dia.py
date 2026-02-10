@@ -13,6 +13,10 @@
 # limitations under the License.
 """Dia model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
 from ...utils import logging
@@ -21,6 +25,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class DiaEncoderConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`DiaEncoder`]. It is used to instantiate a Dia
@@ -62,38 +68,22 @@ class DiaEncoderConfig(PreTrainedConfig):
 
     model_type = "dia_encoder"
 
-    def __init__(
-        self,
-        max_position_embeddings: int = 1024,
-        num_hidden_layers: int = 12,
-        hidden_size: int = 1024,
-        num_attention_heads: int = 16,
-        num_key_value_heads: int = 16,
-        head_dim: int = 128,
-        intermediate_size: int = 4096,
-        norm_eps: float = 1e-5,
-        vocab_size: int = 256,
-        hidden_act: str = "silu",
-        rope_parameters: RopeParameters | None = None,
-        initializer_range: float = 0.02,
-        **kwargs,
-    ):
-        self.max_position_embeddings = max_position_embeddings
-        self.num_hidden_layers = num_hidden_layers
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_attention_heads = num_attention_heads
-        self.head_dim = head_dim
-        self.norm_eps = norm_eps
-        self.vocab_size = vocab_size
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rope_parameters = rope_parameters
-
-        super().__init__(**kwargs)
+    max_position_embeddings: int = 1024
+    num_hidden_layers: int = 12
+    hidden_size: int = 1024
+    num_attention_heads: int = 16
+    num_key_value_heads: int = 16
+    head_dim: int = 128
+    intermediate_size: int = 4096
+    norm_eps: float = 1e-5
+    vocab_size: int = 256
+    hidden_act: str = "silu"
+    rope_parameters: RopeParameters | dict | None = None
+    initializer_range: float = 0.02
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class DiaDecoderConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`DiaDecoder`]. It is used to instantiate a Dia
@@ -149,51 +139,29 @@ class DiaDecoderConfig(PreTrainedConfig):
 
     model_type = "dia_decoder"
 
-    def __init__(
-        self,
-        max_position_embeddings: int = 3072,
-        num_hidden_layers: int = 18,
-        hidden_size: int = 2048,
-        intermediate_size: int = 8192,
-        num_attention_heads: int = 16,
-        num_key_value_heads: int = 4,
-        head_dim: int = 128,
-        cross_num_attention_heads: int = 16,
-        cross_head_dim: int = 128,
-        cross_num_key_value_heads: int = 16,
-        cross_hidden_size: int = 1024,
-        norm_eps: float = 1e-5,
-        vocab_size: int = 1028,
-        hidden_act: str = "silu",
-        num_channels: int = 9,
-        rope_parameters: RopeParameters | None = None,
-        initializer_range: float = 0.02,
-        use_cache: bool = True,
-        is_encoder_decoder: bool = True,
-        **kwargs,
-    ):
-        self.max_position_embeddings = max_position_embeddings
-        self.num_hidden_layers = num_hidden_layers
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.head_dim = head_dim
-        self.cross_num_key_value_heads = cross_num_key_value_heads
-        self.cross_num_attention_heads = cross_num_attention_heads
-        self.cross_head_dim = cross_head_dim
-        self.cross_hidden_size = cross_hidden_size
-        self.norm_eps = norm_eps
-        self.vocab_size = vocab_size
-        self.hidden_act = hidden_act
-        self.num_channels = num_channels
-        self.initializer_range = initializer_range
-        self.use_cache = use_cache
-        self.rope_parameters = rope_parameters
-
-        super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
+    max_position_embeddings: int = 3072
+    num_hidden_layers: int = 18
+    hidden_size: int = 2048
+    intermediate_size: int = 8192
+    num_attention_heads: int = 16
+    num_key_value_heads: int = 4
+    head_dim: int = 128
+    cross_num_attention_heads: int = 16
+    cross_head_dim: int = 128
+    cross_num_key_value_heads: int = 16
+    cross_hidden_size: int = 1024
+    norm_eps: float = 1e-5
+    vocab_size: int = 1028
+    hidden_act: str = "silu"
+    num_channels: int = 9
+    rope_parameters: RopeParameters | dict | None = None
+    initializer_range: float = 0.02
+    use_cache: bool = True
+    is_encoder_decoder: bool = True
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class DiaConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`DiaModel`]. It is used to instantiate a
@@ -246,39 +214,39 @@ class DiaConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
     sub_configs = {"encoder_config": DiaEncoderConfig, "decoder_config": DiaDecoderConfig}
 
-    def __init__(
-        self,
-        encoder_config: DiaEncoderConfig | None = None,
-        decoder_config: DiaDecoderConfig | None = None,
-        norm_eps: float = 1e-5,
-        is_encoder_decoder: bool = True,
-        pad_token_id: int = 1025,
-        eos_token_id: int | list[int] | None = 1024,
-        bos_token_id: int = 1026,
-        delay_pattern: list[int] | None = None,
-        initializer_range: float = 0.02,
-        use_cache: bool = True,
-        **kwargs,
-    ):
-        if isinstance(encoder_config, dict):
-            encoder_config = DiaEncoderConfig(**encoder_config)
-        if isinstance(decoder_config, dict):
-            decoder_config = DiaDecoderConfig(**decoder_config)
-        self.encoder_config = encoder_config if encoder_config is not None else DiaEncoderConfig()
-        self.decoder_config = decoder_config if decoder_config is not None else DiaDecoderConfig()
-        self.norm_eps = norm_eps
-        self.delay_pattern = delay_pattern if delay_pattern is not None else [0, 8, 9, 10, 11, 12, 13, 14, 15]
-        self.initializer_range = initializer_range
-        self.use_cache = use_cache
-        self.decoder_config.pad_token_id = pad_token_id
-        self.decoder_config.eos_token_id = eos_token_id
-        self.decoder_config.bos_token_id = bos_token_id
+    encoder_config: DiaEncoderConfig | dict | None = None
+    decoder_config: DiaDecoderConfig | dict | None = None
+    norm_eps: float = 1e-5
+    is_encoder_decoder: bool = True
+    pad_token_id: int = 1025
+    eos_token_id: int | list[int] | None = 1024
+    bos_token_id: int = 1026
+    delay_pattern: list[int] | None = None
+    initializer_range: float = 0.02
+    use_cache: bool = True
 
-        assert self.decoder_config.num_channels == len(self.delay_pattern), (
-            "Number of channels must match delay pattern length."
+    def __post_init__(self, **kwargs):
+        if isinstance(self.encoder_config, dict):
+            self.encoder_config = DiaEncoderConfig(**self.encoder_config)
+        if isinstance(self.decoder_config, dict):
+            self.decoder_config = DiaDecoderConfig(**self.decoder_config)
+
+        self.encoder_config = self.encoder_config if self.encoder_config is not None else DiaEncoderConfig()
+        self.decoder_config = self.decoder_config if self.decoder_config is not None else DiaDecoderConfig()
+        self.delay_pattern = (
+            self.delay_pattern if self.delay_pattern is not None else [0, 8, 9, 10, 11, 12, 13, 14, 15]
         )
 
-        super().__init__(is_encoder_decoder=is_encoder_decoder, **kwargs)
+        self.decoder_config.pad_token_id = self.pad_token_id
+        self.decoder_config.eos_token_id = self.eos_token_id
+        self.decoder_config.bos_token_id = self.bos_token_id
+
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.decoder_config.num_channels != len(self.delay_pattern):
+            raise ValueError("Number of channels must match delay pattern length.")
 
     def get_text_config(self, *args, **kwargs):
         """Defaulting to audio config as it's the decoder in this case which is usually the text backbone"""

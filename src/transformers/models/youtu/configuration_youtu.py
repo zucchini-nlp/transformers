@@ -131,7 +131,7 @@ class YoutuConfig(PreTrainedConfig):
         max_position_embeddings: int | None = 131072,
         initializer_range: float | None = None,
         embedding_initializer_range: float | None = None,
-        rms_norm_eps: int | None = 1e-6,
+        rms_norm_eps: float | None = 1e-6,
         use_cache: bool | None = True,
         pad_token_id: int | None = None,
         bos_token_id: int | None = 128000,

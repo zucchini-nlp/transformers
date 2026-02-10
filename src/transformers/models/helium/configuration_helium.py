@@ -120,7 +120,7 @@ class HeliumConfig(PreTrainedConfig):
         attention_dropout: float | None = 0.0,
         max_position_embeddings: int | None = 4096,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-8,
+        rms_norm_eps: float | None = 1e-8,
         use_cache: bool | None = True,
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,

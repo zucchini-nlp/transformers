@@ -151,7 +151,7 @@ class Olmo2Config(OlmoConfig):
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_bias: bool | None = False,
         attention_dropout: float | None = 0.0,
-        rms_norm_eps: int | None = 1e-5,
+        rms_norm_eps: float | None = 1e-5,
         **kwargs,
     ):
         super().__init__(

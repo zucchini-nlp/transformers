@@ -118,7 +118,7 @@ class Ernie4_5Config(PreTrainedConfig):
         hidden_act: str | None = "silu",
         max_position_embeddings: int | None = 131072,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-05,
+        rms_norm_eps: float | None = 1e-05,
         use_cache: int | None = True,
         pad_token_id: int | None = 0,
         bos_token_id: int | None = 1,

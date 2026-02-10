@@ -137,7 +137,7 @@ class KyutaiSpeechToTextConfig(PreTrainedConfig):
         sliding_window: int | None = 375,
         attention_dropout: float | None = 0.0,
         ffn_dim: int | None = 11264,
-        rms_norm_eps: int | None = 1e-8,
+        rms_norm_eps: float | None = 1e-8,
         num_codebooks: int | None = 32,
         audio_bos_token_id: int | None = 2048,
         audio_pad_token_id: int | None = 69569,

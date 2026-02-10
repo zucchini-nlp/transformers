@@ -13,9 +13,11 @@
 # limitations under the License.
 
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
+from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ... import initialization as init
@@ -42,6 +44,8 @@ from ..qwen2_moe.modeling_qwen2_moe import Qwen2MoeExperts
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class DeepseekV2Config(LlamaConfig):
     r"""
     This is the configuration class to store the configuration of a [`DeepseekV2Model`]. It is used to instantiate a DeepSeek
@@ -151,64 +155,44 @@ class DeepseekV2Config(LlamaConfig):
     model_type = "deepseek_v2"
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        vocab_size: int | None = 32000,
-        hidden_size: int | None = 4096,
-        intermediate_size: int | None = 11008,
-        num_hidden_layers: int | None = 32,
-        num_attention_heads: int | None = 32,
-        num_key_value_heads: int | None = None,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 2048,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-6,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = None,
-        bos_token_id: int | None = 1,
-        eos_token_id: int | list[int] | None = 2,
-        tie_word_embeddings: bool | None = False,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        mlp_bias: bool | None = False,
-        first_k_dense_replace: int | None = 0,
-        kv_lora_rank: int | None = 512,
-        q_lora_rank: int | None = 1536,
-        n_group: int | None = None,
-        n_routed_experts: int | None = 64,
-        n_shared_experts: int | None = 2,
-        qk_nope_head_dim: int | None = 128,
-        qk_rope_head_dim: int | None = 64,
-        routed_scaling_factor: float | None = 1.0,
-        topk_group: int | None = None,
-        topk_method: str | None = "greedy",
-        norm_topk_prob: bool | None = False,
-        v_head_dim: int | None = 128,
-        num_experts_per_tok: int | None = None,
-        moe_intermediate_size: int | None = 1407,
-        **kwargs,
-    ):
-        self.first_k_dense_replace = first_k_dense_replace
-        self.kv_lora_rank = kv_lora_rank
-        self.q_lora_rank = q_lora_rank
-        self.n_group = n_group
-        self.n_routed_experts = n_routed_experts
-        self.n_shared_experts = n_shared_experts
-        self.qk_nope_head_dim = qk_nope_head_dim
-        self.qk_rope_head_dim = qk_rope_head_dim
-        self.routed_scaling_factor = routed_scaling_factor
-        self.topk_group = topk_group
-        self.topk_method = topk_method
-        self.norm_topk_prob = norm_topk_prob
-        self.v_head_dim = v_head_dim
-        self.num_experts_per_tok = num_experts_per_tok
-        self.moe_intermediate_size = moe_intermediate_size
+    vocab_size: int | None = 32000
+    hidden_size: int | None = 4096
+    intermediate_size: int | None = 11008
+    num_hidden_layers: int | None = 32
+    num_attention_heads: int | None = 32
+    num_key_value_heads: int | None = None
+    hidden_act: str | None = "silu"
+    max_position_embeddings: int | None = 2048
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-6
+    use_cache: bool | None = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = 1
+    eos_token_id: int | list[int] | None = 2
+    tie_word_embeddings: bool | None = False
+    rope_parameters: RopeParameters | dict | None = None
+    attention_bias: bool | None = False
+    attention_dropout: float | None = 0.0
+    mlp_bias: bool | None = False
+    first_k_dense_replace: int | None = 0
+    kv_lora_rank: int | None = 512
+    q_lora_rank: int | None = 1536
+    n_group: int | None = None
+    n_routed_experts: int | None = 64
+    n_shared_experts: int | None = 2
+    qk_nope_head_dim: int | None = 128
+    qk_rope_head_dim: int | None = 64
+    routed_scaling_factor: float | None = 1.0
+    topk_group: int | None = None
+    topk_method: str | None = "greedy"
+    norm_topk_prob: bool | None = False
+    v_head_dim: int | None = 128
+    num_experts_per_tok: int | None = None
+    moe_intermediate_size: int | None = 1407
 
-        super().__init__(**kwargs)
-
-        self.head_dim = qk_rope_head_dim
-        del self.pretraining_tp
+    def __post_init__(self, **kwargs):
+        self.head_dim = self.qk_rope_head_dim
+        super().__post_init__(**kwargs)
 
 
 def apply_rotary_emb(

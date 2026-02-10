@@ -206,7 +206,7 @@ class Glm4vTextConfig(PreTrainedConfig):
         hidden_act: str | None = "silu",
         max_position_embeddings: int | None = 32768,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-05,
+        rms_norm_eps: float | None = 1e-05,
         use_cache: bool | None = True,
         attention_dropout: float | None = 0.0,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,

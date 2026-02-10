@@ -137,7 +137,7 @@ class Exaone4Config(PreTrainedConfig):
         hidden_act: str | None = "silu",
         max_position_embeddings: int | None = 2048,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-5,
+        rms_norm_eps: float | None = 1e-5,
         use_cache: bool | None = True,
         bos_token_id: int | None = 0,
         eos_token_id: int | list[int] | None = 2,

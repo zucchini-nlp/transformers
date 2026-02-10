@@ -120,7 +120,7 @@ class JetMoeConfig(PreTrainedConfig):
         pad_token_id: int | None = None,
         tie_word_embeddings: bool | None = True,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        rms_norm_eps: int | None = 1e-6,
+        rms_norm_eps: float | None = 1e-6,
         initializer_range: float | None = 0.01,
         attention_dropout: float | None = 0.0,
         **kwargs,

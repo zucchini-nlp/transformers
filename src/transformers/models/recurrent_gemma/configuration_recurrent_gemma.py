@@ -110,7 +110,7 @@ class RecurrentGemmaConfig(PreTrainedConfig):
         attention_window_size: int | None = 2048,
         conv1d_width: int | None = 4,
         logits_soft_cap: float | None = 30.0,
-        rms_norm_eps: int | None = 1e-6,
+        rms_norm_eps: float | None = 1e-6,
         use_cache: bool | None = True,
         pad_token_id: int | None = 0,
         eos_token_id: int | list[int] | None = 1,

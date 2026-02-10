@@ -115,7 +115,7 @@ class OlmoeConfig(PreTrainedConfig):
         hidden_act: str | None = "silu",
         max_position_embeddings: int | None = 4096,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-05,
+        rms_norm_eps: float | None = 1e-05,
         use_cache: bool | None = True,
         pad_token_id: int | None = 1,
         bos_token_id: int | None = None,

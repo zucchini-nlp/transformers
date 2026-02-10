@@ -276,7 +276,7 @@ class MoshiConfig(PreTrainedConfig):
         sliding_window: int | None = 3000,
         attention_dropout: float | None = 0.0,
         ffn_dim: int | None = 22528,
-        rms_norm_eps: int | None = 1e-8,
+        rms_norm_eps: float | None = 1e-8,
         num_codebooks: int | None = 8,
         tie_word_embeddings: bool | None = False,
         pad_token_id: int | None = None,

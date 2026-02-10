@@ -146,7 +146,7 @@ class FalconH1Config(PreTrainedConfig):
         num_key_value_heads: int | None = 8,
         hidden_act: str | None = "silu",
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-5,
+        rms_norm_eps: float | None = 1e-5,
         use_cache: int | None = True,
         num_logits_to_keep: int | None = 1,
         pad_token_id: int | None = 0,

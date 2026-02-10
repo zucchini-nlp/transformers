@@ -360,7 +360,7 @@ class Phi4MultimodalConfig(PreTrainedConfig):
         hidden_act: str | None = "silu",
         max_position_embeddings: int | None = 131072,
         initializer_range: float | None = 0.02,
-        rms_norm_eps: int | None = 1e-5,
+        rms_norm_eps: float | None = 1e-5,
         use_cache: bool | None = True,
         tie_word_embeddings: bool | None = False,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,

@@ -211,7 +211,7 @@ class EvollaConfig(PreTrainedConfig):
         num_key_value_heads: int | None = 8,  # llama num key-value heads
         hidden_act: str | None = "silu",  # llama activation function
         max_position_embeddings: int | None = 8192,  # llama rope max length
-        rms_norm_eps: int | None = 1e-05,
+        rms_norm_eps: float | None = 1e-05,
         rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
         attention_bias: bool | None = False,
         attention_dropout: float | None = 0.0,
