@@ -340,7 +340,7 @@ class Trainer:
           data parallelism, this means some of the model layers are split on different GPUs).
         - **place_model_on_device** -- Whether or not to automatically place the model on the device. Defaults to
           `True` unless model parallel, DeepSpeed, FSDP, full fp16/bf16 eval, or SageMaker MP is active. Can be
-          explicitly set via `TrainingArguments.place_model_on_device`.
+          overridden by subclassing `TrainingArguments` and overriding the `place_model_on_device` property.
         - **is_in_train** -- Whether or not a model is currently running `train` (e.g. when `evaluate` is called while
           in `train`)
 
