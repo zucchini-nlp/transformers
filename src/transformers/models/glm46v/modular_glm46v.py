@@ -13,7 +13,10 @@
 # limitations under the License.
 
 
+from dataclasses import dataclass
+
 import numpy as np
+from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...video_utils import VideoMetadata
@@ -25,6 +28,8 @@ from ..glm4v.processing_glm4v import Glm4vProcessor
 from ..glm4v.video_processing_glm4v import Glm4vVideoProcessor
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Glm46VConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Glm4vModel`]. It is used to instantiate a
@@ -72,40 +77,30 @@ class Glm46VConfig(PreTrainedConfig):
     sub_configs = {"text_config": AutoConfig, "vision_config": AutoConfig}
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        text_config=None,
-        vision_config=None,
-        image_token_id=151343,
-        video_token_id=151344,
-        image_start_token_id=151339,
-        image_end_token_id=151340,
-        video_start_token_id=151361,
-        video_end_token_id=151362,
-        tie_word_embeddings=False,
-        **kwargs,
-    ):
-        if isinstance(vision_config, dict):
-            vision_config["model_type"] = vision_config.get("model_type", "glm4v_vision")
-            self.vision_config = CONFIG_MAPPING[vision_config["model_type"]](**vision_config)
-        elif vision_config is None:
+    text_config: dict | PreTrainedConfig | None = None
+    vision_config: dict | PreTrainedConfig | None = None
+    image_token_id: int = 151343
+    video_token_id: int = 151344
+    image_start_token_id: int = 151339
+    image_end_token_id: int = 151340
+    video_start_token_id: int = 151361
+    video_end_token_id: int = 151362
+    tie_word_embeddings: bool = False
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.vision_config, dict):
+            self.vision_config["model_type"] = self.vision_config.get("model_type", "glm4v_vision")
+            self.vision_config = CONFIG_MAPPING[self.vision_config["model_type"]](**self.vision_config)
+        elif self.vision_config is None:
             self.vision_config = CONFIG_MAPPING["glm4v_vision"]()
 
-        if isinstance(text_config, dict):
-            text_config["model_type"] = text_config.get("model_type", "glm4v_text")
-            self.text_config = CONFIG_MAPPING[text_config["model_type"]](**text_config)
-        elif text_config is None:
+        if isinstance(self.text_config, dict):
+            self.text_config["model_type"] = self.text_config.get("model_type", "glm4v_text")
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](**self.text_config)
+        elif self.text_config is None:
             self.text_config = CONFIG_MAPPING["glm4v_text"]()
 
-        self.image_token_id = image_token_id
-        self.video_token_id = video_token_id
-        self.video_start_token_id = video_start_token_id
-        self.video_end_token_id = video_end_token_id
-        self.image_start_token_id = image_start_token_id
-        self.image_end_token_id = image_end_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 class Glm46VPreTrainedModel(Glm4vPreTrainedModel):
