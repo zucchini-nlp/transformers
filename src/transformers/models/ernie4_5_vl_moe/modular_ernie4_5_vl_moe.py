@@ -1362,7 +1362,6 @@ class Ernie4_5_VL_MoeForConditionalGeneration(Glm4vForConditionalGeneration, Gen
         video_grid_thw=None,
         use_cache=True,
         is_first_iteration=False,
-        # Intentionally ignore position ids to force custom cache logic
         position_ids=None,
         **kwargs,
     ):
@@ -1376,6 +1375,7 @@ class Ernie4_5_VL_MoeForConditionalGeneration(Glm4vForConditionalGeneration, Gen
             video_grid_thw=video_grid_thw,
             use_cache=use_cache,
             is_first_iteration=is_first_iteration,
+            position_ids=position_ids,
             **kwargs,
         )
 
