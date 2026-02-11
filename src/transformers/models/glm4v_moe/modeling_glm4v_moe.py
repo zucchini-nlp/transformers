@@ -39,12 +39,7 @@ from ...modeling_outputs import BaseModelOutputWithPooling, ModelOutput, MoeMode
 from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
-from ...utils import (
-    TransformersKwargs,
-    auto_docstring,
-    is_grouped_mm_available,
-    torch_compilable_check,
-)
+from ...utils import TransformersKwargs, auto_docstring, is_grouped_mm_available, torch_compilable_check
 from ...utils.generic import can_return_tuple, is_flash_attention_requested, maybe_autocast, merge_with_config_defaults
 from ...utils.output_capturing import capture_outputs
 from .configuration_glm4v_moe import Glm4vMoeConfig, Glm4vMoeTextConfig, Glm4vMoeVisionConfig
