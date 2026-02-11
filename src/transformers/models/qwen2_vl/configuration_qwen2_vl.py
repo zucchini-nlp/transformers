@@ -14,6 +14,9 @@
 """Qwen2VL model configuration"""
 
 import inspect
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
@@ -23,40 +26,27 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Qwen2VLVisionConfig(PreTrainedConfig):
     model_type = "qwen2_vl"
     base_config_key = "vision_config"
 
-    def __init__(
-        self,
-        depth=32,
-        embed_dim=1280,
-        hidden_size=3584,
-        hidden_act="quick_gelu",
-        mlp_ratio=4,
-        num_heads=16,
-        in_channels=3,
-        patch_size=14,
-        spatial_merge_size=2,
-        temporal_patch_size=2,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-
-        self.depth = depth
-        self.embed_dim = embed_dim
-        self.hidden_size = hidden_size
-        self.hidden_act = hidden_act
-        self.mlp_ratio = mlp_ratio
-        self.num_heads = num_heads
-        self.in_channels = in_channels
-        self.patch_size = patch_size
-        self.spatial_merge_size = spatial_merge_size
-        self.temporal_patch_size = temporal_patch_size
-        self.initializer_range = initializer_range
+    depth: int = 32
+    embed_dim: int = 1280
+    hidden_size: int = 3584
+    hidden_act: str = "quick_gelu"
+    mlp_ratio: int = 4
+    num_heads: int = 16
+    in_channels: int = 3
+    patch_size: int = 14
+    spatial_merge_size: int = 2
+    temporal_patch_size: int = 2
+    initializer_range: float = 0.02
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Qwen2VLTextConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Qwen2VLTextModel`]. It is used to instantiate a
@@ -152,52 +142,34 @@ class Qwen2VLTextConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    def __init__(
-        self,
-        vocab_size: int | None = 152064,
-        hidden_size: int | None = 8192,
-        intermediate_size: int | None = 29568,
-        num_hidden_layers: int | None = 80,
-        num_attention_heads: int | None = 64,
-        num_key_value_heads: int | None = 8,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 32768,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-05,
-        use_cache: bool | None = True,
-        use_sliding_window: bool | None = False,
-        sliding_window: int | None = 4096,
-        max_window_layers: int | None = 80,
-        layer_types: list[str] | None = None,
-        attention_dropout: float | None = 0.0,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        bos_token_id: int | None = 151643,
-        eos_token_id: int | list[int] | None = 151645,
-        pad_token_id: int | None = None,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.use_sliding_window = use_sliding_window
-        self.sliding_window = sliding_window if self.use_sliding_window else None
-        self.max_window_layers = max_window_layers
+    vocab_size: int | None = 152064
+    hidden_size: int | None = 8192
+    intermediate_size: int | None = 29568
+    num_hidden_layers: int | None = 80
+    num_attention_heads: int | None = 64
+    num_key_value_heads: int | None = 8
+    hidden_act: str | None = "silu"
+    max_position_embeddings: int | None = 32768
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-05
+    use_cache: bool | None = True
+    use_sliding_window: bool | None = False
+    sliding_window: int | None = 4096
+    max_window_layers: int | None = 80
+    layer_types: list[str] | None = None
+    attention_dropout: float | None = 0.0
+    rope_parameters: RopeParameters | dict | None = None
+    bos_token_id: int | None = 151643
+    eos_token_id: int | list[int] | None = 151645
+    pad_token_id: int | None = None
+
+    def __post_init__(self, **kwargs):
+        self.sliding_window = self.sliding_window if self.use_sliding_window else None
 
         # for backward compatibility
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_dropout = attention_dropout
-
-        self.layer_types = layer_types
         if self.layer_types is None:
             self.layer_types = [
                 "sliding_attention"
@@ -206,11 +178,7 @@ class Qwen2VLTextConfig(PreTrainedConfig):
                 for i in range(self.num_hidden_layers)
             ]
 
-        self.rope_parameters = rope_parameters
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.pad_token_id = pad_token_id
-        super().__init__(
+        super().__post_init__(
             ignore_keys_at_rope_validation={"mrope_section"},
             **kwargs,
         )
@@ -229,6 +197,8 @@ class Qwen2VLTextConfig(PreTrainedConfig):
         return kwargs
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Qwen2VLConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Qwen2VLModel`]. It is used to instantiate a
@@ -273,25 +243,23 @@ class Qwen2VLConfig(PreTrainedConfig):
     sub_configs = {"vision_config": Qwen2VLVisionConfig, "text_config": Qwen2VLTextConfig}
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        text_config=None,
-        vision_config=None,
-        image_token_id=151655,
-        video_token_id=151656,
-        vision_start_token_id=151652,
-        vision_end_token_id=151653,
-        tie_word_embeddings=False,
-        **kwargs,
-    ):
-        if isinstance(vision_config, dict):
-            self.vision_config = self.sub_configs["vision_config"](**vision_config)
-        elif vision_config is None:
+    text_config: dict | PreTrainedConfig | None = None
+    vision_config: dict | PreTrainedConfig | None = None
+    image_token_id: int = 151655
+    video_token_id: int = 151656
+    vision_start_token_id: int = 151652
+    vision_end_token_id: int = 151653
+    tie_word_embeddings: bool = False
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.vision_config, dict):
+            self.vision_config = self.sub_configs["vision_config"](**self.vision_config)
+        elif self.vision_config is None:
             self.vision_config = self.sub_configs["vision_config"]()
 
-        if isinstance(text_config, dict):
-            self.text_config = self.sub_configs["text_config"](**text_config)
-        elif text_config is None:
+        if isinstance(self.text_config, dict):
+            self.text_config = self.sub_configs["text_config"](**self.text_config)
+        elif self.text_config is None:
             # Hub configs are saved as flat dicts so we pop some of kwargs to init `TextConfig`
             text_params = inspect.signature(self.sub_configs["text_config"].__init__).parameters.keys()
             text_params = list(text_params) + ["rope_scaling", "rope_theta"]
@@ -299,12 +267,7 @@ class Qwen2VLConfig(PreTrainedConfig):
             text_config["dtype"] = kwargs.get("torch_dtype", kwargs.get("dtype"))  # don't pop the dtype
             self.text_config = self.sub_configs["text_config"](**text_config)
 
-        self.image_token_id = image_token_id
-        self.video_token_id = video_token_id
-        self.vision_start_token_id = vision_start_token_id
-        self.vision_end_token_id = vision_end_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["Qwen2VLConfig", "Qwen2VLTextConfig"]

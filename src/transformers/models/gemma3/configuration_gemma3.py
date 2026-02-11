@@ -18,10 +18,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any, Literal
+from dataclasses import dataclass
+from typing import Any
+
+from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_rope_utils import RopeParameters
 from ...utils import logging
 from ..siglip import SiglipVisionConfig
 
@@ -29,6 +31,8 @@ from ..siglip import SiglipVisionConfig
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Gemma3TextConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Gemma3TextModel`]. It is used to instantiate an Gemma3Text
@@ -128,63 +132,36 @@ class Gemma3TextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+
+    vocab_size: int | None = 262_208
+    hidden_size: int | None = 2304
+    intermediate_size: int | None = 9216
+    num_hidden_layers: int | None = 26
+    num_attention_heads: int | None = 8
+    num_key_value_heads: int | None = 4
+    head_dim: int | None = 256
+    hidden_activation: str | None = "gelu_pytorch_tanh"
+    max_position_embeddings: int | None = 131_072
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-6
+    use_cache: bool | None = True
+    pad_token_id: int | None = 0
+    eos_token_id: int | list[int] | None = 1
+    bos_token_id: int | None = 2
+    tie_word_embeddings: bool | None = True
+    rope_parameters: dict | None = None
+    attention_bias: bool | None = False
+    attention_dropout: float | None = 0.0
+    query_pre_attn_scalar: int | None = 256
+    sliding_window: int | None = 4096
+    layer_types: list[str] | None = None
+    final_logit_softcapping: float | None = None
+    attn_logit_softcapping: float | None = None
+    use_bidirectional_attention: bool | None = False
     default_theta = {"global": 1_000_000.0, "local": 10_000.0}
 
-    def __init__(
-        self,
-        vocab_size: int | None = 262_208,
-        hidden_size: int | None = 2304,
-        intermediate_size: int | None = 9216,
-        num_hidden_layers: int | None = 26,
-        num_attention_heads: int | None = 8,
-        num_key_value_heads: int | None = 4,
-        head_dim: int | None = 256,
-        hidden_activation: str | None = "gelu_pytorch_tanh",
-        max_position_embeddings: int | None = 131_072,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-6,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = 0,
-        eos_token_id: int | list[int] | None = 1,
-        bos_token_id: int | None = 2,
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        query_pre_attn_scalar: int | None = 256,
-        sliding_window: int | None = 4096,
-        layer_types: list[str] | None = None,
-        final_logit_softcapping: float | None = None,
-        attn_logit_softcapping: float | None = None,
-        rope_parameters: dict[Literal["full_attention", "sliding_attention"], RopeParameters] | None = None,
-        use_bidirectional_attention: bool | None = False,
-        tie_word_embeddings: bool | None = True,
-        **kwargs,
-    ):
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.head_dim = head_dim
-        self.num_key_value_heads = num_key_value_heads
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
-        self.hidden_activation = hidden_activation
-        self.query_pre_attn_scalar = query_pre_attn_scalar
-        self.sliding_window = sliding_window
-        self.final_logit_softcapping = final_logit_softcapping
-        self.attn_logit_softcapping = attn_logit_softcapping
-        self.layer_types = layer_types
-
-        self.use_bidirectional_attention = use_bidirectional_attention
-        if use_bidirectional_attention:
+    def __post_init__(self, **kwargs):
+        if self.use_bidirectional_attention:
             self.sliding_window = (self.sliding_window // 2) + 1  # due to fa we set exclusive bounds
 
         # BC -> the pattern used to be a simple int, and it's still present in configs on the Hub
@@ -196,8 +173,15 @@ class Gemma3TextConfig(PreTrainedConfig):
                 for i in range(self.num_hidden_layers)
             ]
 
-        self.rope_parameters = rope_parameters
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.hidden_size % self.num_attention_heads != 0:
+            raise ValueError(
+                f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
+                f"heads ({self.num_attention_heads})."
+            )
 
     def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation=None, **kwargs):
         rope_scaling = kwargs.pop("rope_scaling", None)
@@ -230,6 +214,8 @@ class Gemma3TextConfig(PreTrainedConfig):
         return kwargs
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Gemma3Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Gemma3ForConditionalGeneration`]. It is used to instantiate an
@@ -291,40 +277,29 @@ class Gemma3Config(PreTrainedConfig):
         "vision_config": SiglipVisionConfig,
     }
 
-    def __init__(
-        self,
-        text_config: Gemma3TextConfig | dict[str, Any] | None = None,
-        vision_config: SiglipVisionConfig | dict[str, Any] | None = None,
-        mm_tokens_per_image: int | None = 256,
-        boi_token_index: int | None = 255_999,
-        eoi_token_index: int | None = 256_000,
-        image_token_index: int | None = 262_144,
-        initializer_range: float | None = 0.02,
-        tie_word_embeddings: bool | None = True,
-        **kwargs,
-    ):
-        if text_config is None:
-            text_config = Gemma3TextConfig()
-            logger.info("text_config is None, using default Gemma3TextConfig text config.")
-        elif isinstance(text_config, dict):
-            text_config = Gemma3TextConfig(**text_config)
+    text_config: Gemma3TextConfig | dict[str, Any] | None = None
+    vision_config: SiglipVisionConfig | dict[str, Any] | None = None
+    mm_tokens_per_image: int | None = 256
+    boi_token_index: int | None = 255_999
+    eoi_token_index: int | None = 256_000
+    image_token_index: int | None = 262_144
+    initializer_range: float | None = 0.02
+    tie_word_embeddings: bool | None = True
 
-        if isinstance(vision_config, dict):
-            vision_config = SiglipVisionConfig(**vision_config)
-        elif vision_config is None:
-            vision_config = SiglipVisionConfig()
+    def __post_init__(self, **kwargs):
+        if self.text_config is None:
+            self.text_config = Gemma3TextConfig()
+            logger.info("text_config is None, using default Gemma3TextConfig text config.")
+        elif isinstance(self.text_config, dict):
+            self.text_config = Gemma3TextConfig(**self.text_config)
+
+        if isinstance(self.vision_config, dict):
+            self.vision_config = SiglipVisionConfig(**self.vision_config)
+        elif self.vision_config is None:
+            self.vision_config = SiglipVisionConfig()
             logger.info("vision_config is None, using default SiglipVisionConfig vision config.")
 
-        self.text_config = text_config
-        self.vision_config = vision_config
-        self.mm_tokens_per_image = mm_tokens_per_image
-        self.boi_token_index = boi_token_index
-        self.eoi_token_index = eoi_token_index
-        self.image_token_index = image_token_index
-        self.initializer_range = initializer_range
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["Gemma3Config", "Gemma3TextConfig"]

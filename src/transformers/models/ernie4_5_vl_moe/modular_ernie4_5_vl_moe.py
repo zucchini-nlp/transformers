@@ -15,16 +15,18 @@
 
 import itertools
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Optional
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from huggingface_hub.dataclasses import strict
 
 from ... import initialization as init
 from ...cache_utils import Cache, DynamicCache
-from ...configuration_utils import PreTrainedConfig, layer_type_validation
+from ...configuration_utils import PreTrainedConfig
 from ...generation import GenerationMixin
 from ...image_processing_utils import BaseImageProcessor, BatchFeature
 from ...image_processing_utils_fast import (
@@ -91,6 +93,8 @@ from ..qwen2_vl.modeling_qwen2_vl import Qwen2VisionTransformerPretrainedModel, 
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Ernie4_5_VL_MoeVisionConfig(Qwen2VLVisionConfig):
     r"""
     This is the configuration class to store the configuration of the [`Ernie4_5_VL_MoeVisionTransformerPretrainedModel`].
@@ -134,45 +138,18 @@ class Ernie4_5_VL_MoeVisionConfig(Qwen2VLVisionConfig):
         "blocks.*.mlp.fc2": "rowwise",
     }
 
-    def __init__(
-        self,
-        depth=32,
-        hidden_size=1280,
-        hidden_act="quick_gelu",
-        intermediate_size=4 * 1280,
-        num_heads=16,
-        in_channels=3,
-        patch_size=14,
-        spatial_merge_size=2,
-        temporal_merge_size=2,
-        rms_norm_eps=1e-6,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        super().__init__(
-            depth=depth,
-            hidden_size=hidden_size,
-            hidden_act=hidden_act,
-            intermediate_size=intermediate_size,
-            num_heads=num_heads,
-            in_channels=in_channels,
-            patch_size=patch_size,
-            spatial_merge_size=spatial_merge_size,
-            temporal_merge_size=temporal_merge_size,
-            rms_norm_eps=rms_norm_eps,
-            initializer_range=initializer_range,
-            **kwargs,
-        )
+    hidden_size: int = 1280
+    intermediate_size: int = 4 * 1280
+    temporal_merge_size: int = 2
+    rms_norm_eps: float = 1e-6
 
-        del self.embed_dim  # noqa: F821
-        del self.mlp_ratio  # noqa: F821
-        del self.temporal_patch_size  # noqa: F821
-
-        self.intermediate_size = intermediate_size
-        self.temporal_merge_size = temporal_merge_size
-        self.rms_norm_eps = rms_norm_eps
+    embed_dim = AttributeError()
+    mlp_ratio = AttributeError()
+    temporal_patch_size = AttributeError()
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Ernie4_5_VL_MoeTextModel`]. It is used to instantiate a
@@ -258,70 +235,24 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
         "layers.*.mlp.down_proj": "rowwise",
     }
 
-    def __init__(
-        self,
-        vocab_size=103424,
-        hidden_size=2560,
-        intermediate_size=12288,
-        num_hidden_layers=28,
-        num_attention_heads=20,
-        num_key_value_heads=4,
-        hidden_act="silu",
-        max_position_embeddings=131072,
-        initializer_range=0.02,
-        rms_norm_eps=1e-5,
-        use_cache=True,
-        use_bias=False,
-        rope_parameters=None,
-        mlp_layer_types=None,
-        moe_intermediate_size=None,
-        moe_k=6,
-        moe_num_experts=64,
-        moe_num_shared_experts=2,
-        moe_norm_min=1e-12,
-        output_router_logits=False,
-        router_aux_loss_coef=0.001,
-        pad_token_id=None,
-        eos_token_id: int | list[int] | None = None,
-        bos_token_id=None,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.max_position_embeddings = max_position_embeddings
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.use_bias = use_bias
-        self.rope_parameters = rope_parameters
+    mlp_layer_types: list[str] | None = None
+    moe_intermediate_size: list[int] | None = None
+    pad_token_id: int | None = None
+    eos_token_id: int | list[int] | None = None
+    bos_token_id: int | None = None
 
-        # Default to MoE from the second layer and on
-        self.mlp_layer_types = mlp_layer_types
+    def __post_init__(self, **kwargs):
         if self.mlp_layer_types is None:
             self.mlp_layer_types = ["dense"] + ["sparse"] * (self.num_hidden_layers - 1)
-        layer_type_validation(self.mlp_layer_types, self.num_hidden_layers, attention=False)
 
-        self.moe_intermediate_size = moe_intermediate_size
         if self.moe_intermediate_size is None:
             self.moe_intermediate_size = [1536, 512]
-        self.moe_k = moe_k
-        self.moe_num_experts = moe_num_experts
-        self.moe_num_shared_experts = moe_num_shared_experts
-        self.moe_norm_min = moe_norm_min
-        self.output_router_logits = output_router_logits
-        self.router_aux_loss_coef = router_aux_loss_coef
-        self.pad_token_id = pad_token_id
-        self.eos_token_id = eos_token_id
-        self.bos_token_id = bos_token_id
 
-        PreTrainedConfig.__init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
+        super().__post_init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Ernie4_5_VL_MoeConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Ernie4_5_VL_MoeModel`]. It is used to instantiate a
@@ -369,42 +300,28 @@ class Ernie4_5_VL_MoeConfig(PreTrainedConfig):
     sub_configs = {"vision_config": Ernie4_5_VL_MoeVisionConfig, "text_config": Ernie4_5_VL_MoeTextConfig}
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        text_config=None,
-        vision_config=None,
-        image_start_token_id=101304,
-        image_end_token_id=101305,
-        image_token_id=100295,
-        video_start_token_id=101306,
-        video_end_token_id=101307,
-        video_token_id=103367,
-        tie_word_embeddings=True,
-        **kwargs,
-    ):
-        if isinstance(vision_config, dict):
-            self.vision_config = self.sub_configs["vision_config"](**vision_config)
-        elif isinstance(vision_config, Ernie4_5_VL_MoeVisionConfig):
-            self.vision_config = vision_config
-        elif vision_config is None:
+    text_config: dict | PreTrainedConfig | None = None
+    vision_config: dict | PreTrainedConfig | None = None
+    image_start_token_id: int = 101304
+    image_end_token_id: int = 101305
+    image_token_id: int = 100295
+    video_start_token_id: int = 101306
+    video_end_token_id: int = 101307
+    video_token_id: int = 103367
+    tie_word_embeddings: bool = True
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.vision_config, dict):
+            self.vision_config = self.sub_configs["vision_config"](**self.vision_config)
+        elif self.vision_config is None:
             self.vision_config = self.sub_configs["vision_config"]()
 
-        if isinstance(text_config, dict):
-            self.text_config = self.sub_configs["text_config"](**text_config)
-        elif isinstance(text_config, Ernie4_5_VL_MoeTextConfig):
-            self.text_config = text_config
-        elif text_config is None:
+        if isinstance(self.text_config, dict):
+            self.text_config = self.sub_configs["text_config"](**self.text_config)
+        elif self.text_config is None:
             self.text_config = self.sub_configs["text_config"](**kwargs)
 
-        self.image_start_token_id = image_start_token_id
-        self.image_end_token_id = image_end_token_id
-        self.image_token_id = image_token_id
-        self.video_start_token_id = video_start_token_id
-        self.video_end_token_id = video_end_token_id
-        self.video_token_id = video_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 class Ernie4_5_VL_MoeTextRotaryEmbedding(nn.Module):
