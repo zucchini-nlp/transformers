@@ -52,6 +52,7 @@ _MODEL_TO_CONVERSION_PATTERN = {
     "longcat_flash": "qwen2_moe",
     "solar_open": "qwen2_moe",
     "qwen3_moe": "qwen2_moe",
+    "qwen3_vl_moe": "qwen2_moe",
     "qwen3_omni_moe": "qwen2_moe",
     "qwen3_omni_moe_thinker": "qwen2_moe",
     "qwen3_next": "qwen2_moe",
@@ -137,21 +138,6 @@ def _build_checkpoint_conversion_mapping():
                 source_patterns="mlp.experts.*.down_proj.weight",
                 target_patterns="mlp.experts.down_proj",
                 operations=[MergeModulelist(dim=0)],
-            ),
-        ],
-        "qwen3_vl_moe": [
-            WeightConverter(
-                source_patterns=[
-                    "mlp.experts.*.gate_proj.weight",
-                    "mlp.experts.*.up_proj.weight",
-                ],
-                target_patterns="mlp.experts.gate_up_proj",
-                operations=[MergeModulelist(dim=0), Concatenate(dim=1), Transpose(1, 2)],
-            ),
-            WeightConverter(
-                source_patterns="mlp.experts.*.down_proj.weight",
-                target_patterns="mlp.experts.down_proj",
-                operations=[MergeModulelist(dim=0), Transpose(1, 2)],
             ),
         ],
         "phimoe": [
