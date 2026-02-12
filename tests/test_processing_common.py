@@ -1888,11 +1888,12 @@ class ProcessorTesterMixin:
         "Tests that the helper used internally in vLLM works correctly"
 
         processor = self.get_processor()
-        if processor.tokenizer.pad_token_id is None:
-            processor.tokenizer.pad_token_id = processor.tokenizer.eos_token_id
 
         if not hasattr(processor, "_get_num_multimodal_tokens"):
             self.skipTest("Processor doesn't support `_get_num_multimodal_tokens` yet")
+
+        if processor.tokenizer.pad_token_id is None:
+            processor.tokenizer.pad_token_id = processor.tokenizer.eos_token_id
 
         image_sizes = [(100, 100), (300, 100), (500, 30), (213, 167)]
         image_inputs = []
