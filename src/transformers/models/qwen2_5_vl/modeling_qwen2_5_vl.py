@@ -1642,8 +1642,8 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
         if (cache := model_kwargs.get("past_key_values")) is not None:
             past_length = cache.get_seq_length()
         if past_length != 0 and self.model.rope_deltas is not None:
-            text_positions += self.model.rope_deltas
-            return text_positions
+            position_ids = text_positions[None, ...] + self.model.rope_deltas
+            return position_ids
 
         # Otherwise compute 3d position ids for vision tokens and concat with text position ids
         if "input_ids" in model_kwargs and model_kwargs["input_ids"].shape[1] > 0:
