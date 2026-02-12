@@ -1540,7 +1540,10 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
         text_positions = super()._prepare_position_ids_for_generation(inputs_tensor, model_kwargs)
 
         # Early exit in case we are continuing generation from past kv
-        if self.model.rope_deltas is not None:
+        past_length = 0
+        if (cache := model_kwargs.get("past_key_values")) is not None:
+            past_length = cache.get_seq_length()
+        if past_length != 0 and self.model.rope_deltas is not None:
             text_positions += self.model.rope_deltas
             return text_positions
 
