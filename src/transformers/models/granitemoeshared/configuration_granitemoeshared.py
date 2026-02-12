@@ -18,6 +18,10 @@
 # limitations under the License.
 """GraniteMoeShared model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
 from ...utils import logging
@@ -26,6 +30,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class GraniteMoeSharedConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`GraniteMoeSharedModel`]. It is used to instantiate an GraniteMoeShared
@@ -112,77 +118,42 @@ class GraniteMoeSharedConfig(PreTrainedConfig):
     model_type = "granitemoeshared"
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        vocab_size: int | None = 32000,
-        hidden_size: int | None = 4096,
-        intermediate_size: int | None = 11008,
-        num_hidden_layers: int | None = 32,
-        num_attention_heads: int | None = 32,
-        num_key_value_heads: int | None = None,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 2048,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-6,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = None,
-        bos_token_id: int | None = 1,
-        eos_token_id: int | list[int] | None = 2,
-        tie_word_embeddings: bool | None = False,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        embedding_multiplier: float | None = 1.0,
-        logits_scaling: float | None = 1.0,
-        residual_multiplier: float | None = 1.0,
-        attention_multiplier: float | None = 1.0,
-        num_local_experts: int | None = 8,
-        num_experts_per_tok: int | None = 2,
-        output_router_logits: bool | None = False,
-        router_aux_loss_coef: float | None = 0.001,
-        shared_intermediate_size: int | None = 0,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
+    vocab_size: int | None = 32000
+    hidden_size: int | None = 4096
+    intermediate_size: int | None = 11008
+    num_hidden_layers: int | None = 32
+    num_attention_heads: int | None = 32
+    num_key_value_heads: int | None = None
+    hidden_act: str | None = "silu"
+    max_position_embeddings: int | None = 2048
+    initializer_range: float | None = 0.02
+    rms_norm_eps: float | None = 1e-6
+    use_cache: bool | None = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = 1
+    eos_token_id: int | list[int] | None = 2
+    tie_word_embeddings: bool | None = False
+    rope_parameters: RopeParameters | dict | None = None
+    attention_bias: bool | None = False
+    attention_dropout: float | None = 0.0
+    embedding_multiplier: float | None = 1.0
+    logits_scaling: float | None = 1.0
+    residual_multiplier: float | None = 1.0
+    attention_multiplier: float | None = 1.0
+    num_local_experts: int | None = 8
+    num_experts_per_tok: int | None = 2
+    output_router_logits: bool | None = False
+    router_aux_loss_coef: float | None = 0.01
+    shared_intermediate_size: int | None = 0
+    position_embedding_type: str = "rope"
 
-        # for backward compatibility
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
-
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
-
-        self.embedding_multiplier = embedding_multiplier
-        self.logits_scaling = logits_scaling
-        self.residual_multiplier = residual_multiplier
-        self.attention_multiplier = attention_multiplier
-
-        self.num_local_experts = num_local_experts
-        self.num_experts_per_tok = num_experts_per_tok
-        self.output_router_logits = output_router_logits
-        self.router_aux_loss_coef = router_aux_loss_coef
-        self.shared_intermediate_size = shared_intermediate_size
-
-        self.tie_word_embeddings = tie_word_embeddings
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
+    def __post_init__(self, **kwargs):
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
         # this model has rope embedding type, hardcoded for BC
         self.position_embedding_type = "rope"
-        self.rope_parameters = rope_parameters
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["GraniteMoeSharedConfig"]
