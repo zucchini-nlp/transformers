@@ -146,9 +146,7 @@ class Ernie4_5_VL_MoeVisionConfig(Qwen2VLVisionConfig):
     temporal_patch_size = AttributeError()
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
-class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig, PreTrainedConfig):
+class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig):
     r"""
     This is the configuration class to store the configuration of a [`Ernie4_5_VL_MoeTextModel`]. It is used to instantiate a
     the text model portion of the complete Ernie4.5-VL Moe model according to the specified arguments, defining the model architecture.

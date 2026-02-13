@@ -13,6 +13,10 @@
 # limitations under the License.
 
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig, PretrainedConfig
 from ...modeling_rope_utils import RopeParameters
 from ...utils import logging
@@ -22,6 +26,8 @@ from ..auto import CONFIG_MAPPING, AutoConfig
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class PeAudioVideoEncoderConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`PeAudioVideoEncoderModel`]. It is used to instantiate a
@@ -84,62 +90,45 @@ class PeAudioVideoEncoderConfig(PreTrainedConfig):
     base_config_key = "audio_video_config"
     sub_configs = {"audio_config": AutoConfig, "video_config": AutoConfig}
 
-    def __init__(
-        self,
-        audio_config: dict | PreTrainedConfig | None = None,
-        video_config: dict | PreTrainedConfig | None = None,
-        hidden_size: int | None = 1792,
-        intermediate_size: int | None = 4800,
-        num_hidden_layers: int | None = 6,
-        num_attention_heads: int | None = 14,
-        num_key_value_heads: int | None = None,
-        head_dim: int | None = 128,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 10000,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-5,
-        rope_parameters: RopeParameters | dict | None = {"rope_theta": 20000},
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        **kwargs,
-    ):
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
+    audio_config: dict | PreTrainedConfig | None = None
+    video_config: dict | PreTrainedConfig | None = None
+    hidden_size: int = 1792
+    intermediate_size: int = 4800
+    num_hidden_layers: int = 6
+    num_attention_heads: int = 14
+    num_key_value_heads: int | None = None
+    head_dim: int = 128
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 10000
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    rope_parameters: RopeParameters | dict | None = None
+    attention_bias: bool = False
+    attention_dropout: float = 0.0
 
-        # for backward compatibility
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
+    def __post_init__(self, **kwargs):
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
-        self.num_key_value_heads = num_key_value_heads
-        self.head_dim = head_dim
-        self.hidden_act = hidden_act
-        self.max_position_embeddings = max_position_embeddings
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.rope_parameters = rope_parameters
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
+        if isinstance(self.audio_config, dict):
+            self.audio_config["model_type"] = self.audio_config.get("model_type", "pe_audio_encoder")
+            self.audio_config = CONFIG_MAPPING[self.audio_config["model_type"]](**self.audio_config)
+        elif self.audio_config is None:
+            self.audio_config = CONFIG_MAPPING["pe_audio_encoder"]()
 
-        if isinstance(audio_config, dict):
-            audio_config["model_type"] = audio_config.get("model_type", "pe_audio_encoder")
-            audio_config = CONFIG_MAPPING[audio_config["model_type"]](**audio_config)
-        elif audio_config is None:
-            audio_config = CONFIG_MAPPING["pe_audio_encoder"]()
+        if isinstance(self.video_config, dict):
+            self.video_config["model_type"] = self.video_config.get("model_type", "pe_video_encoder")
+            self.video_config = CONFIG_MAPPING[self.video_config["model_type"]](**self.video_config)
+        elif self.video_config is None:
+            self.video_config = CONFIG_MAPPING["pe_video_encoder"]()
 
-        if isinstance(video_config, dict):
-            video_config["model_type"] = video_config.get("model_type", "pe_video_encoder")
-            video_config = CONFIG_MAPPING[video_config["model_type"]](**video_config)
-        elif video_config is None:
-            video_config = CONFIG_MAPPING["pe_video_encoder"]()
-
-        self.audio_config = audio_config
-        self.video_config = video_config
-
-        super().__init__(**kwargs)
+        if self.rope_parameters is None:
+            self.rope_parameters = {"rope_theta": 20000}
+        super().__post_init__(**kwargs)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class PeAudioVideoConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`PeAudioVideoModel`]. It is used to instantiate a
@@ -181,29 +170,24 @@ class PeAudioVideoConfig(PretrainedConfig):
         "num_attention_heads": 16,
     }
 
-    def __init__(
-        self,
-        text_config=None,
-        audio_video_config=None,
-        **kwargs,
-    ):
-        if isinstance(text_config, dict):
-            text_config["model_type"] = text_config.get("model_type", "modernbert")
-            text_config = CONFIG_MAPPING[text_config["model_type"]](
-                **{**self._default_text_config_kwargs, **text_config}
+    text_config: dict | PreTrainedConfig | None = None
+    audio_video_config: dict | PreTrainedConfig | None = None
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.text_config, dict):
+            self.text_config["model_type"] = self.text_config.get("model_type", "modernbert")
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](
+                **{**self._default_text_config_kwargs, **self.text_config}
             )
-        elif text_config is None:
-            text_config = CONFIG_MAPPING["modernbert"](**self._default_text_config_kwargs)
+        elif self.text_config is None:
+            self.text_config = CONFIG_MAPPING["modernbert"](**self._default_text_config_kwargs)
 
-        if isinstance(audio_video_config, dict):
-            audio_video_config = PeAudioVideoEncoderConfig(**audio_video_config)
-        elif audio_video_config is None:
-            audio_video_config = PeAudioVideoEncoderConfig()
+        if isinstance(self.audio_video_config, dict):
+            self.audio_video_config = PeAudioVideoEncoderConfig(**self.audio_video_config)
+        elif self.audio_video_config is None:
+            self.audio_video_config = PeAudioVideoEncoderConfig()
 
-        self.text_config = text_config
-        self.audio_video_config = audio_video_config
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
     @property
     def audio_config(self):

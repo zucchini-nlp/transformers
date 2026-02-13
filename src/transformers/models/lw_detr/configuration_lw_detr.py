@@ -147,6 +147,8 @@ class LwDetrViTConfig(BackboneConfigMixin, PreTrainedConfig):
             )
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class LwDetrConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LwDetrModel`]. It is used to instantiate
@@ -247,50 +249,41 @@ class LwDetrConfig(PreTrainedConfig):
     model_type = "lw_detr"
     sub_configs = {"backbone_config": AutoConfig}
 
-    def __init__(
-        self,
-        # backbone
-        backbone_config=None,
-        # projector
-        projector_scale_factors: list[float] = [],
-        hidden_expansion=0.5,
-        c2f_num_blocks=3,
-        activation_function="silu",
-        batch_norm_eps=1e-5,
-        # decoder
-        d_model=256,
-        dropout=0.1,
-        decoder_ffn_dim=2048,
-        decoder_n_points=4,
-        decoder_layers: int = 3,
-        decoder_self_attention_heads: int = 8,
-        decoder_cross_attention_heads: int = 16,
-        decoder_activation_function="relu",
-        # model
-        num_queries=300,
-        attention_bias=True,
-        attention_dropout=0.0,
-        activation_dropout=0.0,
-        group_detr: int = 13,
-        init_std=0.02,
-        disable_custom_kernels=True,
-        # loss
-        class_cost=2,
-        bbox_cost=5,
-        giou_cost=2,
-        mask_loss_coefficient=1,
-        dice_loss_coefficient=1,
-        bbox_loss_coefficient=5,
-        giou_loss_coefficient=2,
-        eos_coefficient=0.1,
-        focal_alpha=0.25,
-        auxiliary_loss=True,
-        **kwargs,
-    ):
-        self.batch_norm_eps = batch_norm_eps
+    backbone_config: dict | PreTrainedConfig | None = None
+    projector_scale_factors: list[float] | tuple[float, ...] = ()
+    hidden_expansion: float = 0.5
+    c2f_num_blocks: int = 3
+    activation_function: str = "silu"
+    batch_norm_eps: float = 1e-5
+    dropout: float = 0.1
+    decoder_ffn_dim: int = 2048
+    decoder_n_points: int = 4
+    decoder_layers: int = 3
+    decoder_self_attention_heads: int = 8
+    decoder_cross_attention_heads: int = 16
+    decoder_activation_function: str = "relu"
+    num_queries: int = 300
+    attention_bias: bool = True
+    attention_dropout: float = 0.0
+    activation_dropout: float = 0.0
+    group_detr: int = 13
+    init_std: float = 0.02
+    disable_custom_kernels: bool = True
+    class_cost: int = 2
+    bbox_cost: int = 5
+    giou_cost: int = 2
+    mask_loss_coefficient: int = 1
+    dice_loss_coefficient: int = 1
+    bbox_loss_coefficient: int = 5
+    giou_loss_coefficient: int = 2
+    eos_coefficient: float = 0.1
+    focal_alpha: float = 0.25
+    auxiliary_loss: bool = True
+    d_model: int = 256
 
-        backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
-            backbone_config=backbone_config,
+    def __post_init__(self, **kwargs):
+        self.backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
+            backbone_config=self.backbone_config,
             default_config_type="lw_detr_vit",
             default_config_kwargs={
                 "image_size": 1024,
@@ -302,48 +295,16 @@ class LwDetrConfig(PreTrainedConfig):
             **kwargs,
         )
 
-        self.backbone_config = backbone_config
-        # projector
-        self.projector_scale_factors = projector_scale_factors
-        for scale in projector_scale_factors:
+        self.projector_in_channels = [self.d_model] * len(self.projector_scale_factors)
+        self.projector_out_channels = self.d_model
+        self.num_feature_levels = len(self.projector_scale_factors)
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        for scale in self.projector_scale_factors:
             if scale not in [0.5, 1.0, 2.0]:
                 raise ValueError(f"Unsupported scale factor: {scale}")
-        self.projector_in_channels = [d_model] * len(projector_scale_factors)
-        self.projector_out_channels = d_model
-        self.activation_function = activation_function
-        self.hidden_expansion = hidden_expansion
-        self.c2f_num_blocks = c2f_num_blocks
-        # decoder
-        self.d_model = d_model
-        self.dropout = dropout
-        self.num_queries = num_queries
-        self.decoder_ffn_dim = decoder_ffn_dim
-        self.num_feature_levels = len(self.projector_scale_factors)
-        self.decoder_n_points = decoder_n_points
-        self.decoder_layers = decoder_layers
-        self.decoder_activation_function = decoder_activation_function
-        self.decoder_self_attention_heads = decoder_self_attention_heads
-        self.decoder_cross_attention_heads = decoder_cross_attention_heads
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
-        self.activation_dropout = activation_dropout
-        # model
-        self.init_std = init_std
-        self.group_detr = group_detr
-        # Loss
-        self.auxiliary_loss = auxiliary_loss
-        # Hungarian matcher
-        self.class_cost = class_cost
-        self.bbox_cost = bbox_cost
-        self.giou_cost = giou_cost
-        # Loss coefficients
-        self.dice_loss_coefficient = dice_loss_coefficient
-        self.bbox_loss_coefficient = bbox_loss_coefficient
-        self.giou_loss_coefficient = giou_loss_coefficient
-        self.eos_coefficient = eos_coefficient
-        self.focal_alpha = focal_alpha
-        self.disable_custom_kernels = disable_custom_kernels
-        super().__init__(**kwargs)
 
 
 __all__ = ["LwDetrConfig", "LwDetrViTConfig"]

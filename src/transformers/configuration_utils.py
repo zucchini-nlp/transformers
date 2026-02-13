@@ -150,7 +150,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     """
 
     base_config_key: ClassVar[str] = ""
-    sub_configs: ClassVar[dict[str, type["PretrainedConfig"]]] = {}
+    sub_configs: ClassVar[dict[str, type["PreTrainedConfig"]]] = {}
     has_no_defaults_at_init: ClassVar[bool] = False
     keys_to_ignore_at_inference: ClassVar[list[str] | None] = None
     attribute_map: ClassVar[dict[str, str]] = {}

@@ -17,6 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from dataclasses import dataclass
 
 from huggingface_hub.dataclasses import strict
@@ -296,7 +297,7 @@ class EdgeTamConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
         prompt_encoder_config=None,
         mask_decoder_config=None,
         initializer_range=0.02,
