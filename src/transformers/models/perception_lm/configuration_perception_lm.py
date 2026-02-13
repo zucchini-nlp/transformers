@@ -54,8 +54,8 @@ class PerceptionLMConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
-        text_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         vision_use_cls_token=True,
         projector_pooling_ratio=1,
         image_token_id=128002,

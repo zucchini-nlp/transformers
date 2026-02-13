@@ -175,7 +175,7 @@ class RTDetrConfig(PreTrainedConfig):
         layer_norm_eps=1e-5,
         batch_norm_eps=1e-5,
         # backbone
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         freeze_backbone_batch_norms=True,
         # encoder HybridEncoder
         encoder_hidden_dim=256,

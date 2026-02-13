@@ -163,8 +163,8 @@ class Qwen2AudioConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        audio_config=None,
-        text_config=None,
+        audio_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         audio_token_index=151646,
         **kwargs,
     ):

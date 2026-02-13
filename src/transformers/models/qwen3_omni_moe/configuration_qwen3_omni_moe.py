@@ -410,9 +410,9 @@ class Qwen3OmniMoeThinkerConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        audio_config=None,
-        vision_config=None,
-        text_config=None,
+        audio_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         audio_token_id=151646,
         image_token_id=151655,
         video_token_id=151656,
@@ -887,7 +887,7 @@ class Qwen3OmniMoeTalkerConfig(PreTrainedConfig):
     def __init__(
         self,
         code_predictor_config=None,
-        text_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
         num_code_groups=32,
         thinker_hidden_size=2048,
         codec_eos_token_id=4198,

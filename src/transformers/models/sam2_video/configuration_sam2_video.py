@@ -280,7 +280,7 @@ class Sam2VideoConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
         prompt_encoder_config=None,
         mask_decoder_config=None,
         initializer_range=0.02,

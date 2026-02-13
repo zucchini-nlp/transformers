@@ -128,7 +128,7 @@ class ZoeDepthConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         hidden_act="gelu",
         initializer_range=0.02,
         batch_norm_eps=1e-05,

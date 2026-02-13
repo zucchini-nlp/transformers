@@ -74,7 +74,7 @@ class UperNetConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         hidden_size=512,
         initializer_range=0.02,
         pool_scales=[1, 2, 3, 6],

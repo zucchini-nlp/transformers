@@ -147,7 +147,7 @@ class Sam3VisionConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         fpn_hidden_size=256,
         backbone_feature_sizes=None,
         scale_factors=None,
@@ -454,8 +454,8 @@ class Sam3Config(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
-        text_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         geometry_encoder_config=None,
         detr_encoder_config=None,
         detr_decoder_config=None,

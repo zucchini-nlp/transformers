@@ -247,7 +247,12 @@ class Siglip2Config(PreTrainedConfig):
     model_type = "siglip2"
     sub_configs = {"text_config": Siglip2TextConfig, "vision_config": Siglip2VisionConfig}
 
-    def __init__(self, text_config=None, vision_config=None, **kwargs):
+    def __init__(
+        self,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
+        **kwargs,
+    ):
         if text_config is None:
             text_config = Siglip2TextConfig()
             logger.info("`text_config` is `None`. Initializing the `Siglip2TextConfig` with default values.")

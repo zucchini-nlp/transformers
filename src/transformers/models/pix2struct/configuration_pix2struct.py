@@ -298,8 +298,8 @@ class Pix2StructConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        text_config=None,
-        vision_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
         initializer_factor=1.0,
         initializer_range=0.02,
         is_vqa=False,

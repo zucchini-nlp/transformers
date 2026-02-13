@@ -264,8 +264,8 @@ class XCLIPConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        text_config=None,
-        vision_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
         projection_dim=512,
         prompt_layers=2,
         prompt_alpha=0.1,

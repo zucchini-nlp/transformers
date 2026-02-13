@@ -110,8 +110,8 @@ class VideoLlama3Config(PreTrainedConfig):
 
     def __init__(
         self,
-        text_config=None,
-        vision_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
         image_token_id=151655,
         video_token_id=151656,
         tie_word_embeddings=False,

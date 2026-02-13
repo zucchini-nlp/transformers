@@ -78,7 +78,7 @@ class PromptDepthAnythingConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         patch_size=14,
         initializer_range=0.02,
         reassemble_hidden_size=384,

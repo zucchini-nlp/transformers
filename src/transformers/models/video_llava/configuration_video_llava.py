@@ -89,8 +89,8 @@ class VideoLlavaConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
-        text_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         image_token_index=32000,
         video_token_index=32001,
         projector_hidden_act="gelu",

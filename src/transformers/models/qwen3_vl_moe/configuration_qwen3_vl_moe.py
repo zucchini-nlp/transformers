@@ -263,8 +263,8 @@ class Qwen3VLMoeConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        text_config=None,
-        vision_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
         image_token_id=151655,
         video_token_id=151656,
         vision_start_token_id=151652,

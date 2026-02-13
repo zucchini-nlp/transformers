@@ -187,7 +187,7 @@ class Sam2VisionConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         backbone_channel_list=None,
         backbone_feature_sizes=None,
         fpn_hidden_size=256,
@@ -424,7 +424,7 @@ class Sam2Config(PreTrainedConfig):
 
     def __init__(
         self,
-        vision_config=None,
+        vision_config: dict | PreTrainedConfig | None = None,
         prompt_encoder_config=None,
         mask_decoder_config=None,
         initializer_range=0.02,

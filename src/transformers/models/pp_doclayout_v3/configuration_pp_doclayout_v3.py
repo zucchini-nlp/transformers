@@ -162,7 +162,7 @@ class PPDocLayoutV3Config(PreTrainedConfig):
         batch_norm_eps=1e-5,
         tie_word_embeddings=True,
         # backbone
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         freeze_backbone_batch_norms=True,
         # encoder PPDocLayoutV3HybridEncoder
         encoder_hidden_dim=256,

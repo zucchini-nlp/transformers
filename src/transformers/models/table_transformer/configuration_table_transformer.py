@@ -124,7 +124,7 @@ class TableTransformerConfig(PreTrainedConfig):
     # Copied from transformers.models.detr.configuration_detr.DetrConfig.__init__
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         num_channels=3,
         num_queries=100,
         encoder_layers=6,

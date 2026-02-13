@@ -80,8 +80,8 @@ class ShieldGemma2Config(PreTrainedConfig):
 
     def __init__(
         self,
-        text_config=None,
-        vision_config=None,
+        text_config: dict | PreTrainedConfig | None = None,
+        vision_config: dict | PreTrainedConfig | None = None,
         mm_tokens_per_image: int = 256,
         boi_token_index: int = 255_999,
         eoi_token_index: int = 256_000,

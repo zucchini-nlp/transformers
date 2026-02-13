@@ -92,7 +92,7 @@ class TvpConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        backbone_config=None,
+        backbone_config: dict | PreTrainedConfig | None = None,
         distance_loss_weight=1.0,
         duration_loss_weight=0.1,
         visual_prompter_type="framepad",

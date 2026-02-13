@@ -167,8 +167,8 @@ class VoxtralConfig(PreTrainedConfig):
 
     def __init__(
         self,
-        audio_config=None,
-        text_config=None,
+        audio_config: dict | PreTrainedConfig | None = None,
+        text_config: dict | PreTrainedConfig | None = None,
         audio_token_id=None,
         projector_hidden_act="gelu",
         **kwargs,
