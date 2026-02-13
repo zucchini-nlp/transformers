@@ -13,8 +13,11 @@
 # limitations under the License.
 
 
+from dataclasses import dataclass
+
 import torch
 import torch.nn.functional as F
+from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ... import initialization as init
@@ -43,6 +46,8 @@ from ..mixtral.modeling_mixtral import (
 )
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class MiniMaxM2Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`MiniMaxM2Model`]. It is used to instantiate an
@@ -150,59 +155,29 @@ class MiniMaxM2Config(PreTrainedConfig):
     }
     default_theta = 5000000.0
 
-    def __init__(
-        self,
-        vocab_size: int | None = 200064,
-        hidden_size: int | None = 3072,
-        intermediate_size: int | None = 1536,
-        num_hidden_layers: int | None = 62,
-        num_attention_heads: int | None = 48,
-        num_key_value_heads: int | None = 8,
-        head_dim: int | None = 128,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 196608,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-06,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = None,
-        bos_token_id: int | None = 200034,
-        eos_token_id: int | list[int] | None = 200020,
-        tie_word_embeddings: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        num_experts_per_tok: int | None = 8,
-        num_local_experts: int | None = 256,
-        output_router_logits: bool | None = False,
-        router_aux_loss_coef: float | None = 0.001,
-        router_jitter_noise: float | None = 0.0,
-        rope_parameters: RopeParameters | dict[RopeParameters] | None = None,
-        **kwargs,
-    ):
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_dropout = attention_dropout
-        self.head_dim = head_dim
-        self.rope_parameters = rope_parameters
-
-        self.num_experts_per_tok = num_experts_per_tok
-        self.num_local_experts = num_local_experts
-        self.output_router_logits = output_router_logits
-        self.router_aux_loss_coef = router_aux_loss_coef
-        self.router_jitter_noise = router_jitter_noise
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+    vocab_size: int = 200064
+    hidden_size: int = 3072
+    intermediate_size: int = 1536
+    num_hidden_layers: int = 62
+    num_attention_heads: int = 48
+    num_key_value_heads: int = 8
+    head_dim: int = 128
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 196608
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-06
+    use_cache: bool = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = 200034
+    eos_token_id: int | list[int] | None = 200020
+    tie_word_embeddings: bool = False
+    attention_dropout: float = 0.0
+    num_experts_per_tok: int = 8
+    num_local_experts: int = 256
+    output_router_logits: bool = False
+    router_aux_loss_coef: float = 0.001
+    router_jitter_noise: float = 0.0
+    rope_parameters: RopeParameters | dict | None = None
 
 
 class MiniMaxM2TopKRouter(MixtralTopKRouter):

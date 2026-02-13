@@ -13,12 +13,10 @@
 # limitations under the License.
 
 from collections.abc import Callable
-from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from huggingface_hub.dataclasses import strict
 
 from ...modeling_outputs import BaseModelOutputWithPooling
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS
@@ -51,8 +49,6 @@ class GlmOcrVisionMlp(Glm4VisionMlp):
         self.intermediate_size = config.intermediate_size
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class GlmOcrVisionConfig(Glm4vVisionConfig):
     r"""
     This is the configuration class to store the configuration of a [`GlmOcrVisionConfig`]. It is used to instantiate a
@@ -104,8 +100,6 @@ class GlmOcrVisionConfig(Glm4vVisionConfig):
     intermediate_size: int = 4096
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class GlmOcrTextConfig(Glm4vTextConfig):
     r"""
     This is the configuration class to store the configuration of a [`GlmOcrTextConfig`]. It is used to instantiate a
@@ -177,8 +171,6 @@ class GlmOcrTextConfig(Glm4vTextConfig):
     max_position_embeddings: int = 131072
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class GlmOcrConfig(Glm4vConfig):
     r"""
     This is the configuration class to store the configuration of a [`GlmOcrModel`]. It is used to instantiate a

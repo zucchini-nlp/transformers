@@ -13,6 +13,10 @@
 # limitations under the License.
 """MobileNetV1 model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class MobileNetV1Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`MobileNetV1Model`]. It is used to instantiate a
@@ -68,33 +74,20 @@ class MobileNetV1Config(PreTrainedConfig):
 
     model_type = "mobilenet_v1"
 
-    def __init__(
-        self,
-        num_channels=3,
-        image_size=224,
-        depth_multiplier=1.0,
-        min_depth=8,
-        hidden_act="relu6",
-        tf_padding=True,
-        classifier_dropout_prob=0.999,
-        initializer_range=0.02,
-        layer_norm_eps=0.001,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
+    num_channels: int = 3
+    image_size: int = 224
+    depth_multiplier: float = 1.0
+    min_depth: int = 8
+    hidden_act: str = "relu6"
+    tf_padding: bool = True
+    classifier_dropout_prob: float = 0.999
+    initializer_range: float = 0.02
+    layer_norm_eps: float = 0.001
 
-        if depth_multiplier <= 0:
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.depth_multiplier <= 0:
             raise ValueError("depth_multiplier must be greater than zero.")
-
-        self.num_channels = num_channels
-        self.image_size = image_size
-        self.depth_multiplier = depth_multiplier
-        self.min_depth = min_depth
-        self.hidden_act = hidden_act
-        self.tf_padding = tf_padding
-        self.classifier_dropout_prob = classifier_dropout_prob
-        self.initializer_range = initializer_range
-        self.layer_norm_eps = layer_norm_eps
 
 
 __all__ = ["MobileNetV1Config"]

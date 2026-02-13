@@ -14,11 +14,8 @@
 # limitations under the License.
 """LG AI Research EXAONE Lab"""
 
-from dataclasses import dataclass
-
 import torch
 import torch.nn as nn
-from huggingface_hub.dataclasses import strict
 
 from ... import initialization as init
 from ...cache_utils import Cache
@@ -44,8 +41,6 @@ from ..olmoe.modeling_olmoe import (
 from ..qwen2_moe.modeling_qwen2_moe import Qwen2MoeMLP
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class ExaoneMoeConfig(Exaone4Config):
     model_type = "exaone_moe"
 

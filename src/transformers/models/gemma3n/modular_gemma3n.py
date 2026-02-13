@@ -373,8 +373,6 @@ class Gemma3nAudioConfig(PreTrainedConfig):
     )
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class Gemma3nVisionConfig(TimmWrapperConfig):
     r"""
     This is the configuration class to store the configuration for a timm backbone [`TimmWrapper`]. It is used to

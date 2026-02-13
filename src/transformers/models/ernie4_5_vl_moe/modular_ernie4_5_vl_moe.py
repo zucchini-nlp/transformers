@@ -93,8 +93,6 @@ from ..qwen2_vl.modeling_qwen2_vl import Qwen2VisionTransformerPretrainedModel, 
 logger = logging.get_logger(__name__)
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class Ernie4_5_VL_MoeVisionConfig(Qwen2VLVisionConfig):
     r"""
     This is the configuration class to store the configuration of the [`Ernie4_5_VL_MoeVisionTransformerPretrainedModel`].

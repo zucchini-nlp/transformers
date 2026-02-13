@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from dataclasses import dataclass
 
 import torch
-from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ...activations import ACT2FN
@@ -37,8 +35,6 @@ from ..llava.modeling_llava import (
 )
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class FastVlmConfig(LlavaConfig):
     r"""
     This is the configuration class to store the configuration of a [`FastVlmForConditionalGeneration`]. It is used to instantiate a

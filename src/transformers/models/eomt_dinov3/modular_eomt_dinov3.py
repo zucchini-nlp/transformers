@@ -14,12 +14,10 @@
 """PyTorch EoMT model backed by DINOv3."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Optional
 
 import torch
 import torch.nn.functional as F
-from huggingface_hub.dataclasses import strict
 from torch import Tensor, nn
 
 from ... import initialization as init
@@ -47,8 +45,6 @@ from ..eomt.modeling_eomt import (
 )
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class EomtDinov3Config(EomtConfig):
     r"""
     This is the configuration class to store the configuration of a [`EomtDinov3ForUniversalSegmentation`]. It is used to instantiate an EoMT-DINOv3 model

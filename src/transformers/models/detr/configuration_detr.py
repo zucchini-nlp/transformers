@@ -177,6 +177,7 @@ class DetrConfig(PreTrainedConfig):
             timm_default_kwargs=timm_default_kwargs,
             **kwargs,
         )
+        self.num_hidden_layers = self.encoder_layers
         super().__post_init__(**kwargs)
 
 

@@ -13,10 +13,7 @@
 # limitations under the License.
 
 
-from dataclasses import dataclass
-
 import torch
-from huggingface_hub.dataclasses import strict
 
 from ...cache_utils import Cache, DynamicCache
 from ...masking_utils import create_causal_mask, create_sliding_window_causal_mask
@@ -36,8 +33,6 @@ from ..qwen2.modeling_qwen2 import Qwen2Attention, Qwen2RotaryEmbedding
 logger = logging.get_logger(__name__)
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class CwmConfig(LlamaConfig):
     """
     Configuration for Code World Model (CWM).

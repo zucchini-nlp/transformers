@@ -94,8 +94,6 @@ class GlmImageVQVAEConfig(PreTrainedConfig):
     initializer_range: float = 0.02
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class GlmImageVisionConfig(Glm4vVisionConfig):
     r"""
     This is the configuration class to store the configuration of a [`GlmImageVisionModel`]. It is used to instantiate an GlmImageVisionModel
@@ -151,8 +149,6 @@ class GlmImageVisionConfig(Glm4vVisionConfig):
     temporal_patch_size = AttributeError()
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class GlmImageTextConfig(Glm4vTextConfig):
     r"""
     This is the configuration class to store the configuration of a [`GlmImageTextModel`]. It is used to instantiate a

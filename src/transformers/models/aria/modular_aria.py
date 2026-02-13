@@ -98,8 +98,6 @@ def sequential_experts_gemm(token_states, expert_weights, tokens_per_expert):
     return output
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class AriaTextConfig(LlamaConfig):
     r"""
     This class handles the configuration for the text component of the Aria model.

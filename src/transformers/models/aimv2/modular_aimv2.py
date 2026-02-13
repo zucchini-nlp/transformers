@@ -15,11 +15,9 @@
 """Pytorch implementation of AIMv2 Model"""
 
 import math
-from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
-from huggingface_hub.dataclasses import strict
 from torch import nn
 
 from ... import initialization as init
@@ -36,8 +34,6 @@ from ..siglip.configuration_siglip import SiglipConfig, SiglipTextConfig, Siglip
 from ..siglip.modeling_siglip import SiglipAttention, SiglipEncoder, SiglipOutput
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class Aimv2VisionConfig(SiglipVisionConfig):
     r"""
     This is the configuration class to store the configuration of a [`Aimv2VisionModel`]. It is used to instantiate a
@@ -112,8 +108,6 @@ class Aimv2VisionConfig(SiglipVisionConfig):
     layer_norm_eps = AttributeError()
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class Aimv2TextConfig(SiglipTextConfig):
     r"""
     This is the configuration class to store the configuration of a [`Aimv2TextModel`]. It is used to instantiate a
@@ -171,8 +165,6 @@ class Aimv2TextConfig(SiglipTextConfig):
     layer_norm_eps = AttributeError()
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class Aimv2Config(SiglipConfig):
     r"""
     [`Aimv2Config`] is the configuration class to store the configuration of a [`Aimv2Model`]. It is used to

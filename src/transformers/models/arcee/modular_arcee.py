@@ -13,10 +13,6 @@
 # limitations under the License.
 """PyTorch Arcee model."""
 
-from dataclasses import dataclass
-
-from huggingface_hub.dataclasses import strict
-
 from transformers.utils import auto_docstring, logging
 
 from ...modeling_rope_utils import RopeParameters
@@ -33,8 +29,6 @@ from ..nemotron.modeling_nemotron import NemotronMLP
 logger = logging.get_logger(__name__)
 
 
-@strict(accept_kwargs=True)
-@dataclass(repr=False)
 class ArceeConfig(LlamaConfig):
     r"""
     This is the configuration class to store the configuration of a [`ArceeModel`]. It is used to instantiate an Arcee
