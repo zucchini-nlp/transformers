@@ -13,6 +13,7 @@
 """Llava model configuration"""
 
 from dataclasses import dataclass
+from typing import Literal
 
 from huggingface_hub.dataclasses import strict
 
@@ -91,7 +92,7 @@ class LlavaConfig(PreTrainedConfig):
     text_config: dict | PreTrainedConfig | None = None
     image_token_id: int = 32000
     projector_hidden_act: str = "gelu"
-    vision_feature_select_strategy: str = "default"
+    vision_feature_select_strategy: Literal["default", "full"] = "default"
     vision_feature_layer: int = -2
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
@@ -125,14 +126,6 @@ class LlavaConfig(PreTrainedConfig):
             self.tie_word_embeddings = self.text_config.tie_word_embeddings
 
         super().__post_init__(**kwargs)
-
-    def validate_architecture(self):
-        """Part of `@strict`-powered validation. Validates the architecture of the config."""
-        if self.vision_feature_select_strategy not in ["default", "full"]:
-            raise ValueError(
-                "vision_feature_select_strategy should be one of 'default', 'full'."
-                f"Got: {self.vision_feature_select_strategy}"
-            )
 
 
 __all__ = ["LlavaConfig"]

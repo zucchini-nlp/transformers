@@ -13,6 +13,10 @@
 # limitations under the License.
 """LeViT model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class LevitConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LevitModel`]. It is used to instantiate a LeViT
@@ -78,43 +84,27 @@ class LevitConfig(PreTrainedConfig):
 
     model_type = "levit"
 
-    def __init__(
-        self,
-        image_size=224,
-        num_channels=3,
-        kernel_size=3,
-        stride=2,
-        padding=1,
-        patch_size=16,
-        hidden_sizes=[128, 256, 384],
-        num_attention_heads=[4, 8, 12],
-        depths=[4, 4, 4],
-        key_dim=[16, 16, 16],
-        drop_path_rate=0,
-        mlp_ratio=[2, 2, 2],
-        attention_ratio=[2, 2, 2],
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.image_size = image_size
-        self.num_channels = num_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        self.hidden_sizes = hidden_sizes
-        self.num_attention_heads = num_attention_heads
-        self.depths = depths
-        self.key_dim = key_dim
-        self.drop_path_rate = drop_path_rate
-        self.patch_size = patch_size
-        self.attention_ratio = attention_ratio
-        self.mlp_ratio = mlp_ratio
-        self.initializer_range = initializer_range
+    image_size: int = 224
+    num_channels: int = 3
+    kernel_size: int = 3
+    stride: int = 2
+    padding: int = 1
+    patch_size: int = 16
+    hidden_sizes: list[int] | tuple[int, ...] = (128, 256, 384)
+    num_attention_heads: list[int] | tuple[int, ...] = (4, 8, 12)
+    depths: list[int] | tuple[int, ...] = (4, 4, 4)
+    key_dim: list[int] | tuple[int, ...] = (16, 16, 16)
+    drop_path_rate: int = 0
+    mlp_ratio: list[int] | tuple[int, ...] = (2, 2, 2)
+    attention_ratio: list[int] | tuple[int, ...] = (2, 2, 2)
+    initializer_range: float = 0.02
+
+    def __post_init__(self, **kwargs):
         self.down_ops = [
-            ["Subsample", key_dim[0], hidden_sizes[0] // key_dim[0], 4, 2, 2],
-            ["Subsample", key_dim[0], hidden_sizes[1] // key_dim[0], 4, 2, 2],
+            ["Subsample", self.key_dim[0], self.hidden_sizes[0] // self.key_dim[0], 4, 2, 2],
+            ["Subsample", self.key_dim[0], self.hidden_sizes[1] // self.key_dim[0], 4, 2, 2],
         ]
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["LevitConfig"]

@@ -168,8 +168,8 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     return_dict: bool | None = True
     dtype: Union[str, "torch.dtype"] | None = None
 
-    chunk_size_feed_forward: int | None = 0
-    is_encoder_decoder: bool | None = False
+    chunk_size_feed_forward: int = 0
+    is_encoder_decoder: bool = False
 
     # Fine-tuning task arguments
     architectures: list[str] | None = None

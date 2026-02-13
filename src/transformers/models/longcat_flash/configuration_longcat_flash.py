@@ -14,10 +14,16 @@
 
 """LongCat Flash model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class LongcatFlashConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LongcatFlashModel`]. It is used to instantiate
@@ -137,83 +143,46 @@ class LongcatFlashConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    def __init__(
-        self,
-        vocab_size: int | None = 131072,
-        hidden_size: int | None = 6144,
-        num_hidden_layers: int | None = 56,
-        num_layers: int | None = 28,
-        num_attention_heads: int | None = 64,
-        num_key_value_heads: int | None = None,
-        hidden_act: str | None = "silu",
-        max_position_embeddings: int | None = 131072,
-        initializer_range: float | None = 0.02,
-        rms_norm_eps: float | None = 1e-5,
-        use_cache: bool | None = True,
-        pad_token_id: int | None = None,
-        bos_token_id: int | None = 1,
-        eos_token_id: int | list[int] | None = 2,
-        tie_word_embeddings: bool | None = False,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        attention_bias: bool | None = False,
-        attention_dropout: float | None = 0.0,
-        ffn_hidden_size: int | None = 12288,
-        q_lora_rank: int | None = 1536,
-        kv_lora_rank: int | None = 512,
-        qk_nope_head_dim: int | None = 128,
-        qk_rope_head_dim: int | None = 64,
-        head_dim: int | None = 64,
-        v_head_dim: int | None = 128,
-        qk_head_dim: int | None = None,
-        moe_topk: int | None = 12,
-        n_routed_experts: int | None = 512,
-        zero_expert_num: int | None = 256,
-        expert_ffn_hidden_size: int | None = 2048,
-        routed_scaling_factor: float | None = 6.0,
-        **kwargs,
-    ):
-        if num_key_value_heads is None:
-            num_key_value_heads = num_attention_heads
+    vocab_size: int = 131072
+    hidden_size: int = 6144
+    num_hidden_layers: int = 56
+    num_layers: int = 28
+    num_attention_heads: int = 64
+    num_key_value_heads: int | None = None
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 131072
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
+    pad_token_id: int | None = None
+    bos_token_id: int | None = 1
+    eos_token_id: int | list[int] | None = 2
+    tie_word_embeddings: bool = False
+    rope_parameters: RopeParameters | dict | None = None
+    attention_bias: bool = False
+    attention_dropout: float = 0.0
+    ffn_hidden_size: int = 12288
+    q_lora_rank: int = 1536
+    kv_lora_rank: int = 512
+    qk_nope_head_dim: int = 128
+    qk_rope_head_dim: int = 64
+    head_dim: int = 64
+    v_head_dim: int = 128
+    qk_head_dim: int | None = None
+    moe_topk: int = 12
+    n_routed_experts: int = 512
+    zero_expert_num: int = 256
+    expert_ffn_hidden_size: int = 2048
+    routed_scaling_factor: float = 6.0
 
-        if qk_head_dim is None:
-            qk_head_dim = qk_nope_head_dim + qk_rope_head_dim
+    def __post_init__(self, **kwargs):
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.num_key_value_heads = num_key_value_heads
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.rms_norm_eps = rms_norm_eps
-        self.use_cache = use_cache
-        self.attention_bias = attention_bias
-        self.attention_dropout = attention_dropout
+        if self.qk_head_dim is None:
+            self.qk_head_dim = self.qk_nope_head_dim + self.qk_rope_head_dim
 
-        self.ffn_hidden_size = ffn_hidden_size
-
-        self.q_lora_rank = q_lora_rank
-        self.kv_lora_rank = kv_lora_rank
-        self.qk_nope_head_dim = qk_nope_head_dim
-        self.qk_rope_head_dim = qk_rope_head_dim
-        self.v_head_dim = v_head_dim
-        self.qk_head_dim = qk_head_dim
-        self.head_dim = head_dim
-
-        self.moe_topk = moe_topk
-        self.n_routed_experts = n_routed_experts
-        self.zero_expert_num = zero_expert_num
-        self.expert_ffn_hidden_size = expert_ffn_hidden_size
-        self.routed_scaling_factor = routed_scaling_factor
-        self.rope_parameters = rope_parameters
-
-        self.tie_word_embeddings = tie_word_embeddings
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
     def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation: set | None = None, **kwargs):
         rope_scaling = kwargs.pop("rope_scaling", None)

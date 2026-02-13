@@ -28,7 +28,7 @@ from ...modeling_outputs import BackboneOutput
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
 from ...pytorch_utils import meshgrid
-from ...utils import ModelOutput, TransformersKwargs, auto_docstring, logging
+from ...utils import ModelOutput, TransformersKwargs, auto_docstring
 from ...utils.generic import check_model_inputs
 from ..auto import AutoConfig
 from ..convnext.modeling_convnext import ConvNextLayerNorm
@@ -50,9 +50,6 @@ from ..vitdet.modeling_vitdet import (
     VitDetMlp,
     VitDetPreTrainedModel,
 )
-
-
-logger = logging.get_logger(__name__)
 
 
 class LwDetrViTConfig(VitDetConfig):
@@ -134,65 +131,29 @@ class LwDetrViTConfig(VitDetConfig):
 
     model_type = "lw_detr_vit"
 
-    def __init__(
-        self,
-        hidden_size=768,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        mlp_ratio=4,
-        hidden_act="gelu",
-        dropout_prob=0.0,
-        initializer_range=0.02,
-        layer_norm_eps=1e-6,
-        image_size=256,
-        pretrain_image_size=224,
-        patch_size=16,
-        num_channels=3,
-        qkv_bias=True,
-        window_block_indices=[],
-        use_absolute_position_embeddings=True,
-        out_features=None,
-        out_indices=None,
-        cae_init_values: float = 0.1,
-        num_windows=16,
-        **kwargs,
-    ):
-        super().__init__(
-            hidden_size=hidden_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            mlp_ratio=mlp_ratio,
-            hidden_act=hidden_act,
-            dropout_prob=dropout_prob,
-            initializer_range=initializer_range,
-            layer_norm_eps=layer_norm_eps,
-            image_size=image_size,
-            pretrain_image_size=pretrain_image_size,
-            patch_size=patch_size,
-            num_channels=num_channels,
-            qkv_bias=qkv_bias,
-            window_block_indices=window_block_indices,
-            use_absolute_position_embeddings=use_absolute_position_embeddings,
-            out_features=out_features,
-            out_indices=out_indices,
-            **kwargs,
-        )
-        del self.residual_block_indices
-        del self.use_relative_position_embeddings
-        del self.window_size
-        del self.drop_path_rate
+    image_size: int = 256
+    cae_init_values: float = 0.1
+    num_windows: int = 16
 
-        self.cae_init_values = cae_init_values
-        if num_windows % math.sqrt(num_windows) != 0:
+    residual_block_indices = AttributeError()
+    use_relative_position_embeddings = AttributeError()
+    window_size = AttributeError()
+    drop_path_rate = AttributeError()
+
+    def __post_init__(self, **kwargs):
+        self.num_windows_side = int(math.sqrt(self.num_windows))
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.num_windows % math.sqrt(self.num_windows) != 0:
             raise ValueError(
-                f"`num_windows` has to be a perfect square, where num_windows % math.sqrt(num_windows) != 0, but got {num_windows}."
+                f"`num_windows` has to be a perfect square, where num_windows % math.sqrt(num_windows) != 0, but got {self.num_windows}."
             )
-        if image_size / num_windows % math.sqrt(num_windows) != 0:
+        if self.image_size / self.num_windows % math.sqrt(self.num_windows) != 0:
             raise ValueError(
-                f"`image_size` has to be divisible by `num_windows`, where image_size / num_windows % math.sqrt(num_windows) != 0,but got {image_size} and {num_windows}."
+                f"`image_size` has to be divisible by `num_windows`, where image_size / num_windows % math.sqrt(num_windows) != 0,but got {self.image_size} and {self.num_windows}."
             )
-        self.num_windows = num_windows
-        self.num_windows_side = int(math.sqrt(num_windows))
 
 
 class LwDetrConfig(PreTrainedConfig):

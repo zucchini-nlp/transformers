@@ -17,12 +17,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from typing import Any
+from dataclasses import dataclass
 
-from ...configuration_utils import PretrainedConfig
+from huggingface_hub.dataclasses import strict
+
+from ...configuration_utils import PreTrainedConfig, PretrainedConfig
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class LightOnOcrConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`LightOnOcrForConditionalGeneration`]. It is used to instantiate a
@@ -63,20 +67,14 @@ class LightOnOcrConfig(PretrainedConfig):
     model_type = "lighton_ocr"
     sub_configs = {"text_config": AutoConfig, "vision_config": AutoConfig}
 
-    def __init__(
-        self,
-        spatial_merge_size: int = 2,
-        image_token_id: int = 151655,
-        tie_word_embeddings: bool = True,
-        vision_config: dict[str, Any] | None = None,
-        text_config: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        self.spatial_merge_size = spatial_merge_size
-        self.image_token_id = image_token_id
-        self.tie_word_embeddings = tie_word_embeddings
+    spatial_merge_size: int = 2
+    image_token_id: int = 151655
+    tie_word_embeddings: bool = True
+    vision_config: dict | PreTrainedConfig | None = None
+    text_config: dict | PreTrainedConfig | None = None
 
-        if vision_config is None:
+    def __post_init__(self, **kwargs):
+        if self.vision_config is None:
             self.vision_config = CONFIG_MAPPING["pixtral"](
                 attention_dropout=0,
                 head_dim=64,
@@ -92,13 +90,11 @@ class LightOnOcrConfig(PretrainedConfig):
                 patch_size=14,
                 rope_theta=10000,
             )
-        elif isinstance(vision_config, PretrainedConfig):
-            self.vision_config = vision_config
-        else:
-            vision_config["model_type"] = vision_config.get("model_type", "pixtral")
-            self.vision_config = CONFIG_MAPPING[vision_config["model_type"]](**vision_config)
+        elif isinstance(self.vision_config, dict):
+            self.vision_config["model_type"] = self.vision_config.get("model_type", "pixtral")
+            self.vision_config = CONFIG_MAPPING[self.vision_config["model_type"]](**self.vision_config)
 
-        if text_config is None:
+        if self.text_config is None:
             self.text_config = CONFIG_MAPPING["qwen3"](
                 attention_dropout=0,
                 head_dim=128,
@@ -116,13 +112,11 @@ class LightOnOcrConfig(PretrainedConfig):
                 use_cache=True,
                 vocab_size=151936,
             )
-        elif isinstance(text_config, PretrainedConfig):
-            self.text_config = text_config
-        else:
-            text_config["model_type"] = text_config.get("model_type", "qwen3")
-            self.text_config = CONFIG_MAPPING[text_config["model_type"]](**text_config)
+        elif isinstance(self.text_config, dict):
+            self.text_config["model_type"] = self.text_config.get("model_type", "qwen3")
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](**self.text_config)
 
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["LightOnOcrConfig"]

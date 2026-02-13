@@ -13,6 +13,10 @@
 # limitations under the License.
 """VitDet model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
@@ -21,6 +25,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VitDetConfig(BackboneConfigMixin, PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VitDetModel`]. It is used to instantiate an
@@ -99,55 +105,32 @@ class VitDetConfig(BackboneConfigMixin, PreTrainedConfig):
 
     model_type = "vitdet"
 
-    def __init__(
-        self,
-        hidden_size=768,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        mlp_ratio=4,
-        hidden_act="gelu",
-        dropout_prob=0.0,
-        initializer_range=0.02,
-        layer_norm_eps=1e-6,
-        image_size=224,
-        pretrain_image_size=224,
-        patch_size=16,
-        num_channels=3,
-        qkv_bias=True,
-        drop_path_rate=0.0,
-        window_block_indices=[],
-        residual_block_indices=[],
-        use_absolute_position_embeddings=True,
-        use_relative_position_embeddings=False,
-        window_size=0,
-        out_features=None,
-        out_indices=None,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
+    hidden_size: int = 768
+    num_hidden_layers: int = 12
+    num_attention_heads: int = 12
+    mlp_ratio: int = 4
+    hidden_act: str = "gelu"
+    dropout_prob: float = 0.0
+    initializer_range: float = 0.02
+    layer_norm_eps: float = 1e-6
+    image_size: int = 224
+    pretrain_image_size: int = 224
+    patch_size: int = 16
+    num_channels: int = 3
+    qkv_bias: bool = True
+    drop_path_rate: float = 0.0
+    window_block_indices: list[int] | tuple[int, ...] = ()
+    residual_block_indices: list[int] | tuple[int, ...] = ()
+    use_absolute_position_embeddings: bool = True
+    use_relative_position_embeddings: bool = False
+    window_size: int = 0
+    _out_features: list[str] | None = None
+    _out_indices: list[int] | None = None
 
-        self.hidden_size = hidden_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.mlp_ratio = mlp_ratio
-        self.hidden_act = hidden_act
-        self.dropout_prob = dropout_prob
-        self.initializer_range = initializer_range
-        self.layer_norm_eps = layer_norm_eps
-        self.image_size = image_size
-        self.pretrain_image_size = pretrain_image_size
-        self.patch_size = patch_size
-        self.num_channels = num_channels
-        self.qkv_bias = qkv_bias
-        self.drop_path_rate = drop_path_rate
-        self.window_block_indices = window_block_indices
-        self.residual_block_indices = residual_block_indices
-        self.use_absolute_position_embeddings = use_absolute_position_embeddings
-        self.use_relative_position_embeddings = use_relative_position_embeddings
-        self.window_size = window_size
-
+    def __post_init__(self, **kwargs):
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, self.num_hidden_layers + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+        self.set_output_features_output_indices(out_indices=self._out_indices, out_features=self._out_features)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["VitDetConfig"]

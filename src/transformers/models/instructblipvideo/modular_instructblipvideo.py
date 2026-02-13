@@ -16,6 +16,7 @@
 import torch
 
 from transformers.models.instructblip.configuration_instructblip import (
+    InstructBlipConfig,
     InstructBlipQFormerConfig,
     InstructBlipVisionConfig,
 )
@@ -30,16 +31,10 @@ from transformers.models.instructblip.modeling_instructblip import (
     TransformersKwargs,
 )
 
-from ...configuration_utils import PreTrainedConfig
 from ...modeling_flash_attention_utils import FlashAttentionKwargs
 from ...modeling_outputs import BaseModelOutputWithPooling
-from ...models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
 from ...processing_utils import Unpack
-from ...utils import auto_docstring, can_return_tuple, logging
-from ..auto import CONFIG_MAPPING, AutoConfig
-
-
-logger = logging.get_logger(__name__)
+from ...utils import auto_docstring, can_return_tuple
 
 
 class InstructBlipVideoVisionConfig(InstructBlipVisionConfig):
@@ -50,7 +45,7 @@ class InstructBlipVideoQFormerConfig(InstructBlipQFormerConfig):
     pass
 
 
-class InstructBlipVideoConfig(PreTrainedConfig):
+class InstructBlipVideoConfig(InstructBlipConfig):
     r"""
     [`InstructBlipVideoConfig`] is the configuration class to store the configuration of a
     [`InstructBlipVideoForConditionalGeneration`]. It is used to instantiate a Instructblipvideo model according to the specified
@@ -106,57 +101,9 @@ class InstructBlipVideoConfig(PreTrainedConfig):
     >>> config = InstructBlipVideoConfig(vision_config=vision_config, qformer_config=qformer_config, text_config=text_config)
     ```"""
 
-    model_type = "instructblipvideo"
-    attribute_map = {
-        "video_token_id": "video_token_index",
-    }
-    sub_configs = {
-        "text_config": AutoConfig,
-        "qformer_config": InstructBlipVideoQFormerConfig,
-        "vision_config": InstructBlipVideoVisionConfig,
-    }
-
-    def __init__(
-        self,
-        vision_config=None,
-        qformer_config=None,
-        text_config=None,
-        num_query_tokens=32,
-        video_token_index=None,
-        **kwargs,
-    ):
-        if text_config is None:
-            text_config = CONFIG_MAPPING["opt"]()
-            logger.info("text_config is None. Initializing the text config with default values (`OPTConfig`).")
-        elif isinstance(text_config, dict):
-            text_model_type = text_config.get("model_type", "opt")
-            text_config = CONFIG_MAPPING[text_model_type](**text_config)
-
-        if qformer_config is None:
-            qformer_config = InstructBlipVideoQFormerConfig()
-            logger.info("qformer_config is None. Initializing the InstructBlipVideoQFormerConfig with default values.")
-        elif isinstance(qformer_config, dict):
-            qformer_config = InstructBlipVideoQFormerConfig(**qformer_config)
-
-        if vision_config is None:
-            vision_config = InstructBlipVideoVisionConfig()
-            logger.info(
-                "`vision_config` is `None`. initializing the `InstructBlipVideoVisionConfig` with default values."
-            )
-        elif isinstance(vision_config, dict):
-            vision_config = InstructBlipVideoVisionConfig(**vision_config)
-
-        self.text_config = text_config
-        self.vision_config = vision_config
-        self.qformer_config = qformer_config
-
-        self.num_query_tokens = num_query_tokens
-        self.video_token_index = video_token_index
-        self.qformer_config.encoder_hidden_size = self.vision_config.hidden_size
-        self.use_decoder_only_language_model = self.text_config.model_type in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES
-        self.initializer_factor = 1.0
-        self.initializer_range = 0.02
-        super().__init__(**kwargs)
+    attribute_map = {"video_token_id": "video_token_index"}
+    video_token_index: int | None = None
+    image_token_index = AttributeError()
 
 
 class InstructBlipVideoPreTrainedModel(InstructBlipPreTrainedModel):
