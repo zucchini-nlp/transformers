@@ -13,6 +13,10 @@
 # limitations under the License.
 """PLBART model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class PLBartConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`PLBartModel`]. It is used to instantiate an
@@ -102,66 +108,32 @@ class PLBartConfig(PreTrainedConfig):
         "initializer_range": "init_std",
     }
 
-    def __init__(
-        self,
-        vocab_size=50005,
-        max_position_embeddings=1024,
-        encoder_layers=6,
-        encoder_ffn_dim=3072,
-        encoder_attention_heads=12,
-        decoder_layers=6,
-        decoder_ffn_dim=3072,
-        decoder_attention_heads=12,
-        encoder_layerdrop=0.0,
-        decoder_layerdrop=0.0,
-        use_cache=True,
-        is_encoder_decoder=True,
-        activation_function="gelu",
-        d_model=768,
-        dropout=0.1,
-        attention_dropout=0.1,
-        activation_dropout=0.0,
-        init_std=0.02,
-        classifier_dropout=0.0,
-        scale_embedding=True,
-        pad_token_id=1,
-        bos_token_id=0,
-        eos_token_id=2,
-        forced_eos_token_id=2,
-        is_decoder=False,
-        tie_word_embeddings=True,
-        **kwargs,
-    ):
-        self.is_decoder = is_decoder
-        self.tie_word_embeddings = tie_word_embeddings
-        self.vocab_size = vocab_size
-        self.max_position_embeddings = max_position_embeddings
-        self.d_model = d_model
-        self.encoder_ffn_dim = encoder_ffn_dim
-        self.encoder_layers = encoder_layers
-        self.encoder_attention_heads = encoder_attention_heads
-        self.decoder_ffn_dim = decoder_ffn_dim
-        self.decoder_layers = decoder_layers
-        self.decoder_attention_heads = decoder_attention_heads
-        self.dropout = dropout
-        self.attention_dropout = attention_dropout
-        self.activation_dropout = activation_dropout
-        self.activation_function = activation_function
-        self.init_std = init_std
-        self.encoder_layerdrop = encoder_layerdrop
-        self.decoder_layerdrop = decoder_layerdrop
-        self.classifier_dropout = classifier_dropout
-        self.use_cache = use_cache
-        self.num_hidden_layers = encoder_layers
-        self.scale_embedding = scale_embedding  # scale factor will be sqrt(d_model) if True
-        self.pad_token_id = pad_token_id
-        self.bos_token_id = bos_token_id
-        self.eos_token_id = eos_token_id
-        self.forced_eos_token_id = forced_eos_token_id
-        super().__init__(
-            is_encoder_decoder=is_encoder_decoder,
-            **kwargs,
-        )
+    vocab_size: int = 50005
+    max_position_embeddings: int = 1024
+    encoder_layers: int = 6
+    encoder_ffn_dim: int = 3072
+    encoder_attention_heads: int = 12
+    decoder_layers: int = 6
+    decoder_ffn_dim: int = 3072
+    decoder_attention_heads: int = 12
+    encoder_layerdrop: float = 0.0
+    decoder_layerdrop: float = 0.0
+    use_cache: bool = True
+    is_encoder_decoder: bool = True
+    activation_function: str = "gelu"
+    d_model: int = 768
+    dropout: float = 0.1
+    attention_dropout: float = 0.1
+    activation_dropout: float = 0.0
+    init_std: float = 0.02
+    classifier_dropout: float = 0.0
+    scale_embedding: bool = True
+    pad_token_id: int | None = 1
+    bos_token_id: int | None = 0
+    eos_token_id: int | None = 2
+    forced_eos_token_id: int | None = 2
+    is_decoder: bool = False
+    tie_word_embeddings: bool = True
 
 
 __all__ = ["PLBartConfig"]

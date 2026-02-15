@@ -13,6 +13,10 @@
 # limitations under the License.
 """PoolFormer model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -20,6 +24,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class PoolFormerConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of [`PoolFormerModel`]. It is used to instantiate a
@@ -83,43 +89,22 @@ class PoolFormerConfig(PreTrainedConfig):
 
     model_type = "poolformer"
 
-    def __init__(
-        self,
-        num_channels=3,
-        patch_size=16,
-        stride=16,
-        pool_size=3,
-        mlp_ratio=4.0,
-        depths=[2, 2, 6, 2],
-        hidden_sizes=[64, 128, 320, 512],
-        patch_sizes=[7, 3, 3, 3],
-        strides=[4, 2, 2, 2],
-        padding=[2, 1, 1, 1],
-        num_encoder_blocks=4,
-        drop_path_rate=0.0,
-        hidden_act="gelu",
-        use_layer_scale=True,
-        layer_scale_init_value=1e-5,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        self.num_channels = num_channels
-        self.patch_size = patch_size
-        self.stride = stride
-        self.padding = padding
-        self.pool_size = pool_size
-        self.hidden_sizes = hidden_sizes
-        self.mlp_ratio = mlp_ratio
-        self.depths = depths
-        self.patch_sizes = patch_sizes
-        self.strides = strides
-        self.num_encoder_blocks = num_encoder_blocks
-        self.drop_path_rate = drop_path_rate
-        self.hidden_act = hidden_act
-        self.use_layer_scale = use_layer_scale
-        self.layer_scale_init_value = layer_scale_init_value
-        self.initializer_range = initializer_range
-        super().__init__(**kwargs)
+    num_channels: int = 3
+    patch_size: int = 16
+    stride: int = 16
+    pool_size: int = 3
+    mlp_ratio: float = 4.0
+    depths: list[int] | tuple[int, ...] = (2, 2, 6, 2)
+    hidden_sizes: list[int] | tuple[int, ...] = (64, 128, 320, 512)
+    patch_sizes: list[int] | tuple[int, ...] = (7, 3, 3, 3)
+    strides: list[int] | tuple[int, ...] = (4, 2, 2, 2)
+    padding: list[int] | tuple[int, ...] = (2, 1, 1, 1)
+    num_encoder_blocks: int = 4
+    drop_path_rate: float = 0.0
+    hidden_act: str = "gelu"
+    use_layer_scale: bool = True
+    layer_scale_init_value: float = 1e-5
+    initializer_range: float = 0.02
 
 
 __all__ = ["PoolFormerConfig"]
