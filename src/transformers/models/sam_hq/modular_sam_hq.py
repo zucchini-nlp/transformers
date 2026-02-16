@@ -106,13 +106,7 @@ class SamHQMaskDecoderConfig(SamMaskDecoderConfig):
             Dimensionality of the Vision Transformer (ViT) used in the `SamHQMaskDecoder` module.
     """
 
-    def __init__(
-        self,
-        vit_dim=768,
-        **super_kwargs,
-    ):
-        super().__init__(**super_kwargs)
-        self.vit_dim = vit_dim
+    vit_dim: int = 768
 
 
 class SamHQConfig(SamConfig):

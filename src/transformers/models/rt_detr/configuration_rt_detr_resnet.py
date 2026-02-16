@@ -13,6 +13,10 @@
 # limitations under the License.
 """RT-DETR ResNet model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
@@ -21,6 +25,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class RTDetrResNetConfig(BackboneConfigMixin, PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`RTDetrResnetBackbone`]. It is used to instantiate an
@@ -79,33 +85,26 @@ class RTDetrResNetConfig(BackboneConfigMixin, PreTrainedConfig):
     model_type = "rt_detr_resnet"
     layer_types = ["basic", "bottleneck"]
 
-    def __init__(
-        self,
-        num_channels=3,
-        embedding_size=64,
-        hidden_sizes=[256, 512, 1024, 2048],
-        depths=[3, 4, 6, 3],
-        layer_type="bottleneck",
-        hidden_act="relu",
-        downsample_in_first_stage=False,
-        downsample_in_bottleneck=False,
-        out_features=None,
-        out_indices=None,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        if layer_type not in self.layer_types:
-            raise ValueError(f"layer_type={layer_type} is not one of {','.join(self.layer_types)}")
-        self.num_channels = num_channels
-        self.embedding_size = embedding_size
-        self.hidden_sizes = hidden_sizes
-        self.depths = depths
-        self.layer_type = layer_type
-        self.hidden_act = hidden_act
-        self.downsample_in_first_stage = downsample_in_first_stage
-        self.downsample_in_bottleneck = downsample_in_bottleneck
-        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(depths) + 1)]
-        self.set_output_features_output_indices(out_indices=out_indices, out_features=out_features)
+    num_channels: int = 3
+    embedding_size: int = 64
+    hidden_sizes: list[int] | tuple[int, ...] = (256, 512, 1024, 2048)
+    depths: list[int] | tuple[int, ...] = (3, 4, 6, 3)
+    layer_type: str = "bottleneck"
+    hidden_act: str = "relu"
+    downsample_in_first_stage: bool = False
+    downsample_in_bottleneck: bool = False
+    _out_features: list[str] | None = None
+    _out_indices: list[int] | None = None
+
+    def __post_init__(self, **kwargs):
+        self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(self.depths) + 1)]
+        self.set_output_features_output_indices(out_indices=self._out_indices, out_features=self._out_features)
+        super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.layer_type not in self.layer_types:
+            raise ValueError(f"layer_type={self.layer_type} is not one of {','.join(self.layer_types)}")
 
 
 __all__ = ["RTDetrResNetConfig"]

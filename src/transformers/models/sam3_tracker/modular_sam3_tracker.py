@@ -70,19 +70,8 @@ class Sam3TrackerPromptEncoderConfig(Sam2PromptEncoderConfig):
 
     base_config_key = "prompt_encoder_config"
 
-    def __init__(
-        self,
-        hidden_size=256,
-        image_size=1008,
-        patch_size=14,
-        mask_input_channels=16,
-        num_point_embeddings=4,
-        hidden_act="gelu",
-        layer_norm_eps=1e-6,
-        scale=1,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
+    image_size: int = 1008
+    patch_size: int = 14
 
 
 class Sam3TrackerProcessor(Sam2Processor):
@@ -150,36 +139,26 @@ class Sam3TrackerConfig(Sam2Config):
     ```
     """
 
-    def __init__(
-        self,
-        vision_config=None,
-        prompt_encoder_config=None,
-        mask_decoder_config=None,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        vision_config = (
-            vision_config
-            if vision_config is not None
-            else {"backbone_feature_sizes": [[288, 288], [144, 144], [72, 72]]}
-        )
-        prompt_encoder_config = prompt_encoder_config if prompt_encoder_config is not None else {}
-        mask_decoder_config = mask_decoder_config if mask_decoder_config is not None else {}
+    def __post_init__(self, **kwargs):
+        if isinstance(self.vision_config, dict):
+            self.vision_config["model_type"] = self.vision_config.get("model_type", "sam3_vision_model")
+            self.vision_config = CONFIG_MAPPING[self.vision_config["model_type"]](**self.vision_config)
+        elif self.vision_config is None:
+            self.vision_config = CONFIG_MAPPING["sam3_vision_model"](
+                backbone_feature_sizes=[[288, 288], [144, 144], [72, 72]]
+            )
 
-        if isinstance(vision_config, dict):
-            vision_config["model_type"] = vision_config.get("model_type", "sam3_vision_model")
-            vision_config = CONFIG_MAPPING[vision_config["model_type"]](**vision_config)
-        if isinstance(prompt_encoder_config, Sam3TrackerPromptEncoderConfig):
-            prompt_encoder_config = prompt_encoder_config.to_dict()
-        if isinstance(mask_decoder_config, Sam3TrackerMaskDecoderConfig):
-            mask_decoder_config = mask_decoder_config.to_dict()
+        if isinstance(self.prompt_encoder_config, dict):
+            self.prompt_encoder_config = Sam3TrackerPromptEncoderConfig(**self.prompt_encoder_config)
+        elif self.prompt_encoder_config is None:
+            self.prompt_encoder_config = Sam3TrackerPromptEncoderConfig()
 
-        self.vision_config = vision_config
-        self.prompt_encoder_config = Sam3TrackerPromptEncoderConfig(**prompt_encoder_config)
-        self.mask_decoder_config = Sam3TrackerMaskDecoderConfig(**mask_decoder_config)
+        if isinstance(self.mask_decoder_config, dict):
+            self.mask_decoder_config = Sam3TrackerMaskDecoderConfig(**self.mask_decoder_config)
+        elif self.mask_decoder_config is None:
+            self.mask_decoder_config = Sam3TrackerMaskDecoderConfig()
 
-        self.initializer_range = initializer_range
-        PreTrainedConfig.__init__(**kwargs)
+        PreTrainedConfig.__post_init__(**kwargs)
 
 
 class Sam3TrackerImageSegmentationOutput(Sam2ImageSegmentationOutput):

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 
@@ -19,6 +23,8 @@ from ...utils import logging
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class SuperPointConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`SuperPointForKeypointDetection`]. It is used to instantiate a
@@ -60,30 +66,15 @@ class SuperPointConfig(PreTrainedConfig):
 
     model_type = "superpoint"
 
-    def __init__(
-        self,
-        encoder_hidden_sizes: list[int] = [64, 64, 128, 128],
-        decoder_hidden_size: int = 256,
-        keypoint_decoder_dim: int = 65,
-        descriptor_decoder_dim: int = 256,
-        keypoint_threshold: float = 0.005,
-        max_keypoints: int = -1,
-        nms_radius: int = 4,
-        border_removal_distance: int = 4,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        self.encoder_hidden_sizes = encoder_hidden_sizes
-        self.decoder_hidden_size = decoder_hidden_size
-        self.keypoint_decoder_dim = keypoint_decoder_dim
-        self.descriptor_decoder_dim = descriptor_decoder_dim
-        self.keypoint_threshold = keypoint_threshold
-        self.max_keypoints = max_keypoints
-        self.nms_radius = nms_radius
-        self.border_removal_distance = border_removal_distance
-        self.initializer_range = initializer_range
-
-        super().__init__(**kwargs)
+    encoder_hidden_sizes: list[int] | tuple[int, ...] = (64, 64, 128, 128)
+    decoder_hidden_size: int = 256
+    keypoint_decoder_dim: int = 65
+    descriptor_decoder_dim: int = 256
+    keypoint_threshold: float = 0.005
+    max_keypoints: int = -1
+    nms_radius: int = 4
+    border_removal_distance: int = 4
+    initializer_range: float = 0.02
 
 
 __all__ = ["SuperPointConfig"]
