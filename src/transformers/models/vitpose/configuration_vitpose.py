@@ -13,6 +13,10 @@
 # limitations under the License.
 """VitPose model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
@@ -22,6 +26,8 @@ from ..auto.configuration_auto import AutoConfig
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VitPoseConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VitPoseForPoseEstimation`]. It is used to instantiate a
@@ -61,27 +67,20 @@ class VitPoseConfig(PreTrainedConfig):
     model_type = "vitpose"
     sub_configs = {"backbone_config": AutoConfig}
 
-    def __init__(
-        self,
-        backbone_config: PreTrainedConfig | None = None,
-        initializer_range: float = 0.02,
-        scale_factor: int = 4,
-        use_simple_decoder: bool = True,
-        **kwargs,
-    ):
-        backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
-            backbone_config=backbone_config,
+    backbone_config: PreTrainedConfig | None = None
+    initializer_range: float = 0.02
+    scale_factor: int = 4
+    use_simple_decoder: bool = True
+
+    def __post_init__(self, **kwargs):
+        self.backbone_config, kwargs = consolidate_backbone_kwargs_to_config(
+            backbone_config=self.backbone_config,
             default_config_type="vitpose_backbone",
             default_config_kwargs={"out_indices": [4]},
             **kwargs,
         )
 
-        self.backbone_config = backbone_config
-        self.initializer_range = initializer_range
-        self.scale_factor = scale_factor
-        self.use_simple_decoder = use_simple_decoder
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["VitPoseConfig"]

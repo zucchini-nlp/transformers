@@ -109,7 +109,7 @@ class VitMatteConvStream(nn.Module):
         if config.backbone_config is not None:
             in_channels = config.backbone_config.num_channels
 
-        out_channels = config.convstream_hidden_sizes
+        out_channels = list(config.convstream_hidden_sizes)
 
         self.convs = nn.ModuleList()
         self.conv_chans = [in_channels] + out_channels

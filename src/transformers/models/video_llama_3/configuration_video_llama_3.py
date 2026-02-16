@@ -17,10 +17,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ..auto import CONFIG_MAPPING, AutoConfig
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VideoLlama3VisionConfig(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a [`VideoLlama3VisionModel`]. It is used to instantiate a
@@ -55,35 +61,19 @@ class VideoLlama3VisionConfig(PreTrainedConfig):
     model_type = "video_llama_3_vision"
     base_config_key = "vision_config"
 
-    def __init__(
-        self,
-        hidden_size=768,
-        intermediate_size=3072,
-        num_hidden_layers=12,
-        num_attention_heads=12,
-        num_channels=3,
-        patch_size=16,
-        hidden_act="gelu_pytorch_tanh",
-        layer_norm_eps=1e-6,
-        attention_dropout=0.0,
-        initializer_range=0.02,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-
-        self.hidden_size = hidden_size
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.num_attention_heads = num_attention_heads
-        self.num_channels = num_channels
-        self.patch_size = patch_size
-        self.attention_dropout = attention_dropout
-        self.layer_norm_eps = layer_norm_eps
-        self.hidden_act = hidden_act
-
-        self.initializer_range = initializer_range
+    hidden_size: int = 768
+    intermediate_size: int = 3072
+    num_hidden_layers: int = 12
+    num_attention_heads: int = 12
+    num_channels: int = 3
+    patch_size: int = 16
+    hidden_act: str = "gelu_pytorch_tanh"
+    layer_norm_eps: float = 1e-6
+    attention_dropout: float = 0.0
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VideoLlama3Config(PreTrainedConfig):
     """
     This is the configuration class to store the configuration of a [`VideoLlama3Model`]. It is used to instantiate a
@@ -108,40 +98,24 @@ class VideoLlama3Config(PreTrainedConfig):
     sub_configs = {"vision_config": VideoLlama3VisionConfig, "text_config": AutoConfig}
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    def __init__(
-        self,
-        text_config: dict | PreTrainedConfig | None = None,
-        vision_config: dict | PreTrainedConfig | None = None,
-        image_token_id=151655,
-        video_token_id=151656,
-        tie_word_embeddings=False,
-        **kwargs,
-    ):
-        if isinstance(vision_config, dict):
-            self.vision_config = self.sub_configs["vision_config"](**vision_config)
-        elif isinstance(vision_config, PreTrainedConfig):
-            self.vision_config = vision_config
-        elif vision_config is None:
+    text_config: dict | PreTrainedConfig = None
+    vision_config: dict | PreTrainedConfig = None
+    image_token_id: int = 151655
+    video_token_id: int = 151656
+    tie_word_embeddings: bool = False
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.vision_config, dict):
+            self.vision_config = self.sub_configs["vision_config"](**self.vision_config)
+        elif self.vision_config is None:
             self.vision_config = self.sub_configs["vision_config"]()
-        else:
-            raise ValueError(
-                f"vision_config must be of type `dict` or `PreTrainedConfig`, but got {type(vision_config)}."
-            )
 
-        if isinstance(text_config, dict):
-            self.text_config = CONFIG_MAPPING[text_config["model_type"]](**text_config)
-        elif isinstance(text_config, PreTrainedConfig):
-            self.text_config = text_config
-        elif text_config is None:
+        if isinstance(self.text_config, dict):
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](**self.text_config)
+        elif self.text_config is None:
             self.text_config = CONFIG_MAPPING["qwen2"]()
-        else:
-            raise ValueError(f"text_config must be of type `dict` or `PreTrainedConfig`, but got {type(text_config)}.")
 
-        self.image_token_id = image_token_id
-        self.video_token_id = video_token_id
-        self.tie_word_embeddings = tie_word_embeddings
-
-        super().__init__(**kwargs)
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["VideoLlama3VisionConfig", "VideoLlama3Config"]

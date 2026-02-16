@@ -62,7 +62,7 @@ class VJEPA2ModelTester:
         num_hidden_layers=2,
         num_attention_heads=2,
         num_frames=2,
-        mlp_ratio=1,
+        mlp_ratio=1.0,
         pred_hidden_size=32,
         pred_num_attention_heads=2,
         pred_num_hidden_layers=2,

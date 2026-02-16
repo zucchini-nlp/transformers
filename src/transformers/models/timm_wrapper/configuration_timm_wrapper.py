@@ -14,7 +14,10 @@
 
 """Configuration for TimmWrapper models"""
 
+from dataclasses import dataclass
 from typing import Any
+
+from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...utils import is_timm_available, logging, requires_backends
@@ -27,6 +30,8 @@ if is_timm_available():
 logger = logging.get_logger(__name__)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class TimmWrapperConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration for a timm backbone [`TimmWrapper`].
@@ -64,19 +69,10 @@ class TimmWrapperConfig(PreTrainedConfig):
 
     model_type = "timm_wrapper"
 
-    def __init__(
-        self,
-        architecture: str = "resnet50",
-        initializer_range: float = 0.02,
-        do_pooling: bool = True,
-        model_args: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        self.architecture = architecture
-        self.initializer_range = initializer_range
-        self.do_pooling = do_pooling
-        self.model_args = model_args  # named "model_args" for BC with timm
-        super().__init__(**kwargs)
+    architecture: str = "resnet50"
+    initializer_range: float = 0.02
+    do_pooling: bool = True
+    model_args: dict[str, Any] | None = None
 
     @classmethod
     def from_dict(cls, config_dict: dict[str, Any], **kwargs):

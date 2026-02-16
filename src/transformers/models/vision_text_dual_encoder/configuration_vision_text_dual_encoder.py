@@ -13,6 +13,10 @@
 # limitations under the License.
 """VisionTextDualEncoder model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
@@ -30,6 +34,8 @@ VISION_MODEL_CONFIGS = {
 }
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VisionTextDualEncoderConfig(PreTrainedConfig):
     r"""
     [`VisionTextDualEncoderConfig`] is the configuration class to store the configuration of a
@@ -77,9 +83,10 @@ class VisionTextDualEncoderConfig(PreTrainedConfig):
     sub_configs = {"vision_config": AutoConfig, "text_config": AutoConfig}
     has_no_defaults_at_init = True
 
-    def __init__(self, projection_dim=512, logit_scale_init_value=2.6592, **kwargs):
-        super().__init__(**kwargs)
+    projection_dim: int = 512
+    logit_scale_init_value: float = 2.6592
 
+    def __post_init__(self, **kwargs):
         if "vision_config" not in kwargs:
             raise ValueError("`vision_config` can not be `None`.")
 
@@ -101,9 +108,7 @@ class VisionTextDualEncoderConfig(PreTrainedConfig):
                 self.vision_config = self.vision_config.vision_config
 
         self.text_config = AutoConfig.for_model(text_model_type, **text_config)
-
-        self.projection_dim = projection_dim
-        self.logit_scale_init_value = logit_scale_init_value
+        super().__post_init__(**kwargs)
 
     @classmethod
     def from_vision_text_configs(cls, vision_config: PreTrainedConfig, text_config: PreTrainedConfig, **kwargs):

@@ -13,9 +13,15 @@
 # limitations under the License.
 """VJEPA 2 model configuration"""
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PreTrainedConfig
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VJEPA2Config(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VJEPA2Model`]. It is used to instantiate an
@@ -93,61 +99,29 @@ class VJEPA2Config(PreTrainedConfig):
 
     model_type = "vjepa2"
 
-    def __init__(
-        self,
-        patch_size=16,
-        crop_size=256,
-        frames_per_clip=64,
-        tubelet_size=2,
-        hidden_size=1024,
-        in_chans=3,
-        num_attention_heads=16,
-        num_hidden_layers=24,
-        drop_path_rate=0.0,
-        mlp_ratio=4.0,
-        layer_norm_eps=1e-6,
-        qkv_bias=True,
-        attention_probs_dropout_prob=0.0,
-        hidden_act="gelu",
-        initializer_range=0.02,
-        attention_dropout=0.0,
-        num_pooler_layers=3,
-        # predictor params
-        pred_hidden_size=384,
-        pred_num_attention_heads=12,
-        pred_num_hidden_layers=12,
-        pred_num_mask_tokens=10,
-        pred_zero_init_mask_tokens=True,
-        pred_mlp_ratio=4.0,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-
-        self.crop_size = crop_size
-        self.frames_per_clip = frames_per_clip
-        self.patch_size = patch_size
-        self.tubelet_size = tubelet_size
-        self.hidden_size = hidden_size
-        self.in_chans = in_chans
-        self.num_attention_heads = num_attention_heads
-        self.num_hidden_layers = num_hidden_layers
-        self.drop_path_rate = drop_path_rate
-        self.mlp_ratio = mlp_ratio
-        self.layer_norm_eps = layer_norm_eps
-        self.qkv_bias = qkv_bias
-        self.attention_probs_dropout_prob = attention_probs_dropout_prob
-        self.hidden_act = hidden_act
-        self.initializer_range = initializer_range
-        self.image_size = crop_size
-        self.attention_dropout = attention_dropout
-        self.num_pooler_layers = num_pooler_layers
-        # predictor params
-        self.pred_hidden_size = pred_hidden_size
-        self.pred_num_attention_heads = pred_num_attention_heads
-        self.pred_num_hidden_layers = pred_num_hidden_layers
-        self.pred_num_mask_tokens = pred_num_mask_tokens
-        self.pred_zero_init_mask_tokens = pred_zero_init_mask_tokens
-        self.pred_mlp_ratio = pred_mlp_ratio
+    patch_size: int = 16
+    crop_size: int = 256
+    frames_per_clip: int = 64
+    tubelet_size: int = 2
+    hidden_size: int = 1024
+    in_chans: int = 3
+    num_attention_heads: int = 16
+    num_hidden_layers: int = 24
+    drop_path_rate: float = 0.0
+    mlp_ratio: float = 4.0
+    layer_norm_eps: float = 1e-6
+    qkv_bias: bool = True
+    attention_probs_dropout_prob: float = 0.0
+    hidden_act: str = "gelu"
+    initializer_range: float = 0.02
+    attention_dropout: float = 0.0
+    num_pooler_layers: int = 3
+    pred_hidden_size: int = 384
+    pred_num_attention_heads: int = 12
+    pred_num_hidden_layers: int = 12
+    pred_num_mask_tokens: int = 10
+    pred_zero_init_mask_tokens: bool = True
+    pred_mlp_ratio: float = 4.0
 
 
 __all__ = ["VJEPA2Config"]

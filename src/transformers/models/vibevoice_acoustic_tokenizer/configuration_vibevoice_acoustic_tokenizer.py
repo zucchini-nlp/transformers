@@ -13,9 +13,15 @@
 # limitations under the License.
 
 
+from dataclasses import dataclass
+
+from huggingface_hub.dataclasses import strict
+
 from ...configuration_utils import PretrainedConfig
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class VibeVoiceAcousticTokenizerConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VibeVoiceAcousticTokenizerModel`]. It is used to
@@ -70,35 +76,18 @@ class VibeVoiceAcousticTokenizerConfig(PretrainedConfig):
 
     model_type = "vibevoice_acoustic_tokenizer"
 
-    def __init__(
-        self,
-        channels=1,
-        hidden_size=64,
-        kernel_size=7,
-        rms_norm_eps=1e-5,
-        layer_scale_init_value=1e-6,
-        initializer_range=1e-2,
-        num_filters=32,
-        downsampling_ratios=[2, 2, 4, 5, 5, 8],
-        depths=[3, 3, 3, 3, 3, 3, 8],
-        hidden_act="gelu",
-        ffn_expansion=4,
-        vae_std=0.625,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.channels = channels
-        self.hidden_size = hidden_size
-        self.hidden_act = hidden_act
-        self.kernel_size = kernel_size
-        self.rms_norm_eps = rms_norm_eps
-        self.layer_scale_init_value = layer_scale_init_value
-        self.ffn_expansion = ffn_expansion
-        self.initializer_range = initializer_range
-        self.num_filters = num_filters
-        self.downsampling_ratios = downsampling_ratios
-        self.depths = depths
-        self.vae_std = vae_std
+    channels: int = 1
+    hidden_size: int = 64
+    kernel_size: int = 7
+    rms_norm_eps: float = 1e-5
+    layer_scale_init_value: float = 1e-6
+    initializer_range: float = 1e-2
+    num_filters: int = 32
+    downsampling_ratios: list[int] | tuple[int, ...] = (2, 2, 4, 5, 5, 8)
+    depths: list[int] | tuple[int, ...] = (3, 3, 3, 3, 3, 3, 8)
+    hidden_act: str = "gelu"
+    ffn_expansion: int = 4
+    vae_std: float = 0.625
 
     @property
     def upsampling_ratios(self):
