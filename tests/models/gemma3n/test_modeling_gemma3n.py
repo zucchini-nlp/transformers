@@ -649,39 +649,56 @@ class Gemma3nVision2TextModelTester:
         self,
         parent,
         mm_tokens_per_image=2,
-        image_token_index=1,
-        boi_token_index=2,
-        eoi_token_index=3,
+        image_token_id=1,
+        boi_token_id=2,
+        eoi_token_id=3,
         seq_length=25,
         is_training=True,
-        vision_config={
-            "use_labels": True,
-            "image_size": 20,
-            "patch_size": 5,
-            "num_channels": 3,
-            "is_training": True,
-            "hidden_size": 32,
-            "num_key_value_heads": 1,
-            "num_hidden_layers": 2,
-            "num_attention_heads": 4,
-            "intermediate_size": 37,
-            "dropout": 0.1,
-            "attention_dropout": 0.1,
-            "initializer_range": 0.02,
-        },
+        vision_config=None,
         use_cache=False,
+        vision_soft_tokens_per_image=4,
+        audio_soft_tokens_per_image=4,
     ):
         self.parent = parent
-        # `image_token_index` is set to 0 to pass "resize_embeddings" test, do not modify
+        # `image_token_id` is set to 0 to pass "resize_embeddings" test, do not modify
         self.mm_tokens_per_image = mm_tokens_per_image
-        self.image_token_index = image_token_index
-        self.boi_token_index = boi_token_index
-        self.eoi_token_index = eoi_token_index
+        self.image_token_id = image_token_id
+        self.boi_token_id = boi_token_id
+        self.eoi_token_id = eoi_token_id
         self.llm_tester = Gemma3nTextModelTester(self.parent)
         self.text_config = self.llm_tester.get_config()
+        self.audio_tester = Gemma3nAudioModelTester(self.parent)
+        self.audio_config = self.audio_tester.get_audio_encoder_config()
+        # NOTE: gemma3n uses mobilenet backbone but timm doens't let us
+        # create a tiny MobileNet. So we use a random ViT backbone for testing!
+        if vision_config is None:
+            vision_config = {
+                "architecture": "vit_pe_core_large_patch14_336",
+                "use_labels": True,
+                "image_size": 20,
+                "patch_size": 5,
+                "num_channels": 3,
+                "is_training": True,
+                "hidden_size": 32,
+                "num_key_value_heads": 1,
+                "num_hidden_layers": 2,
+                "num_attention_heads": 4,
+                "intermediate_size": 37,
+                "model_args": {
+                    "embed_dim": 64,
+                    "img_size": (20, 20),
+                    "depth": 2,
+                    "global_pool": "",
+                    "use_post_transformer_norm": False,
+                    "init_values": 0.1,
+                    "ref_feat_shape": (1, 1),
+                }
+            }
         self.vision_config = vision_config
         self.seq_length = seq_length
         self.pad_token_id = self.text_config.pad_token_id
+        self.vision_soft_tokens_per_image = vision_soft_tokens_per_image
+        self.audio_soft_tokens_per_image = audio_soft_tokens_per_image
 
         self.num_hidden_layers = self.text_config.num_hidden_layers
         self.vocab_size = self.text_config.vocab_size
@@ -699,10 +716,13 @@ class Gemma3nVision2TextModelTester:
         return Gemma3nConfig(
             text_config=self.text_config,
             vision_config=self.vision_config,
-            image_token_index=self.image_token_index,
-            boi_token_index=self.boi_token_index,
-            eoi_token_index=self.eoi_token_index,
+            audio_config=self.audio_config,
+            image_token_id=self.image_token_id,
+            boi_token_id=self.boi_token_id,
+            eoi_token_id=self.eoi_token_id,
             mm_tokens_per_image=self.mm_tokens_per_image,
+            vision_soft_tokens_per_image=self.vision_soft_tokens_per_image,
+            audio_soft_tokens_per_image=self.audio_soft_tokens_per_image,
         )
 
     def prepare_config_and_inputs(self):
@@ -726,11 +746,11 @@ class Gemma3nVision2TextModelTester:
 
         # set the 3 first tokens to be image, and ensure that no other tokens are image tokens
         # do not change this unless you modified image size or patch size
-        input_ids[input_ids == config.image_token_index] = self.pad_token_id
-        input_ids[:, :1] = config.image_token_index
+        input_ids[input_ids == config.image_token_id] = self.pad_token_id
+        input_ids[:, :self.vision_soft_tokens_per_image] = config.image_token_id
 
         token_type_ids = torch.zeros_like(input_ids)
-        token_type_ids[input_ids == config.image_token_index] = 1
+        token_type_ids[input_ids == config.image_token_id] = 1
 
         inputs_dict = {
             "pixel_values": pixel_values,
@@ -741,7 +761,6 @@ class Gemma3nVision2TextModelTester:
         return config, inputs_dict
 
 
-@unittest.skip("Skipped for now!")
 @require_torch
 class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCase):
     all_model_classes = (Gemma3nModel, Gemma3nForConditionalGeneration) if is_torch_available() else ()
@@ -779,6 +798,22 @@ class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitt
 
     @unittest.skip("Gemma3n applies key/query norm which doesn't work with packing")
     def test_sdpa_padding_matches_padding_free_with_position_ids(self):
+        pass
+
+    @unittest.skip("Cannot set `output_attentions` for timm models.")
+    def test_attention_outputs(self):
+        pass
+
+    @unittest.skip("timm model has no gradient")
+    def test_training_gradient_checkpointing(self):
+        pass
+
+    @unittest.skip("timm model has no gradient")
+    def test_training_gradient_checkpointing_use_reentrant_true(self):
+        pass
+
+    @unittest.skip("timm model has no gradient")
+    def test_training_gradient_checkpointing_use_reentrant_false(self):
         pass
 
     def test_automodelforcausallm(self):
