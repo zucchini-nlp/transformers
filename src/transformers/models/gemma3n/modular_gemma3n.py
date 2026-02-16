@@ -641,7 +641,7 @@ class Gemma3nConfig(PreTrainedConfig):
 @auto_docstring
 class Gemma3nAudioEncoderModelOutput(BaseModelOutputWithPooling):
     r"""
-    audio_mel_mask (`torch.FloatTensor`, *optional*):
+    audio_mel_mask (`torch.BoolTensor`, *optional*):
         A torch.BoolTensor of shape `(batch_size, num_frames)`
     """
 
@@ -2387,9 +2387,9 @@ class Gemma3nModel(PaliGemmaModel):
 
         # Merge text and audio
         if input_features is not None and input_features_mask is not None:
-            audio_features = self.get_audio_features(input_features, ~input_features_mask, return_dict=True)
-            audio_features = audio_features.pooler_output
-            audio_mask = audio_features.audio_mel_mask
+            audio_outputs = self.get_audio_features(input_features, ~input_features_mask, return_dict=True)
+            audio_features = audio_outputs.pooler_output
+            audio_mask = audio_outputs.audio_mel_mask
 
             # The Gemma3nProcessor expects all audio will be 30s in length and inserts 188 audio soft tokens into the
             # text to account for this. However, the audio preprocessing and encoder do not gurarantee they will
