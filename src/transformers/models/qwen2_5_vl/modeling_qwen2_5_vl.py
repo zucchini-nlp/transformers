@@ -1048,6 +1048,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         video_grid_thw: torch.LongTensor | None = None,
         second_per_grid_ts: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
+        mm_token_type_ids: torch.IntTensor | None = None,
         **kwargs,
     ) -> tuple[torch.Tensor, torch.Tensor]:
         """
@@ -1105,19 +1106,6 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         """
         spatial_merge_size = self.config.vision_config.spatial_merge_size
         tokens_per_second = self.config.vision_config.tokens_per_second
-        image_token_id = self.config.image_token_id
-        video_token_id = self.config.video_token_id
-
-        mm_token_type_ids = torch.zeros_like(input_ids)
-        mm_token_type_ids[input_ids == image_token_id] = 1
-        mm_token_type_ids[input_ids == video_token_id] = 2
-
-        if mm_token_type_ids is None:
-            # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0). Early exit
-            text_positions = torch.arange(input_ids.shape[-1], device=input_ids.device)
-            text_positions = text_positions[None, None, :].expand(3, input_ids.shape[0], -1)
-            mrope_position_deltas = torch.zeros(input_ids.shape[0], device=input_ids.device)
-            return text_positions, mrope_position_deltas
 
         mrope_position_deltas = []
         position_ids = torch.zeros(
@@ -1127,25 +1115,27 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
             dtype=input_ids.dtype,
             device=input_ids.device,
         )
+        grid_iters = {
+            1: iter(image_grid_thw) if image_grid_thw is not None else None,
+            2: iter(video_grid_thw) if video_grid_thw is not None else None,
+        }
+        second_per_grid_ts = (
+            iter(second_per_grid_ts) if second_per_grid_ts is not None else iter([1] * input_ids.shape[1])
+        )
         for batch_idx, current_input_ids in enumerate(input_ids):
             input_token_type = mm_token_type_ids[batch_idx]
             if attention_mask is not None:
                 current_input_ids = current_input_ids[attention_mask[batch_idx].bool()]
                 input_token_type = input_token_type[attention_mask[batch_idx].bool()]
+
             input_type_group = []
-            input_token_type = input_token_type.tolist()
-            for key, group in itertools.groupby(enumerate(input_token_type), lambda x: x[1]):
+            for key, group in itertools.groupby(enumerate(input_token_type.tolist()), lambda x: x[1]):
                 group = list(group)
                 start_index = group[0][0]
                 end_index = group[-1][0] + 1
                 input_type_group.append((key, start_index, end_index))
+
             current_pos = 0
-            grid_iters = {
-                1: iter(image_grid_thw) if image_grid_thw is not None else None,
-                2: iter(video_grid_thw) if video_grid_thw is not None else None,
-            }
-            second_per_grid_ts = second_per_grid_ts if second_per_grid_ts is not None else [1] * len(input_type_group)
-            second_per_grid_ts = iter(second_per_grid_ts)
             llm_pos_ids_list = []
             for modality_type, start_idx, end_idx in input_type_group:
                 # text == 0
@@ -1161,7 +1151,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
                     vision_position_ids = self.get_vision_position_ids(
                         current_pos, grid_thw, 1, spatial_merge_size, device=input_ids.device
                     )
-                    vision_position_ids[0] *= tokens_per_second * next(second_per_grid_ts)
+                    vision_position_ids[0] *= tokens_per_second * int(next(second_per_grid_ts))
                     llm_pos_ids_list.append(vision_position_ids)
                     current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size
             llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)
@@ -1267,9 +1257,14 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         attention_mask: torch.Tensor | None,
         past_key_values: torch.Tensor | None,
         second_per_grid_ts: torch.Tensor | None = None,
+        mm_token_type_ids: torch.IntTensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
-        can_compute_mrope = input_ids is not None and (image_grid_thw is not None or video_grid_thw is not None)
+        can_compute_mrope = (
+            input_ids is not None
+            and mm_token_type_ids is not None
+            and (image_grid_thw is not None or video_grid_thw is not None)
+        )
 
         if can_compute_mrope and (self.rope_deltas is None or past_key_values_length == 0):
             position_ids, rope_deltas = self.get_rope_index(
@@ -1278,6 +1273,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
                 video_grid_thw=video_grid_thw,
                 attention_mask=attention_mask,
                 second_per_grid_ts=second_per_grid_ts,
+                mm_token_type_ids=mm_token_type_ids,
             )
             self.rope_deltas = rope_deltas
         # Use pre-calculated rope-deltas to infer correct 3D position ids
@@ -1314,6 +1310,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         image_grid_thw: torch.LongTensor | None = None,
         video_grid_thw: torch.LongTensor | None = None,
         rope_deltas: torch.LongTensor | None = None,
+        mm_token_type_ids: torch.IntTensor | None = None,
         cache_position: torch.LongTensor | None = None,
         second_per_grid_ts: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
@@ -1363,6 +1360,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
                 inputs_embeds=inputs_embeds,
                 attention_mask=attention_mask,
                 past_key_values=past_key_values,
+                mm_token_type_ids=mm_token_type_ids,
             )
 
         outputs = self.language_model(
@@ -1492,6 +1490,7 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
         rope_deltas: torch.LongTensor | None = None,
         cache_position: torch.LongTensor | None = None,
         second_per_grid_ts: torch.Tensor | None = None,
+        mm_token_type_ids: torch.IntTensor | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | Qwen2_5_VLCausalLMOutputWithPast:
@@ -1558,6 +1557,7 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
             image_grid_thw=image_grid_thw,
             video_grid_thw=video_grid_thw,
             second_per_grid_ts=second_per_grid_ts,
+            mm_token_type_ids=mm_token_type_ids,
             position_ids=position_ids,
             attention_mask=attention_mask,
             past_key_values=past_key_values,
@@ -1651,8 +1651,10 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
             inputs_tensor = model_kwargs["input_ids"]
 
         is_input_ids = len(inputs_tensor.shape) == 2 and inputs_tensor.dtype in [torch.int, torch.long]
-        if is_input_ids and (
-            model_kwargs.get("image_grid_thw") is not None or model_kwargs.get("video_grid_thw") is not None
+        if (
+            is_input_ids
+            and model_kwargs.get("mm_token_type_ids") is not None
+            and (model_kwargs.get("image_grid_thw") is not None or model_kwargs.get("video_grid_thw") is not None)
         ):
             model_kwargs = {k: v for k, v in model_kwargs.items() if k != "input_ids"}
             vision_positions, rope_deltas = self.model.get_rope_index(inputs_tensor, **model_kwargs)

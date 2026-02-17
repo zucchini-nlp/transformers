@@ -1196,13 +1196,6 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
         temporal_merge_size = self.config.vision_config.temporal_merge_size
         spatial_merge_size = self.config.vision_config.spatial_merge_size
 
-        if mm_token_type_ids is None:
-            # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0). Early exit
-            text_positions = torch.arange(input_ids.shape[-1], device=input_ids.device)
-            text_positions = text_positions[None, None, :].expand(3, input_ids.shape[0], -1)
-            mrope_position_deltas = torch.zeros((input_ids.shape[0], 1), device=input_ids.device)
-            return text_positions, mrope_position_deltas
-
         mrope_position_deltas = []
         position_ids = torch.zeros(
             3,
@@ -1211,33 +1204,36 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
             dtype=input_ids.dtype,
             device=input_ids.device,
         )
+        grid_iters = {
+            1: iter(image_grid_thw) if image_grid_thw is not None else None,
+            2: iter(video_grid_thw) if video_grid_thw is not None else None,
+        }
         for batch_idx, current_input_ids in enumerate(input_ids):
             input_token_type = mm_token_type_ids[batch_idx]
             if attention_mask is not None:
                 current_input_ids = current_input_ids[attention_mask[batch_idx].bool()]
                 input_token_type = input_token_type[attention_mask[batch_idx].bool()]
+
             input_type_group = []
-            input_token_type = input_token_type.tolist()
-            for key, group in itertools.groupby(enumerate(input_token_type), lambda x: x[1]):
+            for key, group in itertools.groupby(enumerate(input_token_type.tolist()), lambda x: x[1]):
                 group = list(group)
                 start_index = group[0][0]
                 end_index = group[-1][0] + 1
                 input_type_group.append((key, start_index, end_index))
+
             current_pos = 0
-            grid_iters = {
-                1: iter(image_grid_thw) if image_grid_thw is not None else None,
-                2: iter(video_grid_thw) if video_grid_thw is not None else None,
-            }
             llm_pos_ids_list = []
             for modality_type, start_idx, end_idx in input_type_group:
                 # text == 0
                 if modality_type == 0:
                     text_len = end_idx - start_idx
-                    llm_pos_ids_list.append(torch.arange(text_len, device=input_ids.device).view(1, -1).expand(3, -1) + current_pos)
+                    llm_pos_ids_list.append(
+                        torch.arange(text_len, device=input_ids.device).view(1, -1).expand(3, -1) + current_pos
+                    )
                     current_pos += text_len
                 # image == 1, video == 2
                 else:
-                    grid_thw = next(grid_iters[modality_type].tolist())
+                    grid_thw = next(grid_iters[modality_type])
                     t_merge_size = 1 if modality_type == 1 else temporal_merge_size
                     vision_position_ids = self.get_vision_position_ids(
                         current_pos, grid_thw, t_merge_size, spatial_merge_size, device=input_ids.device
@@ -1351,7 +1347,11 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
         mm_token_type_ids: torch.Tensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
-        can_compute_mrope = input_ids is not None and (image_grid_thw is not None or video_grid_thw is not None)
+        can_compute_mrope = (
+            input_ids is not None
+            and mm_token_type_ids is not None
+            and (image_grid_thw is not None or video_grid_thw is not None)
+        )
 
         if can_compute_mrope and (self.rope_deltas is None or past_key_values_length == 0):
             position_ids, rope_deltas = self.get_rope_index(
@@ -1747,8 +1747,10 @@ class Ernie4_5_VL_MoeForConditionalGeneration(Ernie4_5_VL_MoePreTrainedModel, Ge
             inputs_tensor = model_kwargs["input_ids"]
 
         is_input_ids = len(inputs_tensor.shape) == 2 and inputs_tensor.dtype in [torch.int, torch.long]
-        if is_input_ids and (
-            model_kwargs.get("image_grid_thw") is not None or model_kwargs.get("video_grid_thw") is not None
+        if (
+            is_input_ids
+            and model_kwargs.get("mm_token_type_ids") is not None
+            and (model_kwargs.get("image_grid_thw") is not None or model_kwargs.get("video_grid_thw") is not None)
         ):
             model_kwargs = {k: v for k, v in model_kwargs.items() if k != "input_ids"}
             vision_positions, rope_deltas = self.model.get_rope_index(inputs_tensor, **model_kwargs)
