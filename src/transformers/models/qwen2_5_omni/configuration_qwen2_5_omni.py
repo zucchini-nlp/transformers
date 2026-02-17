@@ -235,6 +235,8 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig):
             with longer `max_position_embeddings`.
         initializer_range (`float`, *optional*, defaults to 0.02):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
+        tie_word_embeddings (`bool`, *optional*, defaults to `True`):
+            Whether to tie weight embeddings
 
     Example:
 
@@ -297,6 +299,7 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig):
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         self.sliding_window = self.sliding_window if self.use_sliding_window else None

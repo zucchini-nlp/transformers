@@ -21,8 +21,6 @@ import torch
 from huggingface_hub.dataclasses import strict
 from torch import nn
 
-from transformers.utils.generic import check_model_inputs
-
 from ...cache_utils import Cache, DynamicCache
 from ...configuration_utils import PreTrainedConfig
 from ...masking_utils import create_causal_mask, create_sliding_window_causal_mask
@@ -37,6 +35,8 @@ from ...utils import (
     TransformersKwargs,
     logging,
 )
+from ...utils.generic import merge_with_config_defaults
+from ...utils.output_capturing import capture_outputs
 from ..gemma2.modeling_gemma2 import Gemma2RotaryEmbedding
 from ..llama.modeling_llama import (
     LlamaForCausalLM,
@@ -309,7 +309,8 @@ class Exaone4Model(Exaone4PreTrainedModel, LlamaModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-    @check_model_inputs
+    @merge_with_config_defaults
+    @capture_outputs
     def forward(
         self,
         input_ids: torch.LongTensor | None = None,
@@ -344,7 +345,7 @@ class Exaone4Model(Exaone4PreTrainedModel, LlamaModel):
             # Prepare mask arguments
             mask_kwargs = {
                 "config": self.config,
-                "input_embeds": inputs_embeds,
+                "inputs_embeds": inputs_embeds,
                 "attention_mask": attention_mask,
                 "cache_position": cache_position,
                 "past_key_values": past_key_values,

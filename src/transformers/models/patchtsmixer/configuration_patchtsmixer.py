@@ -88,9 +88,6 @@ class PatchTSMixerConfig(PreTrainedConfig):
             error "mse".
         init_std (`float`, *optional*, defaults to 0.02):
             The standard deviation of the truncated normal weight initialization distribution.
-        post_init (`bool`, *optional*, defaults to `False`):
-            Whether to use custom weight initialization from `transformers` library, or the default initialization in
-            `PyTorch`. Setting it to `False` performs `PyTorch` weight initialization.
         norm_eps (`float`, *optional*, defaults to 1e-05):
             A value added to the denominator for numerical stability of normalization.
         mask_type (`str`, *optional*, defaults to `"random"`):
@@ -169,7 +166,6 @@ class PatchTSMixerConfig(PreTrainedConfig):
     scaling: str | bool | None = "std"
     loss: str = "mse"
     init_std: float = 0.02
-    post_init: bool = False
     norm_eps: float = 1e-5
     mask_type: str = "random"
     random_mask_ratio: float = 0.5

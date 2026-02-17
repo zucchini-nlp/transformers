@@ -46,7 +46,8 @@ from ...modeling_utils import PreTrainedModel
 from ...processing_utils import ProcessorMixin, Unpack
 from ...tokenization_utils_base import TextInput
 from ...utils import auto_docstring, can_return_tuple, logging
-from ...utils.generic import OutputRecorder, TransformersKwargs, check_model_inputs
+from ...utils.generic import TransformersKwargs, merge_with_config_defaults
+from ...utils.output_capturing import OutputRecorder, capture_outputs
 from ...video_utils import VideoInput, make_batched_videos
 from ..mimi.modeling_mimi import MimiLayerScale
 from ..qwen2_5_omni.configuration_qwen2_5_omni import (
@@ -66,7 +67,7 @@ from ..qwen2_5_omni.processing_qwen2_5_omni import (
     Qwen2_5OmniProcessorKwargs,
     SinusoidsPositionEmbedding,
 )
-from ..qwen2_moe.modeling_qwen2_moe import Qwen2MoeSparseMoeBlock
+from ..qwen2_moe.modeling_qwen2_moe import Qwen2MoeSparseMoeBlock, Qwen2MoeTopKRouter
 from ..qwen3.configuration_qwen3 import Qwen3Config
 from ..qwen3.modeling_qwen3 import (
     Qwen3Attention,
@@ -86,6 +87,7 @@ from ..qwen3_moe.modeling_qwen3_moe import (
     Qwen3MoeMLP,
     Qwen3MoePreTrainedModel,
     Qwen3MoeSparseMoeBlock,
+    Qwen3MoeTopKRouter,
     load_balancing_loss_func,
 )
 from ..qwen3_vl_moe.configuration_qwen3_vl_moe import Qwen3VLMoeVisionConfig
@@ -1146,6 +1148,10 @@ class Qwen3OmniMoeThinkerTextExperts(Qwen3MoeExperts):
         super().__init__(config)
 
 
+class Qwen3OmniMoeThinkerTextTopKRouter(Qwen3MoeTopKRouter):
+    pass
+
+
 class Qwen3OmniMoeThinkerTextSparseMoeBlock(Qwen3MoeSparseMoeBlock):
     def __init__(self, config: Qwen3OmniMoeThinkerConfig):
         super().__init__(config)
@@ -1173,7 +1179,7 @@ class Qwen3OmniMoeThinkerTextModel(Qwen3VLMoeTextModel):
     _can_record_outputs = {
         "hidden_states": Qwen3OmniMoeThinkerTextDecoderLayer,
         "attentions": Qwen3OmniMoeThinkerTextAttention,
-        "router_logits": OutputRecorder(Qwen3OmniMoeThinkerTextSparseMoeBlock, index=1),
+        "router_logits": OutputRecorder(Qwen3OmniMoeThinkerTextTopKRouter, index=0),
     }
 
     def __init__(self, config: Qwen3OmniMoeTextConfig):
@@ -1203,7 +1209,7 @@ class Qwen3OmniMoeThinkerForConditionalGeneration(Qwen2_5OmniThinkerForCondition
     _can_record_outputs = {
         "hidden_states": Qwen3OmniMoeThinkerTextDecoderLayer,
         "attentions": Qwen3OmniMoeThinkerTextAttention,
-        "router_logits": OutputRecorder(Qwen3OmniMoeThinkerTextSparseMoeBlock, index=1),
+        "router_logits": OutputRecorder(Qwen3OmniMoeThinkerTextTopKRouter, index=0),
     }
 
     def __init__(self, config):
@@ -1504,7 +1510,8 @@ class Qwen3OmniMoeTalkerCodePredictorModel(Qwen3Model):
     def get_input_embeddings(self):
         return self.codec_embedding
 
-    @check_model_inputs
+    @merge_with_config_defaults
+    @capture_outputs
     @auto_docstring
     def forward(
         self,
@@ -1537,7 +1544,7 @@ class Qwen3OmniMoeTalkerCodePredictorModel(Qwen3Model):
             # Prepare mask arguments
             mask_kwargs = {
                 "config": self.config,
-                "input_embeds": inputs_embeds,
+                "inputs_embeds": inputs_embeds,
                 "attention_mask": attention_mask,
                 "cache_position": cache_position,
                 "past_key_values": past_key_values,
@@ -1669,6 +1676,10 @@ class Qwen3OmniMoeTalkerTextMLP(Qwen3MoeMLP):
     pass
 
 
+class Qwen3OmniMoeTalkerTextTopKRouter(Qwen2MoeTopKRouter):
+    pass
+
+
 class Qwen3OmniMoeTalkerTextSparseMoeBlock(Qwen2MoeSparseMoeBlock):
     pass
 
@@ -1687,7 +1698,7 @@ class Qwen3OmniMoeTalkerModel(Qwen3VLMoeTextModel):
     _can_record_outputs = {
         "hidden_states": Qwen3OmniMoeTalkerDecoderLayer,
         "attentions": Qwen3OmniMoeThinkerTextAttention,
-        "router_logits": OutputRecorder(Qwen3OmniMoeTalkerTextSparseMoeBlock, index=1),
+        "router_logits": OutputRecorder(Qwen3OmniMoeTalkerTextTopKRouter, index=0),
     }
 
     def __init__(self, config: Qwen3OmniMoeTalkerTextConfig):
@@ -1712,7 +1723,7 @@ class Qwen3OmniMoeTalkerForConditionalGeneration(Qwen3MoeForCausalLM):
     _no_split_modules = ["Qwen3OmniMoeTalkerCodePredictorModelForConditionalGeneration"]
     _can_record_outputs = {
         "attentions": Qwen3OmniMoeThinkerTextAttention,
-        "router_logits": OutputRecorder(Qwen3OmniMoeTalkerTextSparseMoeBlock, index=1),
+        "router_logits": OutputRecorder(Qwen3OmniMoeTalkerTextTopKRouter, index=0),
     }
 
     def __init__(self, config: Qwen3OmniMoeTalkerConfig):
@@ -2374,14 +2385,14 @@ class Qwen3OmniMoeForConditionalGeneration(Qwen3OmniMoePreTrainedModel, Generati
             dim=1,
         )
 
-        input_embeds = assistant_text_hidden + assistant_codec_hidden
+        inputs_embeds = assistant_text_hidden + assistant_codec_hidden
         input_ids = torch.full(
             (1, assistant_text_hidden.shape[1]),
             fill_value=self.config.tts_pad_token_id,
             dtype=torch.long,
             device=assistant_text_hidden.device,
         )
-        return input_embeds, input_ids, trailing_text_hidden
+        return inputs_embeds, input_ids, trailing_text_hidden
 
     @torch.no_grad()
     def generate(

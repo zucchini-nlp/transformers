@@ -17,7 +17,6 @@ from dataclasses import dataclass
 
 import torch
 from huggingface_hub.dataclasses import strict
-from torch import nn
 
 from ...cache_utils import Cache, DynamicCache
 from ...configuration_utils import PreTrainedConfig
@@ -26,7 +25,8 @@ from ...modeling_outputs import MoeModelOutputWithPast
 from ...modeling_rope_utils import RopeParameters
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, auto_docstring
-from ...utils.generic import OutputRecorder, check_model_inputs
+from ...utils.generic import merge_with_config_defaults
+from ...utils.output_capturing import OutputRecorder, capture_outputs
 from ..mixtral.modeling_mixtral import MixtralModel, MixtralPreTrainedModel
 from ..olmo2.modeling_olmo2 import Olmo2Attention, Olmo2RMSNorm, Olmo2RotaryEmbedding
 from ..olmoe.modeling_olmoe import (
@@ -34,6 +34,7 @@ from ..olmoe.modeling_olmoe import (
     OlmoeForCausalLM,
     OlmoeMLP,
     OlmoeSparseMoeBlock,
+    OlmoeTopKRouter,
 )
 
 
@@ -190,6 +191,10 @@ class FlexOlmoAttention(Olmo2Attention):
     pass
 
 
+class FlexOlmoTopKRouter(OlmoeTopKRouter):
+    pass
+
+
 class FlexOlmoSparseMoeBlock(OlmoeSparseMoeBlock):
     pass
 
@@ -241,7 +246,7 @@ class FlexOlmoDecoderLayer(OlmoeDecoderLayer):
 # of the transformers library. For example, it uses the newer mechanisms of recording submodule outputs.
 class FlexOlmoPreTrainedModel(MixtralPreTrainedModel):
     _can_record_outputs = {
-        "router_logits": OutputRecorder(nn.Linear, layer_name="mlp.gate", index=0),
+        "router_logits": OutputRecorder(FlexOlmoTopKRouter, index=0),
         "hidden_states": FlexOlmoDecoderLayer,
         "attentions": FlexOlmoAttention,
     }
@@ -252,7 +257,8 @@ class FlexOlmoPreTrainedModel(MixtralPreTrainedModel):
 # FlexOlmo model is identical to Mixtral model except:
 # - FlexOlmo does not use sliding window attention.
 class FlexOlmoModel(MixtralModel):
-    @check_model_inputs
+    @merge_with_config_defaults
+    @capture_outputs
     @auto_docstring
     def forward(
         self,
@@ -284,7 +290,7 @@ class FlexOlmoModel(MixtralModel):
 
         causal_mask = create_causal_mask(
             config=self.config,
-            input_embeds=inputs_embeds,
+            inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             cache_position=cache_position,
             past_key_values=past_key_values,

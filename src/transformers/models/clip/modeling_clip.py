@@ -31,11 +31,11 @@ from ...utils import (
     ModelOutput,
     TransformersKwargs,
     auto_docstring,
-    can_return_tuple,
     logging,
     torch_int,
 )
-from ...utils.generic import check_model_inputs
+from ...utils.generic import can_return_tuple, merge_with_config_defaults
+from ...utils.output_capturing import capture_outputs
 from .configuration_clip import CLIPConfig, CLIPTextConfig, CLIPVisionConfig
 
 
@@ -510,9 +510,14 @@ class CLIPEncoder(nn.Module):
         )
 
 
-class CLIPTextTransformer(nn.Module):
+class CLIPTextTransformer(CLIPPreTrainedModel):
+    config: CLIPTextConfig
+    input_modalities = ("text",)
+
+    _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer"]
+
     def __init__(self, config: CLIPTextConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
         self.embeddings = CLIPTextEmbeddings(config)
@@ -521,7 +526,10 @@ class CLIPTextTransformer(nn.Module):
 
         # For `pooled_output` computation
         self.eos_token_id = config.eos_token_id
+        self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -540,7 +548,7 @@ class CLIPTextTransformer(nn.Module):
 
         attention_mask = create_causal_mask(
             config=self.config,
-            input_embeds=hidden_states,
+            inputs_embeds=hidden_states,
             attention_mask=attention_mask,
             cache_position=torch.arange(hidden_states.shape[1], device=hidden_states.device),
             past_key_values=None,
@@ -582,8 +590,6 @@ class CLIPTextTransformer(nn.Module):
         return BaseModelOutputWithPooling(
             last_hidden_state=last_hidden_state,
             pooler_output=pooled_output,
-            hidden_states=encoder_outputs.hidden_states,
-            attentions=encoder_outputs.attentions,
         )
 
 
@@ -610,7 +616,6 @@ class CLIPTextModel(CLIPPreTrainedModel):
     def set_input_embeddings(self, value):
         self.text_model.embeddings.token_embedding = value
 
-    @check_model_inputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -643,9 +648,14 @@ class CLIPTextModel(CLIPPreTrainedModel):
         )
 
 
-class CLIPVisionTransformer(nn.Module):
+class CLIPVisionTransformer(CLIPPreTrainedModel):
+    config: CLIPVisionConfig
+    main_input_name = "pixel_values"
+    input_modalities = ("image",)
+    _no_split_modules = ["CLIPEncoderLayer"]
+
     def __init__(self, config: CLIPVisionConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
 
@@ -653,7 +663,10 @@ class CLIPVisionTransformer(nn.Module):
         self.pre_layrnorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.encoder = CLIPEncoder(config)
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
+        self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -679,8 +692,6 @@ class CLIPVisionTransformer(nn.Module):
         return BaseModelOutputWithPooling(
             last_hidden_state=last_hidden_state,
             pooler_output=pooled_output,
-            hidden_states=encoder_outputs.hidden_states,
-            attentions=encoder_outputs.attentions,
         )
 
 
@@ -704,7 +715,6 @@ class CLIPVisionModel(CLIPPreTrainedModel):
     def get_input_embeddings(self) -> nn.Module:
         return self.vision_model.embeddings.patch_embedding
 
-    @check_model_inputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -962,7 +972,7 @@ class CLIPTextModelWithProjection(CLIPPreTrainedModel):
     def set_input_embeddings(self, value):
         self.text_model.embeddings.token_embedding = value
 
-    @check_model_inputs(tie_last_hidden_states=False)
+    @can_return_tuple
     @auto_docstring
     def forward(
         self,
@@ -1000,6 +1010,8 @@ class CLIPTextModelWithProjection(CLIPPreTrainedModel):
         return CLIPTextModelOutput(
             text_embeds=text_embeds,
             last_hidden_state=text_outputs.last_hidden_state,
+            hidden_states=text_outputs.hidden_states,
+            attentions=text_outputs.attentions,
         )
 
 
@@ -1023,7 +1035,7 @@ class CLIPVisionModelWithProjection(CLIPPreTrainedModel):
     def get_input_embeddings(self) -> nn.Module:
         return self.vision_model.embeddings.patch_embedding
 
-    @check_model_inputs(tie_last_hidden_states=False)
+    @can_return_tuple
     @auto_docstring
     def forward(
         self,
@@ -1063,6 +1075,8 @@ class CLIPVisionModelWithProjection(CLIPPreTrainedModel):
         return CLIPVisionModelOutput(
             image_embeds=image_embeds,
             last_hidden_state=vision_outputs.last_hidden_state,
+            hidden_states=vision_outputs.hidden_states,
+            attentions=vision_outputs.attentions,
         )
 
 
@@ -1091,7 +1105,7 @@ class CLIPForImageClassification(CLIPPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-    @check_model_inputs(tie_last_hidden_states=False)
+    @can_return_tuple
     @auto_docstring
     def forward(
         self,
@@ -1122,6 +1136,8 @@ class CLIPForImageClassification(CLIPPreTrainedModel):
         return ImageClassifierOutput(
             loss=loss,
             logits=logits,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
         )
 
 

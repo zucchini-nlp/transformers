@@ -27,7 +27,8 @@ from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithPooling
 from ...modeling_utils import PreTrainedModel
 from ...processing_utils import Unpack
 from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
-from ...utils.generic import check_model_inputs
+from ...utils.generic import merge_with_config_defaults
+from ...utils.output_capturing import capture_outputs
 from ..clip.modeling_clip import CLIPModel, CLIPTextEmbeddings, _get_vector_norm
 from ..llama.modeling_llama import LlamaMLP, LlamaRMSNorm
 from ..siglip.configuration_siglip import SiglipConfig, SiglipTextConfig, SiglipVisionConfig
@@ -421,7 +422,8 @@ class Aimv2VisionModel(Aimv2PreTrainedModel):
     def get_input_embeddings(self) -> nn.Module:
         return self.embeddings.patch_embed
 
-    @check_model_inputs(tie_last_hidden_states=False)
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -498,7 +500,8 @@ class Aimv2TextModel(Aimv2PreTrainedModel):
     def set_input_embeddings(self, value):
         self.embeddings.token_embedding = value
 
-    @check_model_inputs(tie_last_hidden_states=False)
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -514,7 +517,7 @@ class Aimv2TextModel(Aimv2PreTrainedModel):
         if attention_mask is not None:
             attention_mask = create_causal_mask(
                 config=self.config,
-                input_embeds=hidden_states,
+                inputs_embeds=hidden_states,
                 position_ids=position_ids,
                 attention_mask=attention_mask,
                 cache_position=cache_position,
