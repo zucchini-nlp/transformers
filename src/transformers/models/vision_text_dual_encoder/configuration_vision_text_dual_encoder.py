@@ -87,27 +87,23 @@ class VisionTextDualEncoderConfig(PreTrainedConfig):
     logit_scale_init_value: float = 2.6592
 
     def __post_init__(self, **kwargs):
-        if "vision_config" not in kwargs:
-            raise ValueError("`vision_config` can not be `None`.")
+        if "vision_config" in kwargs and"text_config" in kwargs:
+            vision_config = kwargs.pop("vision_config")
+            text_config = kwargs.pop("text_config")
 
-        if "text_config" not in kwargs:
-            raise ValueError("`text_config` can not be `None`.")
+            vision_model_type = vision_config.pop("model_type")
+            text_model_type = text_config.pop("model_type")
 
-        vision_config = kwargs.pop("vision_config")
-        text_config = kwargs.pop("text_config")
+            vision_config_class = VISION_MODEL_CONFIGS.get(vision_model_type)
+            if vision_config_class is not None:
+                self.vision_config = vision_config_class(**vision_config)
+            else:
+                self.vision_config = AutoConfig.for_model(vision_model_type, **vision_config)
+                if hasattr(self.vision_config, "vision_config"):
+                    self.vision_config = self.vision_config.vision_config
 
-        vision_model_type = vision_config.pop("model_type")
-        text_model_type = text_config.pop("model_type")
+            self.text_config = AutoConfig.for_model(text_model_type, **text_config)
 
-        vision_config_class = VISION_MODEL_CONFIGS.get(vision_model_type)
-        if vision_config_class is not None:
-            self.vision_config = vision_config_class(**vision_config)
-        else:
-            self.vision_config = AutoConfig.for_model(vision_model_type, **vision_config)
-            if hasattr(self.vision_config, "vision_config"):
-                self.vision_config = self.vision_config.vision_config
-
-        self.text_config = AutoConfig.for_model(text_model_type, **text_config)
         super().__post_init__(**kwargs)
 
     @classmethod

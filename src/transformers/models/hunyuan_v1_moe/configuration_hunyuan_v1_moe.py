@@ -115,7 +115,7 @@ class HunYuanMoEV1Config(PreTrainedConfig):
     intermediate_size: int = 11008
     num_hidden_layers: int = 32
     num_attention_heads: int = 32
-    num_key_value_heads: int = None
+    num_key_value_heads: int | None = None
     hidden_act: str = "silu"
     max_position_embeddings: int = 2048
     initializer_range: float = 0.02
@@ -133,7 +133,7 @@ class HunYuanMoEV1Config(PreTrainedConfig):
     attention_dropout: float = 0.0
     num_experts: int = 1
     moe_topk: int = 1
-    head_dim: int = None
+    head_dim: int | None  = None
 
     def __post_init__(self, **kwargs):
         if self.num_key_value_heads is None:

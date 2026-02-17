@@ -230,7 +230,7 @@ class DiaConfig(PreTrainedConfig):
     decoder_config: DiaDecoderConfig | dict | None = None
     norm_eps: float = 1e-5
     is_encoder_decoder: bool = True
-    pad_token_id: int = None
+    pad_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
     bos_token_id: int = None
     delay_pattern: list[int] | None = None

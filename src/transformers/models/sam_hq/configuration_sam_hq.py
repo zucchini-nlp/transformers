@@ -162,9 +162,9 @@ class SamHQVisionConfig(PreTrainedConfig):
     mlp_dim: int | None = None
 
     def __post_init__(self, **kwargs):
-        super().__post_init__(**kwargs)
         self.mlp_dim = int(self.hidden_size * self.mlp_ratio) if self.mlp_dim is None else self.mlp_dim
         self.scale = self.hidden_size // 2
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)
@@ -219,7 +219,8 @@ class SamHQMaskDecoderConfig(PreTrainedConfig):
 
     vit_dim: int = 768
 
-
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class SamHQConfig(PreTrainedConfig):
     r"""
     [`SamHQConfig`] is the configuration class to store the configuration of a [`SamHQModel`]. It is used to instantiate a

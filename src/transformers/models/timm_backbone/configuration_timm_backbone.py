@@ -67,7 +67,7 @@ class TimmBackboneConfig(BackboneConfigMixin, PreTrainedConfig):
 
     model_type = "timm_backbone"
 
-    backbone: str = None
+    backbone: str | None = None
     num_channels: int = 3
     features_only: bool = True
     _out_indices: list[int] | None = None

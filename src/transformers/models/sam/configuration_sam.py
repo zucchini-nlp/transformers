@@ -211,11 +211,13 @@ class SamVisionConfig(PreTrainedConfig):
     mlp_dim: int | None = None
 
     def __post_init__(self, **kwargs):
-        super().__post_init__(**kwargs)
         self.mlp_dim = int(self.hidden_size * self.mlp_ratio) if self.mlp_dim is None else self.mlp_dim
         self.scale = self.hidden_size // 2
+        super().__post_init__(**kwargs)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class SamConfig(PreTrainedConfig):
     r"""
     [`SamConfig`] is the configuration class to store the configuration of a [`SamModel`]. It is used to instantiate a

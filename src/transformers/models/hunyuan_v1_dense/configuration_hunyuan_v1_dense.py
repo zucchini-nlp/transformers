@@ -105,7 +105,7 @@ class HunYuanDenseV1Config(PreTrainedConfig):
     intermediate_size: int = 11008
     num_hidden_layers: int = 32
     num_attention_heads: int = 32
-    num_key_value_heads: int = None
+    num_key_value_heads: int | None = None
     hidden_act: str = "silu"
     max_position_embeddings: int = 2048
     initializer_range: float = 0.02
@@ -120,7 +120,7 @@ class HunYuanDenseV1Config(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
     attention_dropout: float = 0.0
-    head_dim: int = None
+    head_dim: int | None = None
 
     def __post_init__(self, **kwargs):
         if self.num_key_value_heads is None:
