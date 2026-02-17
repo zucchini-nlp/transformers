@@ -216,6 +216,7 @@ class Qwen3VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCas
             with self.assertRaises(ValueError):
                 _ = model(**curr_input_dict)
 
+            model.base_model.rope_deltas = None
             # simulate multi-image case by concatenating inputs where each has exactly one image/image-token
             input_ids = curr_input_dict["input_ids"][:1]
             pixel_values = curr_input_dict["pixel_values"][:one_img_length]
@@ -230,6 +231,7 @@ class Qwen3VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCas
                     image_grid_thw=image_grid_thw,
                 )
 
+            model.base_model.rope_deltas = None
             # two images and two image tokens don't raise an error
             pixel_values = torch.cat([pixel_values, pixel_values], dim=0)
             image_grid_thw = torch.cat([image_grid_thw, image_grid_thw], dim=0)

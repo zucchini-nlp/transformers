@@ -974,6 +974,30 @@ class GlmImageModel(GlmImagePreTrainedModel):
     def set_input_embeddings(self, value):
         self.language_model.set_input_embeddings(value)
 
+    def get_vision_position_ids(
+        self,
+        start_position: int,
+        grid_thw: list[int, int, int],
+        temp_merge_size: int = 1,
+        spatial_merge_size: int = 1,
+        device: str | torch.device | None = None,
+    ):
+        llm_grid_t, llm_grid_h, llm_grid_w = (
+            grid_thw[0].item() // temp_merge_size,
+            grid_thw[1].item() // spatial_merge_size,
+            grid_thw[2].item() // spatial_merge_size,
+        )
+
+        image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
+        h_grids = image_seq_length // llm_grid_h + start_position
+        w_grids = image_seq_length // llm_grid_w + start_position
+        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
+        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
+        vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
+
+        return vision_position_ids
+
     def get_rope_index(
         self,
         input_ids: torch.LongTensor | None = None,

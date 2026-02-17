@@ -237,6 +237,12 @@ class Glm4vProcessor(ProcessorMixin):
             **kwargs,
         )
 
+    @property
+    def model_input_names(self):
+        model_input_names = super().model_input_names
+        model_input_names.append("mm_token_type_ids")
+        return model_input_names
+
     def replace_frame_token_id(self, timestamp_sec):
         return f"<|begin_of_image|>{self.image_token}<|end_of_image|>{int(timestamp_sec)}"
 
