@@ -36,7 +36,7 @@
     - local: custom_tokenizers
       title: Customizing tokenizers
     - local: tokenizer_summary
-      title: Summary of the tokenizers
+      title: Tokenization algorithms
     - local: image_processors
       title: Image processors
     - local: video_processors
