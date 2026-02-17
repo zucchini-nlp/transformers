@@ -124,6 +124,7 @@ class Qwen2_5_VLVisionText2TextModelTester:
                 "spatial_patch_size": 14,
                 "spatial_merge_size": 1,
                 "temporal_patch_size": 2,
+                "tokens_per_second": 1,
             }
         self.vision_config = vision_config
         self.text_config = {

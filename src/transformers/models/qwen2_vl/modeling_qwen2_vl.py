@@ -1071,24 +1071,26 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         image_token_id = self.config.image_token_id
         video_token_id = self.config.video_token_id
 
+        mm_token_type_ids = torch.zeros_like(input_ids)
+        mm_token_type_ids[input_ids == image_token_id] = 1
+        mm_token_type_ids[input_ids == video_token_id] = 2
+
+        if mm_token_type_ids is None:
+            # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0). Early exit
+            text_positions = torch.arange(input_ids.shape[-1], device=input_ids.device)
+            text_positions = text_positions[None, None, :].expand(3, input_ids.shape[0], -1)
+            mrope_position_deltas = torch.zeros(input_ids.shape[0], device=input_ids.device)
+            return text_positions, mrope_position_deltas
+
         mrope_position_deltas = []
-        position_ids = torch.ones(
+        position_ids = torch.zeros(
             3,
             input_ids.shape[0],
             input_ids.shape[1],
             dtype=input_ids.dtype,
             device=input_ids.device,
         )
-        mm_token_type_ids = torch.zeros_like(input_ids)
-        mm_token_type_ids[input_ids == image_token_id] = 1
-        mm_token_type_ids[input_ids == video_token_id] = 2
         for batch_idx, current_input_ids in enumerate(input_ids):
-            # If we don't have `mm_token_type_ids`, then we have text tokens only (== 0). Early exit
-            if mm_token_type_ids is None:
-                # text_positions = torch.arange(len(current_input_ids), device=input_ids.device)
-                # current_position_ids = text_positions[None, :].repeat(3, 1)
-                mrope_position_deltas.append(1)
-                continue
             input_token_type = mm_token_type_ids[batch_idx]
             if attention_mask is not None:
                 current_input_ids = current_input_ids[attention_mask[batch_idx].bool()]
@@ -1124,15 +1126,12 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
                     current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size
             llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)
             if attention_mask is not None:
-                position_ids[:, batch_idx, attention_mask[batch_idx].bool()] = llm_positions.to(
-                    position_ids.device
-                )
+                position_ids[:, batch_idx, attention_mask[batch_idx].bool()] = llm_positions.to(position_ids.device)
             else:
                 position_ids[:, batch_idx] = llm_positions.to(position_ids.device)
             mrope_position_deltas.append(llm_positions.max() + 1 - len(current_input_ids))
         mrope_position_deltas = torch.tensor(mrope_position_deltas, device=input_ids.device).unsqueeze(1)
         return position_ids, mrope_position_deltas
-
 
     @can_return_tuple
     @auto_docstring
