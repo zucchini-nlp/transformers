@@ -31,6 +31,7 @@ from ...utils import is_timm_available, logging, requires_backends
 if is_timm_available():
     from timm.data import ImageNetInfo, infer_imagenet_subset
 
+
 logger = logging.get_logger(__name__)
 
 
@@ -432,29 +433,15 @@ class Gemma3nVisionConfig(PreTrainedConfig):
     """
 
     model_type = "gemma3n_vision"
+    architecture: str = "mobilenetv5_300m_enc"
 
     initializer_range: float = 0.02
     do_pooling: bool = False
-    architecture: str = "mobilenetv5_300m_enc"
+    model_args: dict | None = None
     hidden_size: int = 2048
     vocab_size: int = 128
     vocab_offset: int = 262_144
     rms_norm_eps: float = 1e-06
-    model_args: dict | None = None
-
-    def __init__(
-        self,
-        architecture: str = "resnet50",
-        initializer_range: float = 0.02,
-        do_pooling: bool = True,
-        model_args: dict[str, Any] | None = None,
-        **kwargs,
-    ):
-        self.architecture = architecture
-        self.initializer_range = initializer_range
-        self.do_pooling = do_pooling
-        self.model_args = model_args  # named "model_args" for BC with timm
-        super().__init__(**kwargs)
 
     @classmethod
     def from_dict(cls, config_dict: dict[str, Any], **kwargs):

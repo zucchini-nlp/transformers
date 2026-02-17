@@ -153,6 +153,7 @@ class T5GemmaModuleConfig(PreTrainedConfig):
     layer_types: list[str] | None = None
     final_logit_softcapping: float | None = 30.0
     attn_logit_softcapping: float | None = 50.0
+
     is_decoder: bool = False
 
     def __post_init__(self, **kwargs):

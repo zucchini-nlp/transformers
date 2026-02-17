@@ -135,20 +135,7 @@ class CwmConfig(PreTrainedConfig):
     sliding_window: int = 8192
     layer_types: list[str] | None = None  # ["full_attention"|"sliding_attention"] per layer
 
-    def validate_architecture(self):
-        """Part of `@strict`-powered validation. Validates the architecture of the config."""
-        if self.hidden_size % self.num_attention_heads != 0:
-            raise ValueError(
-                f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
-                f"heads ({self.num_attention_heads})."
-            )
-
     def __post_init__(self, **kwargs):
-        if self.head_dim is None:
-            self.head_dim = self.hidden_size // self.num_attention_heads
-        if self.num_key_value_heads is None:
-            self.num_key_value_heads = self.num_attention_heads
-
         if self.rope_parameters is None:
             self.rope_parameters = {
                 "rope_theta": 1_000_000.0,
@@ -170,8 +157,20 @@ class CwmConfig(PreTrainedConfig):
         self.sliding_window = int(self.sliding_window) if self.sliding_window else None
         self.layer_types = list(self.layer_types)
         self.eos_token_id = self.eos_token_id if self.eos_token_id is not None else [128001, 128008, 128009]
+        if self.head_dim is None:
+            self.head_dim = self.hidden_size // self.num_attention_heads
+        if self.num_key_value_heads is None:
+            self.num_key_value_heads = self.num_attention_heads
 
         super().__post_init__(**kwargs)
+
+    def validate_architecture(self):
+        """Part of `@strict`-powered validation. Validates the architecture of the config."""
+        if self.hidden_size % self.num_attention_heads != 0:
+            raise ValueError(
+                f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
+                f"heads ({self.num_attention_heads})."
+            )
 
 
 __all__ = ["CwmConfig"]

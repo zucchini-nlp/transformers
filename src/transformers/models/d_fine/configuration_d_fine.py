@@ -276,10 +276,11 @@ class DFineConfig(PreTrainedConfig):
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
-        if isinstance(self.decoder_n_points, list) and len(self.decoder_n_points) != self.num_feature_levels:
-            raise ValueError(
-                f"Length of decoder_n_points list ({len(self.decoder_n_points)}) must match num_feature_levels ({self.num_feature_levels})."
-            )
+        if isinstance(self.decoder_n_points, list):
+            if len(self.decoder_n_points) != self.num_feature_levels:
+                raise ValueError(
+                    f"Length of decoder_n_points list ({len(self.decoder_n_points)}) must match num_feature_levels ({self.num_feature_levels})."
+                )
 
         if self.head_dim * self.decoder_attention_heads != self.d_model:
             raise ValueError(

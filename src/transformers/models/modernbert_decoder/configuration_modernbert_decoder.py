@@ -162,7 +162,6 @@ class ModernBertDecoderConfig(PreTrainedConfig):
         # BC -> the pattern used to be a simple int, and it's still present in configs on the Hub
         global_attn_every_n_layers = kwargs.get("global_attn_every_n_layers", 3)
         if self.layer_types is None:
-            # Create layer_types based on the alternating pattern
             self.layer_types = []
             for layer_id in range(self.num_hidden_layers):
                 if layer_id % global_attn_every_n_layers != 0:
