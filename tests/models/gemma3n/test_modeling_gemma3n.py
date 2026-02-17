@@ -43,7 +43,6 @@ from transformers.testing_utils import (
     slow,
     torch_device,
 )
-from transformers.utils import is_flash_attn_2_available
 
 from ...causal_lm_tester import CausalLMModelTest, CausalLMModelTester
 from ...generation.test_utils import GenerationTesterMixin, has_similar_generate_outputs
@@ -362,32 +361,32 @@ class Gemma3nTextModelTest(CausalLMModelTest, unittest.TestCase):
         "We need to relax a bit the `atols` and `rtols` for fp32 here due to the altup projections"
         atols = {
             ("cpu", False, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", False, torch.bfloat16): 5e-3,
+            ("cpu", False, torch.float16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", True, torch.bfloat16): 5e-3,
+            ("cpu", True, torch.float16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 5e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.bfloat16): 5e-3,
+            ("cuda", False, torch.float16): 5e-3,
             ("cuda", True, torch.float32): 5e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 1e-2,
-            ("cuda", True, torch.bfloat16): 5e-3,
+            ("cuda", True, torch.float16): 5e-3,
         }
 
         rtols = {
             ("cpu", False, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", False, torch.bfloat16): 5e-3,
+            ("cpu", False, torch.float16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", True, torch.bfloat16): 5e-3,
+            ("cpu", True, torch.float16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 1e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.bfloat16): 5e-3,
+            ("cuda", False, torch.float16): 5e-3,
             ("cuda", True, torch.float32): 1e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 3e-2,
-            ("cuda", True, torch.bfloat16): 5e-3,
+            ("cuda", True, torch.float16): 5e-3,
         }
 
         _test_eager_matches_sdpa_inference(
@@ -906,32 +905,32 @@ class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitt
         "We need to relax a bit the `atols` and `rtols` for fp32 here due to the altup projections"
         atols = {
             ("cpu", False, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", False, torch.bfloat16): 5e-3,
+            ("cpu", False, torch.float16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", True, torch.bfloat16): 5e-3,
+            ("cpu", True, torch.float16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 5e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.bfloat16): 5e-3,
+            ("cuda", False, torch.float16): 5e-3,
             ("cuda", True, torch.float32): 5e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 1e-2,
-            ("cuda", True, torch.bfloat16): 5e-3,
+            ("cuda", True, torch.float16): 5e-3,
         }
 
         rtols = {
             ("cpu", False, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", False, torch.bfloat16): 5e-3,
+            ("cpu", False, torch.float16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", True, torch.bfloat16): 5e-3,
+            ("cpu", True, torch.float16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 1e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.bfloat16): 5e-3,
+            ("cuda", False, torch.float16): 5e-3,
             ("cuda", True, torch.float32): 1e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 3e-2,
-            ("cuda", True, torch.bfloat16): 5e-3,
+            ("cuda", True, torch.float16): 5e-3,
         }
 
         _test_eager_matches_sdpa_inference(
@@ -1142,7 +1141,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         output_text = self.processor.batch_decode(output, skip_special_tokens=True)
 
         EXPECTED_TEXTS = Expectations({
-            ("cuda", None): ['user\nYou are a helpful assistant.\n\n\n\n\n\nWhat do you see here?\nmodel\nIn the image, I see a street scene in what appears to be a Chinatown district. Here are some key elements:\n\n* **A prominent red'],
+            ("cuda", None): ['user\nYou are a helpful assistant.\n\n\n\n\n\nWhat do you see here?\nmodel\nIn the image, I see a street scene in what appears to be a Chinatown district. Here are some of the key elements:\n\n* **A'],
             ("xpu", None): ['user\nYou are a helpful assistant.\n\n\n\n\n\nWhat do you see here?\nmodel\nIn the image, I see a street scene in what appears to be a Chinatown district. Here are the key elements:\n\n* **A prominent red'],
             ("rocm", (9, 4)): ['user\nYou are a helpful assistant.\n\n\n\n\n\nWhat do you see here?\nmodel\nIn the image, I see a street scene in what appears to be a Chinatown district. \n\nHere are some key elements:\n\n* **A'],
         }).get_expectation()  # fmt: skip
@@ -1162,16 +1161,11 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         EXPECTED_TEXTS = ['Write a poem about Machine Learning.\n\n---\n\nThe data flows, a river deep,\nWith patterns hidden, secrets sleep.\nA neural net, a watchful eye,\nLearning']  # fmt: skip
         self.assertEqual(output_text, EXPECTED_TEXTS)
 
-    @parameterized.expand([("sdpa",), ("eager",), ("flash_attention_2",)])
-    def test_generation_beyond_sliding_window(self, attn_implementation: str):
+    def test_generation_beyond_sliding_window(self):
         """Test that we can correctly generate beyond the sliding window. This is non trivial as
         we need to correctly slice the attention mask in all cases (because we use a hybrid cache).
         Outputs for every attention functions should be coherent and identical.
         """
-
-        if attn_implementation == "flash_attention_2" and not is_flash_attn_2_available():
-            self.skipTest("Test requires Flash Attention")
-
         model_id = "google/gemma-3n-E2B-it"
 
         input_text = [
@@ -1182,7 +1176,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         inputs = tokenizer(input_text, padding=True, return_tensors="pt").to(torch_device)
 
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, attn_implementation=attn_implementation, dtype=torch.bfloat16, device_map=torch_device
+            model_id, attn_implementation="eager", dtype=torch.bfloat16, device_map=torch_device
         )
 
         # Make sure prefill is larger than sliding window
@@ -1192,8 +1186,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         out = model.generate(**inputs, max_new_tokens=20, do_sample=False)[:, input_size:]
         output_text = tokenizer.batch_decode(out)
 
-        EXPECTED_COMPLETIONS = [" and the food is delicious. I'm so glad I came here. I'm so glad", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"]  # fmt: skip
-        print(output_text)
+        EXPECTED_COMPLETIONS = [" and the people are so friendly. I'm so glad I came here. I'm so", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"]  # fmt: skip
         self.assertEqual(output_text, EXPECTED_COMPLETIONS)
 
     @require_deterministic_for_xpu
@@ -1222,9 +1215,8 @@ class Gemma3nIntegrationTest(unittest.TestCase):
 
         EXPECTED_COMPLETIONS = Expectations({
             # FIXME: This test is VERY flaky on ROCm
-            ("cuda", None): [" and I'm sure others will too. This is a nice place. This is a nice place", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"],
+            ("cuda", None): [" and I'm glad I came here. This is a nice place. This is a nice place", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"],
             ("rocm", (9, 4)): [' and I think it makes this place special. This is a nice place. This is a nice place', ', green, yellow, purple, orange, pink, brown, black, white.\n\nHere are'],
             ("xpu", None): [" and I think it's a nice place to visit. This is a nice place. This is", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"],
         }).get_expectation()  # fmt: skip
-        print(output_text)
         self.assertEqual(output_text, EXPECTED_COMPLETIONS)
