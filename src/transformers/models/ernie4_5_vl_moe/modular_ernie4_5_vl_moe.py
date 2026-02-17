@@ -85,7 +85,7 @@ from ..qwen2_5_vl.modeling_qwen2_5_vl import (
 )
 from ..qwen2_vl.configuration_qwen2_vl import Qwen2VLVisionConfig
 from ..qwen2_vl.image_processing_qwen2_vl import smart_resize
-from ..qwen2_vl.modeling_qwen2_vl import Qwen2VisionTransformerPretrainedModel, VisionMlp
+from ..qwen2_vl.modeling_qwen2_vl import Qwen2VLModel, Qwen2VisionTransformerPretrainedModel, VisionMlp
 
 
 logger = logging.get_logger(__name__)
@@ -1038,8 +1038,10 @@ class Ernie4_5_VL_MoeVariableResolutionResamplerModel(nn.Module):
         return hidden_states
 
 
-class Ernie4_5_VL_MoeModel(Qwen2_5_VLModel):
+class Ernie4_5_VL_MoeModel(Qwen2VLModel):
     _checkpoint_conversion_mapping = {"^norm": "language_model.norm"}
+    config: Ernie4_5_VL_MoeConfig
+    _no_split_modules = ["Ernie4_5_VL_MoeDecoderLayer", "Ernie4_5_VL_MoeVisionBlock"]
 
     def __init__(self, config: Ernie4_5_VL_MoeConfig):
         super().__init__(config)
@@ -1144,7 +1146,7 @@ class Ernie4_5_VL_MoeModel(Qwen2_5_VLModel):
                         current_pos, grid_thw, t_merge_size, spatial_merge_size, device=input_ids.device
                     )
                     llm_pos_ids_list.append(vision_position_ids)
-                    current_pos += max(grid_thw[1], grid_thw[2])
+                    current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size
             llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)
             if attention_mask is not None:
                 position_ids[:, batch_idx, attention_mask[batch_idx].bool()] = llm_positions.to(position_ids.device)
@@ -1187,49 +1189,6 @@ class Ernie4_5_VL_MoeModel(Qwen2_5_VLModel):
         image_embeds = torch.split(image_embeds, split_sizes)
         image_outputs.pooler_output = image_embeds
         return image_outputs
-
-    def compute_3d_position_ids(
-        self,
-        input_ids: torch.Tensor | None,
-        inputs_embeds: torch.Tensor | None,
-        image_grid_thw: torch.Tensor | None = None,
-        video_grid_thw: torch.Tensor | None = None,
-        attention_mask: torch.Tensor | None = None,
-        past_key_values: torch.Tensor | None = None,
-        mm_token_type_ids: torch.Tensor | None = None,
-    ) -> torch.Tensor | None:
-        past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
-        can_compute_mrope = (
-            input_ids is not None
-            and mm_token_type_ids is not None
-            and (image_grid_thw is not None or video_grid_thw is not None)
-        )
-
-        if can_compute_mrope and (self.rope_deltas is None or past_key_values_length == 0):
-            position_ids, rope_deltas = self.get_rope_index(
-                input_ids,
-                image_grid_thw=image_grid_thw,
-                video_grid_thw=video_grid_thw,
-                attention_mask=attention_mask,
-                mm_token_type_ids=mm_token_type_ids,
-            )
-            self.rope_deltas = rope_deltas
-        # Use pre-calculated rope-deltas to infer correct 3D position ids
-        elif self.rope_deltas is not None:
-            batch_size, seq_length, _ = inputs_embeds.shape
-            if attention_mask is not None:
-                position_ids = attention_mask.long().cumsum(-1) - 1
-                position_ids = position_ids.masked_fill(attention_mask == 0, 0)
-                position_ids = position_ids.view(1, batch_size, -1).repeat(3, 1, 1).to(inputs_embeds.device)
-            else:
-                position_ids = torch.arange(past_key_values_length, past_key_values_length + seq_length)
-                position_ids = position_ids.view(1, 1, -1).expand(3, batch_size, -1).to(inputs_embeds.device)
-            delta = self.rope_deltas.repeat_interleave(batch_size // self.rope_deltas.shape[0], dim=0)
-            position_ids = (position_ids + delta).to(device=inputs_embeds.device)
-        else:
-            # Can't build correct 3D positions. Let the model infer it from `cache_position`
-            position_ids = None
-        return position_ids
 
     @auto_docstring
     @can_return_tuple

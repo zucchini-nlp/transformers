@@ -1112,6 +1112,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
         grid_thw: list[int, int, int],
         temp_merge_size: int = 1,
         spatial_merge_size: int = 1,
+        time_interval: int = 1,
         device: str | torch.device | None = None,
     ):
         llm_grid_t, llm_grid_h, llm_grid_w = (
@@ -1123,8 +1124,9 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
         h_grids = image_seq_length // llm_grid_h + start_position
         w_grids = image_seq_length // llm_grid_w + start_position
-        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
-        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_width = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat(llm_grid_w * llm_grid_t)
+        position_width = position_width * time_interval
+        position_height = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat_interleave(llm_grid_h * llm_grid_t)
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
@@ -1226,7 +1228,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
                         current_pos, grid_thw, t_merge_size, spatial_merge_size, device=input_ids.device
                     )
                     llm_pos_ids_list.append(vision_position_ids)
-                    current_pos += max(grid_thw[1], grid_thw[2])
+                    current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size
             llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)
             if attention_mask is not None:
                 position_ids[:, batch_idx, attention_mask[batch_idx].bool()] = llm_positions.to(position_ids.device)
@@ -1331,7 +1333,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
         video_grid_thw: torch.Tensor | None = None,
         attention_mask: torch.Tensor | None = None,
         past_key_values: torch.Tensor | None = None,
-        mm_token_type_ids: torch.Tensor | None = None,
+        mm_token_type_ids: torch.IntTensor | None = None,
     ) -> torch.Tensor | None:
         past_key_values_length = 0 if past_key_values is None else past_key_values.get_seq_length()
         can_compute_mrope = (
@@ -1360,7 +1362,7 @@ class Ernie4_5_VL_MoeModel(Ernie4_5_VL_MoePreTrainedModel):
                 position_ids = torch.arange(past_key_values_length, past_key_values_length + seq_length)
                 position_ids = position_ids.view(1, 1, -1).expand(3, batch_size, -1).to(inputs_embeds.device)
             delta = self.rope_deltas.repeat_interleave(batch_size // self.rope_deltas.shape[0], dim=0)
-            position_ids = (position_ids + delta).to(device=inputs_embeds.device)
+            position_ids = position_ids + delta.to(device=inputs_embeds.device)
         else:
             # Can't build correct 3D positions. Let the model infer it from `cache_position`
             position_ids = None

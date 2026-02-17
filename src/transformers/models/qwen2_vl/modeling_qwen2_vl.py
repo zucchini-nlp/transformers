@@ -997,6 +997,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         grid_thw: list[int, int, int],
         temp_merge_size: int = 1,
         spatial_merge_size: int = 1,
+        time_interval: int = 1,
         device: str | torch.device | None = None,
     ):
         llm_grid_t, llm_grid_h, llm_grid_w = (
@@ -1008,8 +1009,9 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
         h_grids = image_seq_length // llm_grid_h + start_position
         w_grids = image_seq_length // llm_grid_w + start_position
-        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
-        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_width = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat(llm_grid_w * llm_grid_t)
+        position_width = position_width * time_interval
+        position_height = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat_interleave(llm_grid_h * llm_grid_t)
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
@@ -1241,7 +1243,7 @@ class Qwen2VLModel(Qwen2VLPreTrainedModel):
                 position_ids = torch.arange(past_key_values_length, past_key_values_length + seq_length)
                 position_ids = position_ids.view(1, 1, -1).expand(3, batch_size, -1).to(inputs_embeds.device)
             delta = self.rope_deltas.repeat_interleave(batch_size // self.rope_deltas.shape[0], dim=0)
-            position_ids = position_ids + delta.to(device=position_ids.device)
+            position_ids = position_ids + delta.to(device=inputs_embeds.device)
         else:
             # Can't build correct 3D positions. Let the model infer it from `cache_position`
             position_ids = None

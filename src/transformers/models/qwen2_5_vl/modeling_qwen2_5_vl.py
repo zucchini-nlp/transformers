@@ -1024,6 +1024,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         grid_thw: list[int, int, int],
         temp_merge_size: int = 1,
         spatial_merge_size: int = 1,
+        time_interval: int = 1,
         device: str | torch.device | None = None,
     ):
         llm_grid_t, llm_grid_h, llm_grid_w = (
@@ -1035,8 +1036,9 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
         h_grids = image_seq_length // llm_grid_h + start_position
         w_grids = image_seq_length // llm_grid_w + start_position
-        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
-        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_width = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat(llm_grid_w * llm_grid_t)
+        position_width = position_width * time_interval
+        position_height = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat_interleave(llm_grid_h * llm_grid_t)
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
@@ -1138,10 +1140,10 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
                 # image == 1, video == 2
                 else:
                     grid_thw = next(grid_iters[modality_type])
+                    time_interval = tokens_per_second * int(next(second_per_grid_ts))
                     vision_position_ids = self.get_vision_position_ids(
-                        current_pos, grid_thw, 1, spatial_merge_size, device=input_ids.device
+                        current_pos, grid_thw, 1, spatial_merge_size, time_interval, device=input_ids.device
                     )
-                    vision_position_ids[0] *= tokens_per_second * int(next(second_per_grid_ts))
                     llm_pos_ids_list.append(vision_position_ids)
                     current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size
             llm_positions = torch.cat(llm_pos_ids_list, dim=1).reshape(3, -1)

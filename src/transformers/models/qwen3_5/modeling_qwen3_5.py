@@ -1429,6 +1429,7 @@ class Qwen3_5Model(Qwen3_5PreTrainedModel):
         grid_thw: list[int, int, int],
         temp_merge_size: int = 1,
         spatial_merge_size: int = 1,
+        time_interval: int = 1,
         device: str | torch.device | None = None,
     ):
         llm_grid_t, llm_grid_h, llm_grid_w = (
@@ -1440,8 +1441,9 @@ class Qwen3_5Model(Qwen3_5PreTrainedModel):
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
         h_grids = image_seq_length // llm_grid_h + start_position
         w_grids = image_seq_length // llm_grid_w + start_position
-        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
-        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_width = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat(llm_grid_w * llm_grid_t)
+        position_width = position_width * time_interval
+        position_height = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat_interleave(llm_grid_h * llm_grid_t)
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
