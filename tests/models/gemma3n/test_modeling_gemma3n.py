@@ -831,10 +831,6 @@ class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitt
     def test_training_gradient_checkpointing_use_reentrant_false(self):
         pass
 
-    @unittest.skip("timm model cannot init buffers because we can't infer model arch/configs")
-    def test_init_weights_can_init_buffers(self):
-        pass
-
     def _image_features_get_expected_num_hidden_states(self, model_tester=None):
         return 2
 

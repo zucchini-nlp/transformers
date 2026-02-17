@@ -1422,9 +1422,6 @@ class Gemma3nPreTrainedModel(PreTrainedModel):
         if hasattr(module, "gradient_clipping"):
             init.constant_(module.gradient_clipping, self.config.gradient_clipping)
 
-        if hasattr(module, "pos_embed"):
-            init.constant_(module.pos_embed, self.config.gradient_clipping)
-
 
 class Gemma3nAudioEncoder(Gemma3nPreTrainedModel):
     """
