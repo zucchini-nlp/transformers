@@ -596,6 +596,9 @@ class VideoLlama3Model(Qwen2VLModel):
     def get_rope_index(self):
         raise AttributeError("Not needed for VideoLLaMA3")
 
+    def get_vision_position_ids(self):
+        raise AttributeError("Not needed for VideoLLaMA3")
+
     def compute_3d_position_ids(self):
         raise AttributeError("Not needed for VideoLLaMA3")
 
