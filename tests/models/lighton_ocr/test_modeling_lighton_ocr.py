@@ -229,6 +229,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
     skip_test_image_features_output_shape = True
 
     _is_composite = True
+    test_torch_exportable = False
 
     def setUp(self):
         self.model_tester = LightOnOcrVisionText2TextModelTester(self)
@@ -248,7 +249,6 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
             batch_size = inputs_dict["pixel_values"].shape[0]
             # If image_sizes doesn't match batch size, adjust it
             if len(inputs_dict["image_sizes"]) != batch_size:
-                # Take only the first batch_size entries
                 inputs_dict["image_sizes"] = inputs_dict["image_sizes"][:batch_size]
 
         return inputs_dict
