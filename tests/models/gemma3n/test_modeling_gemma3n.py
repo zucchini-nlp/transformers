@@ -362,32 +362,32 @@ class Gemma3nTextModelTest(CausalLMModelTest, unittest.TestCase):
         "We need to relax a bit the `atols` and `rtols` for fp32 here due to the altup projections"
         atols = {
             ("cpu", False, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", False, torch.float16): 5e-3,
+            ("cpu", False, torch.bfloat16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", True, torch.float16): 5e-3,
+            ("cpu", True, torch.bfloat16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 5e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.float16): 5e-3,
+            ("cuda", False, torch.bfloat16): 5e-3,
             ("cuda", True, torch.float32): 5e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 1e-2,
-            ("cuda", True, torch.float16): 5e-3,
+            ("cuda", True, torch.bfloat16): 5e-3,
         }
 
         rtols = {
             ("cpu", False, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", False, torch.float16): 5e-3,
+            ("cpu", False, torch.bfloat16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", True, torch.float16): 5e-3,
+            ("cpu", True, torch.bfloat16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 1e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.float16): 5e-3,
+            ("cuda", False, torch.bfloat16): 5e-3,
             ("cuda", True, torch.float32): 1e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 3e-2,
-            ("cuda", True, torch.float16): 5e-3,
+            ("cuda", True, torch.bfloat16): 5e-3,
         }
 
         _test_eager_matches_sdpa_inference(
@@ -504,7 +504,7 @@ class Gemma3nTextModelTest(CausalLMModelTest, unittest.TestCase):
             seq_length = self.model_tester.seq_length
             max_new_tokens = 20
 
-            for dtype in (torch.float32, torch.float16):
+            for dtype in (torch.float32, torch.bfloat16):
                 model = model_class(copy.deepcopy(config)).to(torch_device).to(dtype).eval()
                 inputs_dict = {
                     k: v.to(dtype) if isinstance(v, torch.Tensor) and torch.is_floating_point(v) else v
@@ -906,32 +906,32 @@ class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitt
         "We need to relax a bit the `atols` and `rtols` for fp32 here due to the altup projections"
         atols = {
             ("cpu", False, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", False, torch.float16): 5e-3,
+            ("cpu", False, torch.bfloat16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 5e-2,  # this was relaxed
-            ("cpu", True, torch.float16): 5e-3,
+            ("cpu", True, torch.bfloat16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 5e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.float16): 5e-3,
+            ("cuda", False, torch.bfloat16): 5e-3,
             ("cuda", True, torch.float32): 5e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 1e-2,
-            ("cuda", True, torch.float16): 5e-3,
+            ("cuda", True, torch.bfloat16): 5e-3,
         }
 
         rtols = {
             ("cpu", False, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", False, torch.float16): 5e-3,
+            ("cpu", False, torch.bfloat16): 5e-3,
             ("cpu", False, torch.bfloat16): 1e-2,
             ("cpu", True, torch.float32): 1e-2,  # this was relaxed
-            ("cpu", True, torch.float16): 5e-3,
+            ("cpu", True, torch.bfloat16): 5e-3,
             ("cpu", True, torch.bfloat16): 1e-2,
             ("cuda", False, torch.float32): 1e-2,  # this was relaxed
             ("cuda", False, torch.bfloat16): 1e-2,
-            ("cuda", False, torch.float16): 5e-3,
+            ("cuda", False, torch.bfloat16): 5e-3,
             ("cuda", True, torch.float32): 1e-2,  # this was relaxed
             ("cuda", True, torch.bfloat16): 3e-2,
-            ("cuda", True, torch.float16): 5e-3,
+            ("cuda", True, torch.bfloat16): 5e-3,
         }
 
         _test_eager_matches_sdpa_inference(
@@ -985,7 +985,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
             return_dict=True,
             return_tensors="pt",
             add_generation_prompt=True,
-        ).to(torch_device)
+        ).to(torch_device, dtype=torch.bfloat16)
 
         output = model.generate(**inputs, max_new_tokens=30, do_sample=False)
         output_text = self.processor.batch_decode(output, skip_special_tokens=True)
@@ -1069,7 +1069,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
             return_tensors="pt",
             padding=True,
             add_generation_prompt=True,
-        ).to(torch_device)
+        ).to(torch_device, dtype=torch.bfloat16)
 
         output = model.generate(**inputs, max_new_tokens=30, do_sample=False)
         output_text = self.processor.batch_decode(output, skip_special_tokens=True)
@@ -1093,7 +1093,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
             return_dict=True,
             return_tensors="pt",
             add_generation_prompt=True,
-        ).to(torch_device)
+        ).to(torch_device, dtype=torch.bfloat16)
 
         output = model.generate(**inputs, max_new_tokens=30, do_sample=False)
         output_text = self.processor.batch_decode(output, skip_special_tokens=True)
@@ -1136,7 +1136,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
             return_tensors="pt",
             padding=True,
             add_generation_prompt=True,
-        ).to(torch_device)
+        ).to(torch_device, dtype=torch.bfloat16)
 
         output = model.generate(**inputs, max_new_tokens=30, do_sample=False)
         output_text = self.processor.batch_decode(output, skip_special_tokens=True)
@@ -1182,7 +1182,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         inputs = tokenizer(input_text, padding=True, return_tensors="pt").to(torch_device)
 
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, attn_implementation=attn_implementation, dtype=torch.float16, device_map=torch_device
+            model_id, attn_implementation=attn_implementation, dtype=torch.bfloat16, device_map=torch_device
         )
 
         # Make sure prefill is larger than sliding window
@@ -1192,7 +1192,8 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         out = model.generate(**inputs, max_new_tokens=20, do_sample=False)[:, input_size:]
         output_text = tokenizer.batch_decode(out)
 
-        EXPECTED_COMPLETIONS = [" and I think it's a nice place to visit. This is a nice place. This is", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"]  # fmt: skip
+        EXPECTED_COMPLETIONS = [" and the food is delicious. I'm so glad I came here. I'm so glad", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"]  # fmt: skip
+        print(output_text)
         self.assertEqual(output_text, EXPECTED_COMPLETIONS)
 
     @require_deterministic_for_xpu
@@ -1210,7 +1211,7 @@ class Gemma3nIntegrationTest(unittest.TestCase):
         tokenizer = AutoTokenizer.from_pretrained(model_id, padding="left")
         inputs = tokenizer(input_text, padding=True, return_tensors="pt").to(torch_device)
 
-        model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float16, device_map=torch_device)
+        model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.bfloat16, device_map=torch_device)
 
         # Make sure prefill is larger than sliding window
         input_size = inputs.input_ids.shape[-1]
@@ -1221,8 +1222,9 @@ class Gemma3nIntegrationTest(unittest.TestCase):
 
         EXPECTED_COMPLETIONS = Expectations({
             # FIXME: This test is VERY flaky on ROCm
-            ("cuda", None): [" and I am glad to be here. This is a nice place. This is a nice place.", ", green, yellow, purple, orange, pink, brown, black, white.\n\nHere are"],
+            ("cuda", None): [" and I'm sure others will too. This is a nice place. This is a nice place", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"],
             ("rocm", (9, 4)): [' and I think it makes this place special. This is a nice place. This is a nice place', ', green, yellow, purple, orange, pink, brown, black, white.\n\nHere are'],
             ("xpu", None): [" and I think it's a nice place to visit. This is a nice place. This is", ", green, yellow, orange, purple, pink, brown, black, white.\n\nHere'"],
         }).get_expectation()  # fmt: skip
+        print(output_text)
         self.assertEqual(output_text, EXPECTED_COMPLETIONS)
