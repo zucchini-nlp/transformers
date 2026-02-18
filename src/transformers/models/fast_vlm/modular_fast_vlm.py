@@ -86,7 +86,7 @@ class FastVlmConfig(LlavaConfig):
 
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | PreTrainedConfig | None = None
-    image_token_id: int = 151646
+    image_token_index: int = 151646
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: str = "full"
     vision_feature_layer: int | list[int] = -1

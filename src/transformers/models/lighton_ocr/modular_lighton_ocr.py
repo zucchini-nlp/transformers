@@ -93,7 +93,7 @@ class LightOnOcrConfig(PretrainedConfig):
     def __post_init__(self, **kwargs):
         if self.vision_config is None:
             self.vision_config = CONFIG_MAPPING["pixtral"](
-                attention_dropout=0,
+                attention_dropout=0.0,
                 head_dim=64,
                 hidden_act="silu",
                 hidden_size=1024,
@@ -113,7 +113,7 @@ class LightOnOcrConfig(PretrainedConfig):
 
         if self.text_config is None:
             self.text_config = CONFIG_MAPPING["qwen3"](
-                attention_dropout=0,
+                attention_dropout=0.0,
                 head_dim=128,
                 hidden_act="silu",
                 hidden_size=1024,

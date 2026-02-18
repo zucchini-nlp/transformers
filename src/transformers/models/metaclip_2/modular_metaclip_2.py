@@ -287,6 +287,8 @@ class MetaClip2PreTrainedModel(CLIPPreTrainedModel):
             init.ones_(module.weight)
         if isinstance(module, nn.Linear) and module.bias is not None:
             init.zeros_(module.bias)
+        if hasattr(module, "logit_scale"):
+            init.constant_(module.logit_scale, self.config.logit_scale_init_value)
 
 
 class MetaClip2TextTransformer(CLIPTextTransformer):

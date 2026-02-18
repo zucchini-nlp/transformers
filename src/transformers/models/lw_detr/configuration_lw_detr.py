@@ -118,8 +118,8 @@ class LwDetrViTConfig(BackboneConfigMixin, PreTrainedConfig):
     layer_norm_eps: float = 1e-6
 
     image_size: int = 256
-    pretrain_image_size: int = 224
-    patch_size: int = 16
+    pretrain_image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     qkv_bias: bool = True
     window_block_indices: list[int] | tuple[int, ...] = ()

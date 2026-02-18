@@ -163,9 +163,9 @@ class ExaoneMoeConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     rms_norm_eps: float = 1e-5
     use_cache: bool = True
-    bos_token_id: int = 1
-    eos_token_id: int = 53
-    pad_token_id: int = 0
+    bos_token_id: int | None = 1
+    eos_token_id: int | None = 53
+    pad_token_id: int | None = 0
     tie_word_embeddings: bool = False
     rope_parameters: dict | None = None
     attention_dropout: float = 0.0

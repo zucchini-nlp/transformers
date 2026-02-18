@@ -223,7 +223,7 @@ class EncodecModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
 
             torch.manual_seed(0)
             config.chunk_length_s = 2
-            config.overlap = 0
+            config.overlap = 0.0
             config.sampling_rate = 20
 
             model = model_class(config)

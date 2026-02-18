@@ -87,7 +87,7 @@ class VipLlavaConfig(PreTrainedConfig):
     image_token_index: int = 32000
     projector_hidden_act: str = "gelu"
     projector_layernorm_eps: float = 1e-5
-    vision_feature_layers: list[int] | tuple[int, ...] = (-2, -5, -8, -11, 6)
+    vision_feature_layers: int | list[int] | tuple[int, ...] = (-2, -5, -8, -11, 6)
     image_seq_length: int = 576
     tie_word_embeddings: bool = False
 

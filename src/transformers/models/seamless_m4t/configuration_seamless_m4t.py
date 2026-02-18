@@ -302,7 +302,7 @@ class SeamlessM4TConfig(PreTrainedConfig):
     sampling_rate: int = 16000
     upsample_initial_channel: int = 512
     upsample_rates: list[int] | tuple[int, ...] = (5, 4, 4, 2, 2)
-    upsample_kernel_sizes: list[int] | tuple[int, ...] = (1, 8, 8, 4, 4)
+    upsample_kernel_sizes: list[int] | tuple[int, ...] = (11, 8, 8, 4, 4)
     resblock_kernel_sizes: list[int] | tuple[int, ...] = (3, 7, 11)
     resblock_dilation_sizes: list | tuple = ((1, 3, 5), (1, 3, 5), (1, 3, 5))
     leaky_relu_slope: float = 0.1

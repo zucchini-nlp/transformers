@@ -274,7 +274,7 @@ class DFineConfig(PreTrainedConfig):
     weight_loss_ddf: float = 1.5
     eos_coefficient: float = 1e-4
     eval_idx: int = -1
-    layer_scale: int = 1
+    layer_scale: int | float = 1.0
     max_num_bins: int = 32
     reg_scale: float = 4.0
     depth_mult: float = 1.0

@@ -723,9 +723,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """
         return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
 
-        # To remove arg here are those passed along for our internal telemetry but we still need to remove them
-        to_remove = ["_from_auto", "_from_pipeline"]
-
         # Case 1: dataclass → get dataclass fields
         if is_dataclass(cls):
             valid_fields = [field.name for field in fields(cls)]
@@ -745,9 +742,11 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 "name_or_path",
             ]
         )
-        for key, value in kwargs.items():
-            if key in valid_fields and key not in ["torch_dtype", "dtype"]:
-                to_remove.append(key)
+        for key in list(kwargs):
+            if key in valid_fields:
+                config_dict[key] = kwargs[key]
+                if key not in ["torch_dtype", "dtype"]:
+                    kwargs.pop(key)
 
         config = cls(**config_dict)
 
@@ -755,16 +754,22 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         if "_commit_hash" in kwargs and "_commit_hash" in config_dict:
             kwargs.setdefault("_commit_hash", config_dict["_commit_hash"])
 
+        # To remove arg here are those passed along for our internal telemetry but we still need to remove them
+        to_remove = ["_from_auto", "_from_pipeline"]
+
+        # Set attrbutes that aren't config fields but are created at `post_init`
         for key, value in kwargs.items():
             if hasattr(config, key):
                 current_attr = getattr(config, key)
                 # To authorize passing a custom subconfig as kwarg in models that have nested configs.
-                # We need to update only custom kwarg values instead and keep other attributes in subconfig.
+                # We need to update
+                # only custom kwarg values instead and keep other attributes in subconfig.
                 if isinstance(current_attr, PreTrainedConfig) and isinstance(value, dict):
                     current_attr_updated = current_attr.to_dict()
                     current_attr_updated.update(value)
                     value = current_attr.__class__(**current_attr_updated)
                 setattr(config, key, value)
+                to_remove.append(key)
 
         for key in to_remove:
             kwargs.pop(key, None)
@@ -933,7 +938,11 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         # Pop "kwargs" since they are unpacked and set in the post init
         output.pop("kwargs", None)
 
-        to_list = lambda x: [to_list(i) for i in x] if isinstance(x, tuple) else x
+        def to_list(value):
+            if isinstance(value, tuple):
+                value = [to_list(item) for item in value]
+            return value
+
         for key, value in output.items():
             # Deal with nested configs like CLIP
             if isinstance(value, PreTrainedConfig):
