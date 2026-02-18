@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...modeling_rope_utils import RopeParameters, RotaryEmbeddingConfigMixin
+from ...modeling_rope_utils import RopeParameters
 from ..auto import CONFIG_MAPPING, AutoConfig
 from ..mistral.configuration_mistral import MistralConfig
 
@@ -37,7 +37,7 @@ class VoxtralRealtimeTextConfig(MistralConfig):
 
 @strict(accept_kwargs=True)
 @dataclass(repr=False)
-class VoxtralRealtimeEncoderConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin):
+class VoxtralRealtimeEncoderConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`VoxtralRealtimeEncoder`]. It is used to instantiate a
     Voxtral Realtime audio encoder according to the specified arguments, defining the model architecture. Instantiating a

@@ -702,7 +702,7 @@ class RotaryEmbeddingConfigMixin:
         """
         Validate the RoPE config arguments, given a `"PreTrainedConfig"` object
         """
-        rope_parameters_dict = self.rope_parameters
+        rope_parameters_dict = getattr(self, "rope_parameters", None)
         if rope_parameters_dict is None:
             return
 
