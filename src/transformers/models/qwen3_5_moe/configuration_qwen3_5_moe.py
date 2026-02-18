@@ -143,6 +143,7 @@ class Qwen3_5MoeTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     vocab_size: int = 248320
     hidden_size: int = 2048
@@ -177,7 +178,6 @@ class Qwen3_5MoeTextConfig(PreTrainedConfig):
     base_config_key = "text_config"
 
     def __post_init__(self, **kwargs):
-        kwargs["ignore_keys_at_rope_validation"] = {"mrope_section", "mrope_interleaved"}
         kwargs.setdefault("partial_rotary_factor", 0.25)  # assign default for BC
         if self.layer_types is None:
             interval_pattern = kwargs.pop("full_attention_interval", 4)

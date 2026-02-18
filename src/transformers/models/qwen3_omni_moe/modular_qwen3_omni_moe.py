@@ -250,6 +250,7 @@ class Qwen3OmniMoeTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section", "interleaved", "mrope_interleaved"}
 
     vocab_size: int = 3584
     hidden_size: int = 2048
@@ -281,10 +282,7 @@ class Qwen3OmniMoeTextConfig(PreTrainedConfig):
     def __post_init__(self, **kwargs):
         self.mlp_only_layers = [] if self.mlp_only_layers is None else self.mlp_only_layers
 
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"mrope_section", "interleaved", "mrope_interleaved"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
 
 
 class Qwen3OmniMoeThinkerConfig(Qwen2_5OmniThinkerConfig):

@@ -135,7 +135,7 @@ class GPTNeoXConfig(PreTrainedConfig):
                 "The hidden size is not divisible by the number of attention heads! Make sure to update them!"
             )
 
-    def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation=None, **kwargs):
+    def convert_rope_params_to_dict(self, **kwargs):
         rope_scaling = kwargs.pop("rope_scaling", None)
         self.rope_parameters = rope_scaling or self.rope_parameters
         self.rope_parameters = self.rope_parameters if self.rope_parameters is not None else {}
@@ -145,7 +145,6 @@ class GPTNeoXConfig(PreTrainedConfig):
         self.rope_parameters.setdefault("rope_theta", kwargs.pop("rotary_emb_base", self.default_theta))
         self.rope_parameters["partial_rotary_factor"] = kwargs.pop("rotary_pct", 0.25)
         self.standardize_rope_params()
-        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 

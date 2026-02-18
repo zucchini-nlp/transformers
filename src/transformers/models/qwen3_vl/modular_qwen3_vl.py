@@ -171,6 +171,7 @@ class Qwen3VLTextConfig(PreTrainedConfig):
     model_type = "qwen3_vl_text"
     base_config_key = "text_config"
     default_theta = 500000.0
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     vocab_size: int = 151936
     hidden_size: int = 4096
@@ -193,10 +194,7 @@ class Qwen3VLTextConfig(PreTrainedConfig):
         if self.num_key_value_heads is None:
             self.num_key_value_heads = self.num_attention_heads
 
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"mrope_section", "mrope_interleaved"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)

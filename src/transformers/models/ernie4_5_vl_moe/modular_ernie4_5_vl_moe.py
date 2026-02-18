@@ -230,6 +230,7 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig):
         "layers.*.mlp.up_proj": "colwise",
         "layers.*.mlp.down_proj": "rowwise",
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     mlp_layer_types: list[str] | None = None
     moe_intermediate_size: list[int] | None = None
@@ -244,7 +245,7 @@ class Ernie4_5_VL_MoeTextConfig(Ernie4_5_MoeConfig):
         if self.moe_intermediate_size is None:
             self.moe_intermediate_size = [1536, 512]
 
-        super().__post_init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)

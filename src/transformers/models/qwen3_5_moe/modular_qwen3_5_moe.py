@@ -164,6 +164,7 @@ class Qwen3_5MoeTextConfig(Qwen3NextConfig):
         "layers.*.mlp.shared_expert.up_proj": "colwise",
         "layers.*.mlp.shared_expert.down_proj": "rowwise",
     }
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     vocab_size: int = 248320
     hidden_size: int = 2048
@@ -176,7 +177,6 @@ class Qwen3_5MoeTextConfig(Qwen3NextConfig):
     mlp_only_layers = AttributeError()
 
     def __post_init__(self, **kwargs):
-        kwargs["ignore_keys_at_rope_validation"] = {"mrope_section", "mrope_interleaved"}
         super().__post_init__(**kwargs)
         del self.mlp_only_layers
 

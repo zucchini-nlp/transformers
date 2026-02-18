@@ -161,6 +161,7 @@ class Glm4vMoeTextConfig(Glm4MoeConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     vocab_size: int | None = 151424
     max_position_embeddings: int | None = 65536
@@ -168,7 +169,7 @@ class Glm4vMoeTextConfig(Glm4MoeConfig):
     router_aux_loss_coef: float | None = 0.0001
 
     def __post_init__(self, **kwargs):
-        super().__post_init__(self, ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
+        super().__post_init__(self, **kwargs)
 
 
 class Glm4vMoeConfig(Glm4vConfig):

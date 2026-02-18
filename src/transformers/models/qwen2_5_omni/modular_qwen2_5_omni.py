@@ -285,6 +285,7 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     vocab_size: int = 152064
     hidden_size: int = 3584
@@ -321,10 +322,7 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig):
                 for i in range(self.num_hidden_layers)
             ]
 
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"mrope_section"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)
@@ -567,6 +565,7 @@ class Qwen2_5OmniTalkerConfig(PreTrainedConfig):
         "video_token_id": "video_token_index",
         "audio_token_id": "audio_token_index",
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     audio_token_index: int = 151646
     image_token_index: int = 151655
@@ -621,7 +620,7 @@ class Qwen2_5OmniTalkerConfig(PreTrainedConfig):
                 for i in range(self.num_hidden_layers)
             ]
 
-        super().__post_init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)

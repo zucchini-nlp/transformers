@@ -126,6 +126,7 @@ class Ministral3Config(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"llama_4_scaling_beta", "max_position_embeddings"}
 
     vocab_size: int = 131072
     hidden_size: int = 4096
@@ -172,10 +173,7 @@ class Ministral3Config(PreTrainedConfig):
                 "Detected Mistral model with layer_types. Consider using AutoModel or Ministral classes instead to enable alternating attention compatibility."
             )
 
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"llama_4_scaling_beta", "max_position_embeddings"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["Ministral3Config"]

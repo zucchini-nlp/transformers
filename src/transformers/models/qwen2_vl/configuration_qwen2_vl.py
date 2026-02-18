@@ -137,6 +137,7 @@ class Qwen2VLTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     vocab_size: int | None = 152064
     hidden_size: int | None = 8192
@@ -174,12 +175,9 @@ class Qwen2VLTextConfig(PreTrainedConfig):
                 for i in range(self.num_hidden_layers)
             ]
 
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"mrope_section"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
 
-    def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation: set | None = None, **kwargs):
+    def convert_rope_params_to_dict(self, **kwargs):
         rope_scaling = kwargs.pop("rope_scaling", None)
         self.rope_parameters = rope_scaling or self.rope_parameters
         self.rope_parameters = self.rope_parameters if self.rope_parameters is not None else {}
@@ -189,7 +187,6 @@ class Qwen2VLTextConfig(PreTrainedConfig):
         if self.rope_parameters.get("rope_type", self.rope_parameters.get("type")) == "mrope":
             self.rope_parameters["rope_type"] = "default"
         self.standardize_rope_params()
-        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 

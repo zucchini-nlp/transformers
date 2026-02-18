@@ -153,6 +153,7 @@ class Qwen3_5TextConfig(Qwen3NextConfig):
         "layers.*.mlp.up_proj": "colwise",
         "layers.*.mlp.down_proj": "rowwise",
     }
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     vocab_size: int = 248320
     hidden_size: int = 4096
@@ -170,7 +171,6 @@ class Qwen3_5TextConfig(Qwen3NextConfig):
     router_aux_loss_coef = AttributeError()
 
     def __post_init__(self, **kwargs):
-        kwargs["ignore_keys_at_rope_validation"] = {"mrope_section", "mrope_interleaved"}
         super().__post_init__(**kwargs)
         del self.mlp_only_layers
 

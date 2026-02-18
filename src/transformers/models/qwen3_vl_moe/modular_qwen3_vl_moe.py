@@ -149,6 +149,7 @@ class Qwen3VLMoeTextConfig(Qwen3MoeConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     intermediate_size: int = 5632
     num_hidden_layers: int = 24
@@ -170,10 +171,7 @@ class Qwen3VLMoeTextConfig(Qwen3MoeConfig):
             self.num_key_value_heads = self.num_attention_heads
 
         self.head_dim = self.head_dim or self.hidden_size // self.num_attention_heads
-        super().__post_init__(
-            ignore_keys_at_rope_validation={"mrope_section", "mrope_interleaved"},
-            **kwargs,
-        )
+        super().__post_init__(**kwargs)
         self.sliding_window = None
 
 

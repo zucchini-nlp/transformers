@@ -205,6 +205,7 @@ class GlmImageTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     vocab_size: int = 168064
     hidden_size: int | None = 4096
@@ -228,7 +229,7 @@ class GlmImageTextConfig(PreTrainedConfig):
         if self.num_key_value_heads is None:
             self.num_key_value_heads = self.num_attention_heads
 
-        super().__post_init__(ignore_keys_at_rope_validation={"mrope_section"}, **kwargs)
+        super().__post_init__(**kwargs)
 
 
 @strict(accept_kwargs=True)

@@ -237,7 +237,7 @@ class Gemma3nTextConfig(PreTrainedConfig):
                 f"heads ({self.num_attention_heads})."
             )
 
-    def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation=None, **kwargs):
+    def convert_rope_params_to_dict(self, **kwargs):
         rope_scaling = kwargs.pop("rope_scaling", None)
 
         # Try to set `rope_scaling` if available, otherwise use `rope_parameters`. If we find `rope_parameters`
@@ -264,7 +264,6 @@ class Gemma3nTextConfig(PreTrainedConfig):
 
         # Standardize and validate the correctness of rotary position embeddings parameters
         self.standardize_rope_params()
-        self._validate_rope(ignore_keys=ignore_keys_at_rope_validation)
         return kwargs
 
 
