@@ -100,7 +100,7 @@ class VideoLlavaConfig(PreTrainedConfig):
     video_token_index: int = 32001
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "default"
-    vision_feature_layer: int = -2
+    vision_feature_layer: int | list[int] = -2
     image_seq_length: int = 256
     video_seq_length: int = 2056
     multimodal_projector_bias: bool = True

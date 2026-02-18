@@ -102,6 +102,7 @@ class LEDConfig(PreTrainedConfig):
         "hidden_size": "d_model",
         "attention_probs_dropout_prob": "attention_dropout",
         "initializer_range": "init_std",
+        "num_hidden_layers": "encoder_layers",
     }
 
     vocab_size: int = 50265
@@ -129,11 +130,6 @@ class LEDConfig(PreTrainedConfig):
     bos_token_id: int | None = 0
     eos_token_id: int | None = 2
     attention_window: list[int] | int = 512
-    tie_word_embeddings: bool | None = True
-
-    def __post_init__(self, **kwargs):
-        self.num_hidden_layers = self.encoder_layers
-        super().__post_init__(**kwargs)
 
 
 __all__ = ["LEDConfig"]

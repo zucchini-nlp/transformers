@@ -93,7 +93,7 @@ class LlavaConfig(PreTrainedConfig):
     image_token_id: int = 32000
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "default"
-    vision_feature_layer: int = -2
+    vision_feature_layer: int | list[int] = -2
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
 

@@ -100,7 +100,6 @@ class T5Config(PreTrainedConfig):
     pad_token_id: int | None = 0
     eos_token_id: int | None = 1
     classifier_dropout: float = 0.0
-    tie_word_embeddings: bool = True
     is_decoder: bool = False
 
     def __post_init__(self, **kwargs):
@@ -121,7 +120,7 @@ class T5Config(PreTrainedConfig):
         # The model code was relying on saved configs where `tie_word_embeddings` is
         # set to `False` in 1.1v and using it as indicator of whether to scale or not
         # But in fact we tie weights always and force it to be `True`
-        self.scale_decoder_outputs = self.tie_word_embeddings is True
+        self.scale_decoder_outputs = kwargs.pop("tie_word_embeddings", None) is not False
         self.tie_word_embeddings = True
 
         super().__post_init__(**kwargs)

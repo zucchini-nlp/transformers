@@ -100,7 +100,11 @@ class BlenderbotSmallConfig(PreTrainedConfig):
 
     model_type = "blenderbot-small"
     keys_to_ignore_at_inference = ["past_key_values"]
-    attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
+    attribute_map = {
+        "num_attention_heads": "encoder_attention_heads",
+        "hidden_size": "d_model",
+        "num_hidden_layers": "encoder_layers",
+    }
 
     vocab_size: int = 50265
     max_position_embeddings: int = 512

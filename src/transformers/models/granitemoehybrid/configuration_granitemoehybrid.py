@@ -181,7 +181,7 @@ class GraniteMoeHybridConfig(PreTrainedConfig):
     mamba_proj_bias: bool | None = False
     time_step_min: float | None = 0.001
     time_step_max: float | None = 0.1
-    time_step_limit: tuple[float, float] | None = (0.0, float("inf"))
+    time_step_limit: list[float, float] | tuple[float, float] | None = (0.0, float("inf"))
 
     def __post_init__(self, **kwargs):
         if self.num_key_value_heads is None:

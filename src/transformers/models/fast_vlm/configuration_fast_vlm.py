@@ -87,7 +87,7 @@ class FastVlmConfig(PreTrainedConfig):
     image_token_id: int = 151646
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: str = "full"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
 

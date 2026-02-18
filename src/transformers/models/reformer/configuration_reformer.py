@@ -198,6 +198,8 @@ class ReformerConfig(PreTrainedConfig):
 
     def __post_init__(self, **kwargs):
         self.num_hidden_layers = len(self.attn_layers)
+        self.axial_pos_shape = tuple(self.axial_pos_shape)
+        self.axial_pos_embds_dim = tuple(self.axial_pos_embds_dim)
         super().__post_init__(**kwargs)
 
 

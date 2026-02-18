@@ -131,7 +131,9 @@ class DinatConfig(BackboneConfigMixin, PreTrainedConfig):
         # this indicates the channel dimension after the last stage of the model
         self.hidden_size = int(self.embed_dim * 2 ** (len(self.depths) - 1))
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(self.depths) + 1)]
-        self.set_output_features_output_indices(out_indices=self._out_indices, out_features=self._out_features)
+        self.set_output_features_output_indices(
+            out_indices=kwargs.pop("out_indices", None), out_features=kwargs.pop("out_features", None)
+        )
         super().__post_init__(**kwargs)
 
 

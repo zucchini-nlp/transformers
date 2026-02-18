@@ -225,7 +225,7 @@ class AriaConfig(PreTrainedConfig):
 
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | AriaTextConfig | None = None
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     projector_patch_to_query_dict: dict | None = None
     image_token_index: int | None = 9
     initializer_range: float | None = 0.02
@@ -1248,7 +1248,7 @@ class AriaModel(LlavaModel):
         self,
         pixel_values: torch.FloatTensor,
         pixel_mask: torch.FloatTensor | None = None,
-        vision_feature_layer: int = -1,
+        vision_feature_layer: int | list[int] = -1,
         output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
@@ -1335,7 +1335,7 @@ class AriaForConditionalGeneration(LlavaForConditionalGeneration):
         self,
         pixel_values: torch.FloatTensor,
         pixel_mask: torch.FloatTensor | None = None,
-        vision_feature_layer: int = -1,
+        vision_feature_layer: int | list[int] = -1,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         return self.model.get_image_features(

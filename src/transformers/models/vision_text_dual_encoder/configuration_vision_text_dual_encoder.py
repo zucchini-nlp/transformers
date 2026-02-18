@@ -87,7 +87,7 @@ class VisionTextDualEncoderConfig(PreTrainedConfig):
     logit_scale_init_value: float = 2.6592
 
     def __post_init__(self, **kwargs):
-        if "vision_config" in kwargs and"text_config" in kwargs:
+        if "vision_config" in kwargs and "text_config" in kwargs:
             vision_config = kwargs.pop("vision_config")
             text_config = kwargs.pop("text_config")
 

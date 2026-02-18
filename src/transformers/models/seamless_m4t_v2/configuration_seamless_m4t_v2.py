@@ -244,6 +244,7 @@ class SeamlessM4Tv2Config(PreTrainedConfig):
     ```"""
 
     model_type = "seamless_m4t_v2"
+    attribute_map = {"num_hidden_layers": "decoder_layers"}
 
     vocab_size: int = 256102
     t2u_vocab_size: int = 10082

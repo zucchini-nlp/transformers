@@ -106,6 +106,7 @@ class PLBartConfig(PreTrainedConfig):
         "num_attention_heads": "encoder_attention_heads",
         "hidden_size": "d_model",
         "initializer_range": "init_std",
+        "num_hidden_layers": "encoder_layers",
     }
 
     vocab_size: int = 50005

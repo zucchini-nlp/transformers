@@ -113,6 +113,7 @@ class BigBirdPegasusConfig(PreTrainedConfig):
         "num_attention_heads": "encoder_attention_heads",
         "hidden_size": "d_model",
         "attention_probs_dropout_prob": "attention_dropout",
+        "num_hidden_layers": "encoder_layers",
     }
 
     vocab_size: int = 96103

@@ -85,7 +85,7 @@ class Mistral3Config(PreTrainedConfig):
     text_config: dict | PreTrainedConfig | None = None
     image_token_index: int = 10
     projector_hidden_act: str = "gelu"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     multimodal_projector_bias: bool = False
     spatial_merge_size: int = 2
     tie_word_embeddings: bool = True

@@ -172,7 +172,7 @@ class FalconH1Config(PreTrainedConfig):
     mamba_rms_norm: bool | None = False
     time_step_min: float | None = 0.001
     time_step_max: float | None = 0.1
-    time_step_limit: tuple[float, float] | None = (0.0, float("inf"))
+    time_step_limit: list[float, float] | tuple[float, float] | None = (0.0, float("inf"))
     projectors_bias: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
     lm_head_multiplier: float | None = 1.0

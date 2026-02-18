@@ -219,6 +219,7 @@ class SamHQMaskDecoderConfig(PreTrainedConfig):
 
     vit_dim: int = 768
 
+
 @strict(accept_kwargs=True)
 @dataclass(repr=False)
 class SamHQConfig(PreTrainedConfig):

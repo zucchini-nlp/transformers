@@ -131,7 +131,11 @@ class NllbMoeConfig(PreTrainedConfig):
 
     model_type = "nllb-moe"
     keys_to_ignore_at_inference = ["past_key_values"]
-    attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
+    attribute_map = {
+        "num_attention_heads": "encoder_attention_heads",
+        "hidden_size": "d_model",
+        "num_hidden_layers": "encoder_layers",
+    }
 
     vocab_size: int = 128112
     max_position_embeddings: int = 1024
@@ -172,10 +176,6 @@ class NllbMoeConfig(PreTrainedConfig):
     eos_token_id: int | None = 2
     tie_word_embeddings: bool = True
     output_router_logits: bool = False
-
-    def __post_init__(self, **kwargs):
-        self.num_hidden_layers = self.encoder_layers
-        super().__post_init__(**kwargs)
 
 
 __all__ = ["NllbMoeConfig"]

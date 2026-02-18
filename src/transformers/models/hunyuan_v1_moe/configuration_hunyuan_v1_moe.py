@@ -133,7 +133,7 @@ class HunYuanMoEV1Config(PreTrainedConfig):
     attention_dropout: float = 0.0
     num_experts: int = 1
     moe_topk: int = 1
-    head_dim: int | None  = None
+    head_dim: int | None = None
 
     def __post_init__(self, **kwargs):
         if self.num_key_value_heads is None:

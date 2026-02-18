@@ -180,7 +180,7 @@ class InternVLConfig(PreTrainedConfig):
     image_seq_length: int = 256
     downsample_ratio: float = 0.5
     projector_hidden_act: str = "gelu"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     vision_feature_select_strategy: str = "default"
     tie_word_embeddings: bool = True
 

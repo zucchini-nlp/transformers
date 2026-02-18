@@ -920,6 +920,11 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
                 value = value.to_dict()
                 del value["transformers_version"]
 
+            # Some models have defaults as tuples because dataclass
+            # doesn't allow mutables. Let's convert back to `list``
+            elif isinstance(value, tuple):
+                value = list(value)
+
             output[key] = value
 
         self._remove_keys_not_serialized(output)

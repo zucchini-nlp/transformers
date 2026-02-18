@@ -138,7 +138,7 @@ class OneFormerConfig(PreTrainedConfig):
 
     model_type = "oneformer"
     sub_configs = {"backbone_config": AutoConfig}
-    attribute_map = {"hidden_size": "hidden_dim"}
+    attribute_map = {"hidden_size": "hidden_dim", "num_hidden_layers": "decoder_layers"}
 
     backbone_config: dict | PreTrainedConfig | None = None
     ignore_value: int = 255

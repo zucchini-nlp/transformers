@@ -105,7 +105,11 @@ class PegasusXConfig(PreTrainedConfig):
 
     model_type = "pegasus_x"
     keys_to_ignore_at_inference = ["past_key_values"]
-    attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
+    attribute_map = {
+        "num_attention_heads": "encoder_attention_heads",
+        "hidden_size": "d_model",
+        "num_hidden_layers": "encoder_layers",
+    }
 
     vocab_size: int = 96103
     max_position_embeddings: int = 16384

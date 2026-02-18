@@ -127,6 +127,7 @@ class ConditionalDetrConfig(PreTrainedConfig):
     attribute_map = {
         "hidden_size": "d_model",
         "num_attention_heads": "encoder_attention_heads",
+        "num_hidden_layers": "encoder_layers",
     }
 
     backbone_config: dict | PreTrainedConfig | None = None

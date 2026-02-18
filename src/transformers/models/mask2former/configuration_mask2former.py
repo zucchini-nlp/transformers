@@ -121,7 +121,7 @@ class Mask2FormerConfig(PreTrainedConfig):
     model_type = "mask2former"
     sub_configs = {"backbone_config": AutoConfig}
     backbones_supported = ["swin"]
-    attribute_map = {"hidden_size": "hidden_dim"}
+    attribute_map = {"hidden_size": "hidden_dim", "num_hidden_layers": "decoder_layers"}
 
     backbone_config: dict | PreTrainedConfig | None = None
     feature_size: int = 256

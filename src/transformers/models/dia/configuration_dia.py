@@ -232,7 +232,7 @@ class DiaConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     pad_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    bos_token_id: int = None
+    bos_token_id: int | None = None
     delay_pattern: list[int] | None = None
     initializer_range: float = 0.02
     use_cache: bool = True

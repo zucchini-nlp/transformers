@@ -104,7 +104,7 @@ class BartConfig(PreTrainedConfig):
     attribute_map = {
         "num_attention_heads": "encoder_attention_heads",
         "hidden_size": "d_model",
-        "encoder_layers": "num_hidden_layers",
+        "num_hidden_layers": "encoder_layers",
     }
 
     vocab_size: int | None = 50265

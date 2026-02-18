@@ -125,6 +125,7 @@ class DetrConfig(PreTrainedConfig):
     attribute_map = {
         "hidden_size": "d_model",
         "num_attention_heads": "encoder_attention_heads",
+        "num_hidden_layers": "encoder_layers",
     }
 
     backbone_config: dict | PreTrainedConfig | None = None
@@ -177,7 +178,6 @@ class DetrConfig(PreTrainedConfig):
             timm_default_kwargs=timm_default_kwargs,
             **kwargs,
         )
-        self.num_hidden_layers = self.encoder_layers
         super().__post_init__(**kwargs)
 
 

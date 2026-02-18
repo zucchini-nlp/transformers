@@ -67,7 +67,7 @@ class AyaVisionConfig(PreTrainedConfig):
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | PreTrainedConfig | None = None
     vision_feature_select_strategy: str = "full"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     downsample_factor: int = 2
     adapter_layer_norm_eps: float = 1e-6
     image_token_index: int = 255036

@@ -89,7 +89,7 @@ class FastVlmConfig(LlavaConfig):
     image_token_id: int = 151646
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: str = "full"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
 
@@ -176,7 +176,7 @@ class FastVlmModel(LlavaModel):
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
@@ -210,7 +210,7 @@ class FastVlmModel(LlavaModel):
         position_ids: torch.LongTensor | None = None,
         past_key_values: Cache | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         cache_position: torch.LongTensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
@@ -281,7 +281,7 @@ class FastVlmForConditionalGeneration(LlavaForConditionalGeneration):
         position_ids: torch.LongTensor | None = None,
         past_key_values: Cache | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         labels: torch.LongTensor | None = None,
         cache_position: torch.LongTensor | None = None,

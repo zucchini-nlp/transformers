@@ -122,7 +122,7 @@ class LlavaNextVideoConfig(PreTrainedConfig):
     video_token_id: int = 32000
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "default"
-    vision_feature_layer: int = -2
+    vision_feature_layer: int | list[int] = -2
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
     image_grid_pinpoints: list | None = None
@@ -265,7 +265,7 @@ class LlavaNextVideoModel(LlavaNextModel):
         self,
         pixel_values: torch.FloatTensor,
         image_sizes: torch.Tensor,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
@@ -337,7 +337,7 @@ class LlavaNextVideoModel(LlavaNextModel):
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
@@ -434,7 +434,7 @@ class LlavaNextVideoModel(LlavaNextModel):
         position_ids: torch.LongTensor | None = None,
         past_key_values: Cache | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         use_cache: bool | None = None,
         output_attentions: bool | None = None,
@@ -515,7 +515,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
     def get_video_features(
         self,
         pixel_values: torch.FloatTensor,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
@@ -549,7 +549,7 @@ class LlavaNextVideoForConditionalGeneration(LlavaNextForConditionalGeneration):
         position_ids: torch.LongTensor | None = None,
         past_key_values: Cache | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
-        vision_feature_layer: int | list[int] | None = None,
+        vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         labels: torch.LongTensor | None = None,
         use_cache: bool | None = None,

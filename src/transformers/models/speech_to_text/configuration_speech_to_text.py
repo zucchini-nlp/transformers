@@ -124,7 +124,11 @@ class Speech2TextConfig(PreTrainedConfig):
 
     model_type = "speech_to_text"
     keys_to_ignore_at_inference = ["past_key_values"]
-    attribute_map = {"num_attention_heads": "encoder_attention_heads", "hidden_size": "d_model"}
+    attribute_map = {
+        "num_attention_heads": "encoder_attention_heads",
+        "hidden_size": "d_model",
+        "num_hidden_layers": "encoder_layers",
+    }
 
     vocab_size: int = 10000
     encoder_layers: int = 12

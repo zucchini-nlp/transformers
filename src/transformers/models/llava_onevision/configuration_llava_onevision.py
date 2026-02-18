@@ -100,7 +100,7 @@ class LlavaOnevisionConfig(PreTrainedConfig):
     video_token_id: int = 151647
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "full"
-    vision_feature_layer: int = -1
+    vision_feature_layer: int | list[int] = -1
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
     image_grid_pinpoints: list | None = None

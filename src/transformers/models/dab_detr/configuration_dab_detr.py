@@ -135,6 +135,7 @@ class DabDetrConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
     attribute_map = {
         "num_attention_heads": "encoder_attention_heads",
+        "num_hidden_layers": "encoder_layers",
     }
 
     backbone_config: dict | PreTrainedConfig | None = None

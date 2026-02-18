@@ -85,6 +85,7 @@ class Qwen2AudioEncoderConfig(PreTrainedConfig):
     ```"""
 
     model_type = "qwen2_audio_encoder"
+    attribute_map = {"num_hidden_layers": "encoder_layers"}
 
     num_mel_bins: int = 128
     encoder_layers: int = 32

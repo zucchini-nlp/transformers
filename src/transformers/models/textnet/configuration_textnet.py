@@ -114,7 +114,9 @@ class TextNetConfig(BackboneConfigMixin, PreTrainedConfig):
 
         self.depths = [len(layer) for layer in self.conv_layer_kernel_sizes]
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, 5)]
-        self.set_output_features_output_indices(out_indices=self._out_indices, out_features=self._out_features)
+        self.set_output_features_output_indices(
+            out_indices=kwargs.pop("out_indices", None), out_features=kwargs.pop("out_features", None)
+        )
         super().__post_init__(**kwargs)
 
 
