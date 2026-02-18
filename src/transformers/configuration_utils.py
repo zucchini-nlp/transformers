@@ -1173,8 +1173,8 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
             for key in config_to_return.to_dict():
                 # NOTE: We don't want to discard the key if it is mapped from a different attribute name at read time
                 # Since we can't truly delete a cls attribte on a dataclass, we set the value to `Nonw`
-                if key.startswith(prefix_to_discard) and key not in config_to_return.attribute_map.values():
-                    setattr(config_to_return, key, None)
+                # if key.startswith(prefix_to_discard) and key not in config_to_return.attribute_map.values():
+                #     setattr(config_to_return, key, None)
                 if key.startswith(prefix_to_keep):
                     # [encoder/decoder]_layers -> num_hidden_layers
                     if key == prefix_to_keep + "_layers":
