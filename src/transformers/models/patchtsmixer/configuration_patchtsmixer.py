@@ -151,7 +151,7 @@ class PatchTSMixerConfig(PreTrainedConfig):
     d_model: int = 8
     expansion_factor: int = 2
     num_layers: int = 3
-    dropout: float = 0.2
+    dropout: float | int = 0.2
     mode: str = "common_channel"
     gated_attn: bool = True
     norm_mlp: str = "LayerNorm"
@@ -170,7 +170,7 @@ class PatchTSMixerConfig(PreTrainedConfig):
     masked_loss: bool = True
     channel_consistent_masking: bool = True
     unmasked_channel_indices: list[int] | None = None
-    head_dropout: float = 0.2
+    head_dropout: float | int = 0.2
     distribution_output: str = "student_t"
     prediction_length: int = 16
     prediction_channel_indices: list | None = None

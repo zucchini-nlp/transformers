@@ -117,7 +117,7 @@ class ErnieConfig(PreTrainedConfig):
     layer_norm_eps: float = 1e-12
     pad_token_id: int | None = 0
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     is_decoder: bool = False
     add_cross_attention: bool = False
     bos_token_id: int | None = None

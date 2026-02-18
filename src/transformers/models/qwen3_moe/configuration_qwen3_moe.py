@@ -157,7 +157,7 @@ class Qwen3MoeConfig(PreTrainedConfig):
     attention_bias: bool = False
     use_sliding_window: bool = False
     sliding_window: int | None = 4096
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     decoder_sparse_step: int = 1
     moe_intermediate_size: int = 768
     num_experts_per_tok: int = 8

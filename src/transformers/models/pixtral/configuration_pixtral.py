@@ -82,7 +82,7 @@ class PixtralVisionConfig(PreTrainedConfig):
     image_size: int = 1024
     patch_size: int = 16
     hidden_act: str = "gelu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None
     initializer_range: float = 0.02
 

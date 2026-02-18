@@ -136,7 +136,7 @@ class Qwen2Config(PreTrainedConfig):
     sliding_window: int | None = 4096
     max_window_layers: int = 28
     layer_types: list[str] | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None

@@ -97,9 +97,9 @@ class XGLMConfig(PreTrainedConfig):
     num_layers: int = 24
     attention_heads: int = 16
     activation_function: str = "gelu"
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     layerdrop: float = 0.0
     init_std: float = 0.02
     scale_embedding: bool = True

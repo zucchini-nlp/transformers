@@ -138,9 +138,9 @@ class DetrConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "relu"
     d_model: int = 256
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     init_xavier_std: float = 1.0
     auxiliary_loss: bool = False

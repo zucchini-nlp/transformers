@@ -169,9 +169,9 @@ class MMGroundingDinoConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "relu"
     d_model: int = 256
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     auxiliary_loss: bool = False
     position_embedding_type: str = "sine"
     num_feature_levels: int = 4
@@ -186,9 +186,9 @@ class MMGroundingDinoConfig(PreTrainedConfig):
     focal_alpha: float = 0.25
     disable_custom_kernels: bool = False
     max_text_len: int = 256
-    text_enhancer_dropout: float = 0.0
+    text_enhancer_dropout: float | int = 0.0
     fusion_droppath: float = 0.1
-    fusion_dropout: float = 0.0
+    fusion_dropout: float | int = 0.0
     embedding_init_target: bool = True
     query_dim: int = 4
     positional_embedding_temperature: int = 20

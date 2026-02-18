@@ -119,8 +119,8 @@ class FalconConfig(PreTrainedConfig):
     layer_norm_epsilon: float | None = 1e-5
     initializer_range: float | None = 0.02
     use_cache: bool | None = True
-    hidden_dropout: float | None = 0.0
-    attention_dropout: float | None = 0.0
+    hidden_dropout: float | int | None = 0.0
+    attention_dropout: float | int | None = 0.0
     num_kv_heads: int | None = None
     alibi: bool | None = False
     new_decoder_architecture: bool | None = False

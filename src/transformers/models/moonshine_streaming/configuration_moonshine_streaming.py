@@ -86,7 +86,7 @@ class MoonshineStreamingEncoderConfig(PreTrainedConfig):
     num_attention_heads: int = 8
     num_key_value_heads: int = 8
     max_position_embeddings: int = 4096
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     attention_bias: bool = False
     sample_rate: int = 16000
     frame_ms: float = 5.0
@@ -197,7 +197,7 @@ class MoonshineStreamingConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = 2
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     decoder_start_token_id: int | None = None
     head_dim: int | None = None
     pad_head_dim_to_multiple_of: int | None = None

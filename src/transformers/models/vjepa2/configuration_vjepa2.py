@@ -114,7 +114,7 @@ class VJEPA2Config(PreTrainedConfig):
     attention_probs_dropout_prob: float = 0.0
     hidden_act: str = "gelu"
     initializer_range: float = 0.02
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_pooler_layers: int = 3
     pred_hidden_size: int = 384
     pred_num_attention_heads: int = 12

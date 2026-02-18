@@ -182,7 +182,7 @@ class AltCLIPVisionConfig(PreTrainedConfig):
     patch_size: int = 32
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
 

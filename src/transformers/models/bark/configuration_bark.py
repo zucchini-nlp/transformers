@@ -81,7 +81,7 @@ class BarkSubModelConfig(PreTrainedConfig):
     num_layers: int = 12
     num_heads: int = 12
     hidden_size: int = 768
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     bias: bool = True
     initializer_range: float = 0.02
     use_cache: bool = True

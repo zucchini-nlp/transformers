@@ -93,12 +93,12 @@ class DistilBertConfig(PreTrainedConfig):
     n_heads: int = 12
     dim: int = 768
     hidden_dim: int = 4 * 768
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
     activation: str = "gelu"
     initializer_range: float = 0.02
-    qa_dropout: float = 0.1
-    seq_classif_dropout: float = 0.2
+    qa_dropout: float | int = 0.1
+    seq_classif_dropout: float | int = 0.2
     pad_token_id: int | None = 0
     eos_token_id: int | list[int] | None = None
     bos_token_id: int | None = None

@@ -100,9 +100,9 @@ class FunnelConfig(PreTrainedConfig):
     d_head: int = 64
     d_inner: int = 3072
     hidden_act: str = "gelu_new"
-    hidden_dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.0
+    hidden_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     initializer_range: float = 0.1
     initializer_std: float | None = None
     layer_norm_eps: float = 1e-9

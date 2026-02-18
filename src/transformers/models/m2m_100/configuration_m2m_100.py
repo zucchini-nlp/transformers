@@ -112,9 +112,9 @@ class M2M100Config(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "relu"
     d_model: int = 1024
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     decoder_start_token_id: int | None = 2
     scale_embedding: int = True

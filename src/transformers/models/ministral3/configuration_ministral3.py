@@ -145,7 +145,7 @@ class Ministral3Config(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     def __post_init__(self, **kwargs):
         if self.rope_parameters is None:

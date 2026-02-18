@@ -132,9 +132,9 @@ class Starcoder2Config(PreTrainedConfig):
     pad_token_id: int | None = None
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = None
-    attention_dropout: float = 0.0
-    residual_dropout: float = 0.0
-    embedding_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    residual_dropout: float | int = 0.0
+    embedding_dropout: float | int = 0.0
     use_bias: bool = True
     tie_word_embeddings: bool = True
 

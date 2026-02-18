@@ -89,9 +89,9 @@ class Kosmos2_5TextConfig(PreTrainedConfig):
     ffn_dim: int = 6144
     attention_heads: int = 16
     activation_function: str = "gelu"
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     layerdrop: float = 0.0
     layer_norm_eps: float = 1e-5
     init_std: float = 0.02
@@ -165,7 +165,7 @@ class Kosmos2_5VisionConfig(PreTrainedConfig):
     dense_act_fn: str = "gelu_new"
     layer_norm_eps: float = 1e-6
     dropout_rate: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     max_num_patches: int = 4096
     initializer_factor: float = 1.0
     initializer_range: float = 0.02

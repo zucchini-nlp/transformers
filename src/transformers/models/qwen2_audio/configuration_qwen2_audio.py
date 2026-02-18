@@ -89,10 +89,10 @@ class Qwen2AudioEncoderConfig(PreTrainedConfig):
     encoder_ffn_dim: int = 5120
     encoder_layerdrop: float = 0.0
     d_model: int = 1280
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     activation_function: str = "gelu"
-    activation_dropout: float = 0.0
+    activation_dropout: float | int = 0.0
     scale_embedding: bool = False
     initializer_range: float = 0.02
     max_source_positions: int = 1500

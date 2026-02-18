@@ -115,7 +115,7 @@ class Glm4Config(PreTrainedConfig):
     num_key_value_heads: int = 2
     head_dim: int = 128
     hidden_act: str = "silu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     max_position_embeddings: int = 131072
     initializer_range: float = 0.02
     rms_norm_eps: float = 0.00000015625

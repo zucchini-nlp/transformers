@@ -91,8 +91,8 @@ class GroupViTTextConfig(PreTrainedConfig):
     max_position_embeddings: int = 77
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
     pad_token_id: int | None = 1
@@ -173,8 +173,8 @@ class GroupViTVisionConfig(PreTrainedConfig):
     num_channels: int = 3
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-5
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
     assign_eps: float = 1.0

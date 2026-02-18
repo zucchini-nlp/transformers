@@ -178,7 +178,7 @@ class MimiConfig(PreTrainedConfig):
     use_streaming: bool = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int = 250
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     layer_scale_initial_scale: float = 0.01
     attention_bias: bool = False
     tie_word_embeddings: bool = True

@@ -144,7 +144,7 @@ class YoutuConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     rope_interleave: bool | None = True
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     embedding_initializer_range: float | None = None
 
     def __post_init__(self, **kwargs):

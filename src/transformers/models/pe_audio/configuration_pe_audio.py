@@ -99,7 +99,7 @@ class PeAudioEncoderConfig(PreTrainedConfig):
     rms_norm_eps: float = 1e-5
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     def __post_init__(self, **kwargs):
         if self.num_key_value_heads is None:

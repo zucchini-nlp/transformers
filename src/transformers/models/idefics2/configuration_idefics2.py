@@ -90,7 +90,7 @@ class Idefics2VisionConfig(PreTrainedConfig):
     patch_size: int = 32
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
 
 
@@ -134,7 +134,7 @@ class Idefics2PerceiverConfig(PreTrainedConfig):
     resampler_n_heads: int = 16
     resampler_head_dim: int = 96
     num_key_value_heads: int = 4
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
 
     def validate_architecture(self):

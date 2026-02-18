@@ -149,7 +149,7 @@ class MoonshineConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     is_encoder_decoder: bool = True
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2
     pad_token_id: int | None = None

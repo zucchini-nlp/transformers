@@ -89,7 +89,7 @@ class Phi4MultimodalVisionConfig(PreTrainedConfig):
     patch_size: int = 14
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     crop_size: int = 448
     image_token_id: int = 200010
     feature_layer: int = -2
@@ -318,7 +318,7 @@ class Phi4MultimodalConfig(PreTrainedConfig):
     num_key_value_heads: int | None = 8
     resid_pdrop: float = 0.0
     embd_pdrop: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     hidden_act: str = "silu"
     max_position_embeddings: int = 131072
     original_max_position_embeddings: int | None = 4096

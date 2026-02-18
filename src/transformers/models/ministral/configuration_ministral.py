@@ -142,7 +142,7 @@ class MinistralConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = 4096
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     layer_types: list[str] | None = None
 

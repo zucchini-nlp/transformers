@@ -186,7 +186,7 @@ class Glm4MoeLiteConfig(PreTrainedConfig):
     rope_interleave: bool = True
     mlp_layer_types: list[str] | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     def __post_init__(self, **kwargs):
         # Default to MoE from the second layer and on

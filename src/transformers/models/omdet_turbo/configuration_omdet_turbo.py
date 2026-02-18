@@ -165,8 +165,8 @@ class OmDetTurboConfig(PreTrainedConfig):
     csp_activation: str = "silu"
     conv_norm_activation: str = "gelu"
     encoder_feedforward_activation: str = "relu"
-    encoder_feedforward_dropout: float = 0.0
-    encoder_dropout: float = 0.0
+    encoder_feedforward_dropout: float | int = 0.0
+    encoder_dropout: float | int = 0.0
     hidden_expansion: int = 1
     encoder_hidden_dim: int = 256
     vision_features_channels: list[int] | tuple[int, ...] = (256, 256, 256)
@@ -183,7 +183,7 @@ class OmDetTurboConfig(PreTrainedConfig):
     decoder_activation: str = "relu"
     decoder_dim_feedforward: int = 2048
     decoder_num_points: int = 4
-    decoder_dropout: float = 0.0
+    decoder_dropout: float | int = 0.0
     eval_size: int | None = None
     learn_initial_query: int = False
     cache_size: int = 100

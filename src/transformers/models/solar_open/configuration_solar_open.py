@@ -130,7 +130,7 @@ class SolarOpenConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     moe_intermediate_size: int = 1280
     num_experts_per_tok: int = 8
     n_shared_experts: int = 1

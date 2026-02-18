@@ -100,8 +100,8 @@ class InternVLVisionConfig(PreTrainedConfig):
     intermediate_size: int = 4096
     hidden_act: str = "gelu"
     hidden_dropout_prob: float = 0.0
-    attention_dropout: float = 0.0
-    projection_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    projection_dropout: float | int = 0.0
     initializer_range: float = 0.02
     norm_type: str = "layer_norm"
     layer_norm_eps: float = 1e-06

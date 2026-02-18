@@ -98,9 +98,9 @@ class AudioFlamingo3EncoderConfig(PreTrainedConfig):
     layerdrop: float = 0.0
     activation_function: str = "gelu"
     hidden_size: int = 1280
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     initializer_range: float = 0.02
     scale_embedding: bool = False
     max_source_positions: int = 1500

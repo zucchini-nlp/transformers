@@ -136,7 +136,7 @@ class JanusVisionConfig(SiglipVisionConfig):
     attention_bias: bool = True
     hidden_dropout_rate: float = 0.0
     projection_dim: int = 2048
-    projection_dropout: float = 0.0
+    projection_dropout: float | int = 0.0
     use_qk_norm: bool = False
     initializer_range: float = 0.02
     depth: int = 2
@@ -199,7 +199,7 @@ class JanusVQVAEConfig(ChameleonVQVAEConfig):
     base_channels: int = 128
     channel_multiplier: list[int] | tuple[int, ...] = (1, 1, 2, 2, 4)
     num_res_blocks: int = 2
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     initializer_range: float = 0.02
     projection_dim: int = 2048
     num_hidden_layers: int = 2

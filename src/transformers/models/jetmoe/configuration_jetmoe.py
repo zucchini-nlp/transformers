@@ -121,7 +121,7 @@ class JetMoeConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     rms_norm_eps: float = 1e-6
     initializer_range: float = 0.01
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     def __post_init__(self, **kwargs):
         self.num_attention_heads = self.num_key_value_heads * self.num_experts_per_tok

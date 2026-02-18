@@ -127,7 +127,7 @@ class OlmoeConfig(PreTrainedConfig):
     tie_word_embeddings: int = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     clip_qkv: float | None = None
     num_experts_per_tok: int = 8
     num_experts: int = 64

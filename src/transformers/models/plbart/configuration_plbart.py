@@ -118,11 +118,11 @@ class PLBartConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "gelu"
     d_model: int = 768
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     scale_embedding: bool = True
     pad_token_id: int | None = 1
     bos_token_id: int | None = 0

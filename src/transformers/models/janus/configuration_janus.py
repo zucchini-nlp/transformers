@@ -90,12 +90,12 @@ class JanusVisionConfig(PreTrainedConfig):
     patch_size: int = 16
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     mlp_ratio: float | int = 4.0
     attention_bias: bool = True
     hidden_dropout_rate: float = 0.0
     projection_dim: int = 2048
-    projection_dropout: float = 0.0
+    projection_dropout: float | int = 0.0
     use_qk_norm: bool = False
     initializer_range: float = 0.02
     depth: int = 2
@@ -160,7 +160,7 @@ class JanusVQVAEConfig(PreTrainedConfig):
     base_channels: int = 128
     channel_multiplier: list[int] | tuple[int, ...] = (1, 1, 2, 2, 4)
     num_res_blocks: int = 2
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     initializer_range: float = 0.02
     num_patches: int = 32
     out_channels: int = 3

@@ -193,7 +193,7 @@ class Pix2StructVisionConfig(PreTrainedConfig):
     dense_act_fn: str = "gelu_new"
     layer_norm_eps: float = 1e-6
     dropout_rate: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 1e-10
     initializer_factor: float = 1.0
     seq_len: int = 4096

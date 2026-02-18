@@ -227,10 +227,10 @@ class Sam2VideoConfig(PreTrainedConfig):
     memory_attention_downsample_rate: int = 1
     memory_attention_feed_forward_hidden_size: int = 2048
     memory_attention_feed_forward_hidden_act: str = "relu"
-    memory_attention_dropout: float = 0.1
+    memory_attention_dropout: float | int = 0.1
     memory_attention_rope_theta: int = 10000
     memory_attention_rope_feat_sizes: list[int] | None = None
-    memory_attention_rope_dropout: float = 0.1
+    memory_attention_rope_dropout: float | int = 0.1
     memory_encoder_hidden_size: int = 256
     memory_encoder_output_channels: int = 64
     mask_downsampler_embed_dim: int = 256

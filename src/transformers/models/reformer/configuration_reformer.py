@@ -188,7 +188,7 @@ class ReformerConfig(PreTrainedConfig):
     vocab_size: int = 320
     tie_word_embeddings: bool = False
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     bos_token_id: int | None = None
     pad_token_id: int | None = 0
 

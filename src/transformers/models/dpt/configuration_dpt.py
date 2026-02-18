@@ -153,7 +153,7 @@ class DPTConfig(PreTrainedConfig):
     use_auxiliary_head: bool = True
     auxiliary_loss_weight: float = 0.4
     semantic_loss_ignore_index: int = 255
-    semantic_classifier_dropout: float = 0.1
+    semantic_classifier_dropout: float | int = 0.1
     backbone_featmap_shape: list[int] | tuple[int, ...] | None = (1, 1024, 24, 24)
     neck_ignore_stages: list[int] | tuple[int, ...] = (0, 1)
     backbone_config: dict | PreTrainedConfig | None = None

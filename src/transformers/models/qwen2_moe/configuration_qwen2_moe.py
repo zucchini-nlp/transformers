@@ -156,7 +156,7 @@ class Qwen2MoeConfig(PreTrainedConfig):
     use_sliding_window: bool = False
     sliding_window: int | None = 4096
     max_window_layers: int = 28
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     decoder_sparse_step: int = 1
     moe_intermediate_size: int = 1408
     shared_expert_intermediate_size: int = 5632

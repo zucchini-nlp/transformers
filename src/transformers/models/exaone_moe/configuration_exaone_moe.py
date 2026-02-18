@@ -168,7 +168,7 @@ class ExaoneMoeConfig(PreTrainedConfig):
     pad_token_id: int | None = 0
     tie_word_embeddings: bool = False
     rope_parameters: dict | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     sliding_window: int = 4096
     sliding_window_pattern: int = 4
     layer_types: list[str] | None = None

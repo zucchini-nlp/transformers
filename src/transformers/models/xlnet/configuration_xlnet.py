@@ -153,7 +153,7 @@ class XLNetConfig(PreTrainedConfig):
     attn_type: str = "bi"
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-12
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     mem_len: int = 512
     reuse_len: int | None = None
     use_mems_eval: bool = True
@@ -164,7 +164,7 @@ class XLNetConfig(PreTrainedConfig):
     summary_type: str = "last"
     summary_use_proj: bool = True
     summary_activation: str = "tanh"
-    summary_last_dropout: float = 0.1
+    summary_last_dropout: float | int = 0.1
     start_n_top: int = 5
     end_n_top: int = 5
     pad_token_id: int | None = 5

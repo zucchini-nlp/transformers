@@ -146,7 +146,7 @@ class FlexOlmoConfig(PreTrainedConfig):
     tie_word_embeddings: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     num_experts_per_tok: int | None = 5
     num_experts: int | None = 7
     output_router_logits: bool | None = False

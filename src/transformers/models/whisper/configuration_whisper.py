@@ -202,9 +202,9 @@ class WhisperConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "gelu"
     d_model: int = 384
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     scale_embedding: bool = False
     max_source_positions: int = 1500

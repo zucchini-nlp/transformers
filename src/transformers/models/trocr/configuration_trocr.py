@@ -100,9 +100,9 @@ class TrOCRConfig(PreTrainedConfig):
     decoder_ffn_dim: int = 4096
     activation_function: str = "gelu"
     max_position_embeddings: int = 512
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     decoder_start_token_id: int = 2
     init_std: float = 0.02
     decoder_layerdrop: float = 0.0

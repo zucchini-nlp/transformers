@@ -97,7 +97,7 @@ class LiltConfig(PreTrainedConfig):
     pad_token_id: int | None = 0
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     channel_shrink_ratio: int = 4
     max_2d_position_embeddings: int = 1024
 

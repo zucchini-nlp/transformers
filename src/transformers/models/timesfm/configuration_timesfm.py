@@ -91,7 +91,7 @@ class TimesFmConfig(PreTrainedConfig):
     rms_norm_eps: float = 1e-6
     quantiles: list[float] | tuple[float, ...] = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
     pad_val: float = 1123581321.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     use_positional_embedding: bool = False
     initializer_range: float = 0.02
     min_timescale: int = 1

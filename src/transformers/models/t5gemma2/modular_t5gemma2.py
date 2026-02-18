@@ -306,7 +306,7 @@ class T5Gemma2Config(PreTrainedConfig):
     decoder: T5Gemma2DecoderConfig | dict[str, Any] | None = None
     is_encoder_decoder: bool = True
     dropout_rate: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     classifier_dropout_rate: float = 0.0
     initializer_range: float = 0.02
     image_token_index: int = 256_001

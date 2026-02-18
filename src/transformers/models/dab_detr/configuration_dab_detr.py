@@ -144,9 +144,9 @@ class DabDetrConfig(PreTrainedConfig):
     is_encoder_decoder: int = True
     activation_function: str = "prelu"
     hidden_size: int = 256
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     init_xavier_std: float = 1.0
     auxiliary_loss: bool = False

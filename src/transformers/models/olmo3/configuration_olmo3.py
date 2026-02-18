@@ -138,7 +138,7 @@ class Olmo3Config(PreTrainedConfig):
     tie_word_embeddings: int = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     rms_norm_eps: float = 1e-5
 

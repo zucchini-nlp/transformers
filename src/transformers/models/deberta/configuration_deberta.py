@@ -115,7 +115,7 @@ class DebertaConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = None
     position_biased_input: bool = True
     pos_att_type: str | list[str] | None = None
-    pooler_dropout: float = 0.0
+    pooler_dropout: float | int = 0.0
     pooler_hidden_act: str = "gelu"
     legacy: bool = True
     tie_word_embeddings: bool = True

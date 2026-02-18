@@ -127,7 +127,7 @@ class PhiConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     resid_pdrop: float = 0.0
     embd_pdrop: float = 0.0
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     hidden_act: str = "gelu_new"
     max_position_embeddings: int = 2048
     initializer_range: float = 0.02

@@ -117,7 +117,7 @@ class XmodConfig(PreTrainedConfig):
     bos_token_id: int | None = 0
     eos_token_id: int | None = 2
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     pre_norm: bool = False
     adapter_reduction_factor: int = 2
     adapter_layer_norm: bool = False

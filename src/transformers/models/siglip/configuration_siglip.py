@@ -93,7 +93,7 @@ class SiglipTextConfig(PreTrainedConfig):
     max_position_embeddings: int = 64
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     # This differs from `CLIPTokenizer`'s default and from openai/siglip
     # See https://github.com/huggingface/transformers/pull/24773#issuecomment-1632287538
     pad_token_id: int | None = 1
@@ -168,7 +168,7 @@ class SiglipVisionConfig(PreTrainedConfig):
     patch_size: int = 16
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
 
 @strict(accept_kwargs=True)

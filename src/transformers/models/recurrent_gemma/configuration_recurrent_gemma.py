@@ -117,7 +117,7 @@ class RecurrentGemmaConfig(PreTrainedConfig):
     hidden_activation: str = "gelu_pytorch_tanh"
     rope_parameters: RopeParameters | dict | None = None
     block_types: list[str] | tuple[str, ...] | None = ("recurrent", "recurrent", "attention")
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_key_value_heads: int | None = None
     attention_bias: bool = False
     w_init_variance_scale: float = 0.01

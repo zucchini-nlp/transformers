@@ -79,7 +79,7 @@ class IdeficsVisionConfig(PreTrainedConfig):
     num_channels: int = 3
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
 
@@ -214,7 +214,7 @@ class IdeficsConfig(PreTrainedConfig):
     intermediate_size: int = 11008
     num_hidden_layers: int = 32
     num_attention_heads: int = 32
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     hidden_act: str = "silu"
     initializer_range: float = 0.02
     alpha_initializer: str = "zeros"

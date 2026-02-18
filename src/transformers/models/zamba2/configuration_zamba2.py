@@ -155,7 +155,7 @@ class Zamba2Config(PreTrainedConfig):
     hidden_act: str = "gelu"
     num_attention_heads: int = 32
     num_key_value_heads: int | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_mem_blocks: int = 1
     use_shared_attention_adapter: bool = False
     adapter_rank: int = 128

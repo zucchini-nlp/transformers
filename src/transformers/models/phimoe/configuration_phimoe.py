@@ -128,7 +128,7 @@ class PhimoeConfig(PreTrainedConfig):
     tie_word_embeddings: int = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 2
     num_local_experts: int = 16
     output_router_logits: bool = False

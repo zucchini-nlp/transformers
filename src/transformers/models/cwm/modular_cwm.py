@@ -117,7 +117,7 @@ class CwmConfig(LlamaConfig):
     eos_token_id: int | list[int] | None = None
     bos_token_id: int = 128000
     tie_word_embeddings: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     pretraining_tp: int = 1
     mlp_bias: bool = False
     rope_parameters: dict | None = None

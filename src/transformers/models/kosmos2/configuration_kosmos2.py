@@ -95,9 +95,9 @@ class Kosmos2TextConfig(PreTrainedConfig):
     ffn_dim: int = 8192
     attention_heads: int = 32
     activation_function: str = "gelu"
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     layerdrop: float = 0.0
     layer_norm_eps: float = 1e-5
     init_std: float = 0.02
@@ -162,7 +162,7 @@ class Kosmos2VisionConfig(PreTrainedConfig):
     patch_size: int = 14
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
 

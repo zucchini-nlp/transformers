@@ -112,9 +112,9 @@ class GPTNeoXConfig(PreTrainedConfig):
     num_attention_heads: int = 64
     intermediate_size: int = 24576
     hidden_act: str = "gelu"
-    attention_dropout: float = 0.0
-    hidden_dropout: float = 0.0
-    classifier_dropout: float = 0.1
+    attention_dropout: float | int = 0.0
+    hidden_dropout: float | int = 0.0
+    classifier_dropout: float | int = 0.1
     max_position_embeddings: int = 2048
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5

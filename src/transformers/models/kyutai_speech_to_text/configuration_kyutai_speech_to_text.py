@@ -139,7 +139,7 @@ class KyutaiSpeechToTextConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     use_cache: bool = True
     sliding_window: int = 375
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     ffn_dim: int = 11264
     rms_norm_eps: float = 1e-8
     num_codebooks: int = 32

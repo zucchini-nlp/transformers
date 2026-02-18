@@ -96,7 +96,7 @@ class UnivNetConfig(PreTrainedConfig):
     kernel_predictor_num_blocks: int = 3
     kernel_predictor_hidden_channels: int = 64
     kernel_predictor_conv_size: int = 3
-    kernel_predictor_dropout: float = 0.0
+    kernel_predictor_dropout: float | int = 0.0
     initializer_range: float = 0.01
     leaky_relu_slope: float = 0.2
 

@@ -91,7 +91,7 @@ class GlmAsrEncoderConfig(PreTrainedConfig):
     max_position_embeddings: int = 1500
     initializer_range: float = 0.02
     rope_parameters: dict | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_mel_bins: int = 128
 
     def __post_init__(self, **kwargs):

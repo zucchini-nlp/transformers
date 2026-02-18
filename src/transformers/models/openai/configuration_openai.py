@@ -137,7 +137,7 @@ class OpenAIGPTConfig(PreTrainedConfig):
     summary_use_proj: bool = True
     summary_activation: str | None = None
     summary_proj_to_labels: bool = True
-    summary_first_dropout: float = 0.1
+    summary_first_dropout: float | int = 0.1
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None

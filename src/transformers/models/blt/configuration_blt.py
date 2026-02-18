@@ -44,7 +44,7 @@ class BltLocalEncoderConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     num_hidden_layers: int | None = 1
     rms_norm_eps: float | None = 1e-5
-    dropout: float | None = 0.0
+    dropout: float | int | None = 0.0
     max_position_embeddings: int | None = 24576
     rope_parameters: RopeParameters | dict | None = None
     hidden_act: str | None = "silu"
@@ -76,7 +76,7 @@ class BltLocalDecoderConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     num_hidden_layers: int | None = 9
     rms_norm_eps: float | None = 1e-5
-    dropout: float | None = 0.0
+    dropout: float | int | None = 0.0
     max_position_embeddings: int | None = 24576
     rope_parameters: RopeParameters | dict | None = None
     hidden_act: str | None = "silu"
@@ -109,7 +109,7 @@ class BltGlobalTransformerConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     num_hidden_layers: int | None = 25
     rms_norm_eps: float | None = 1e-5
-    dropout: float | None = 0.0
+    dropout: float | int | None = 0.0
     max_position_embeddings: int | None = 4096
     rope_parameters: RopeParameters | dict | None = None
     hidden_act: str | None = "silu"
@@ -175,7 +175,7 @@ class BltPatcherConfig(PreTrainedConfig):
     num_key_value_heads: int | None = None
     max_position_embeddings: int | None = 8192
     rms_norm_eps: float | None = 1e-5
-    dropout: float | None = 0.0
+    dropout: float | int | None = 0.0
     intermediate_size: int | None = 2048
     rope_parameters: RopeParameters | dict | None = None
     initializer_range: float | None = 0.02

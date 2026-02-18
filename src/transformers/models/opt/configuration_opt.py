@@ -97,8 +97,8 @@ class OPTConfig(PreTrainedConfig):
     do_layer_norm_before: bool = True
     _remove_final_layer_norm: bool = False
     word_embed_proj_dim: int | None = None
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
     num_attention_heads: int = 12
     activation_function: str = "relu"
     layerdrop: float = 0.0

@@ -149,7 +149,7 @@ class SmolLM3Config(PreTrainedConfig):
     no_rope_layer_interval: int = 4
     layer_types: list[str] | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     mlp_bias: bool = False
     tie_word_embeddings: bool = True
 

@@ -178,7 +178,7 @@ class GlmMoeDsaConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     mlp_layer_types: list[str] | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     index_topk: int = 2048
     index_head_dim: int = 128
     index_n_heads: int = 32

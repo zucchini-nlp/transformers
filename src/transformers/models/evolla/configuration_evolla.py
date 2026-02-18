@@ -197,7 +197,7 @@ class EvollaConfig(PreTrainedConfig):
     rms_norm_eps: float | None = 1e-05
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     mlp_bias: bool | None = False
     aligner_ffn_mult: int | None = 4
     aligner_enable_bias: bool | None = True

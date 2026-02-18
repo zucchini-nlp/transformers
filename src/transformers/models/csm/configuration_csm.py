@@ -127,7 +127,7 @@ class CsmDepthDecoderConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = None
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     mlp_bias: bool | None = False
     head_dim: int | None = None
 
@@ -265,7 +265,7 @@ class CsmConfig(PreTrainedConfig):
     audio_eos_token_id: int | list[int] | None = 128003
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     mlp_bias: bool | None = False
     head_dim: int | None = None
     tie_codebooks_embeddings: bool | None = True

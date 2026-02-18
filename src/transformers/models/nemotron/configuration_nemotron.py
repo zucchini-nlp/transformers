@@ -119,7 +119,7 @@ class NemotronConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     mlp_bias: bool = False
 
     def __post_init__(self, **kwargs):

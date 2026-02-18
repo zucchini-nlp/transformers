@@ -76,7 +76,7 @@ class Ovis2VisionConfig(PreTrainedConfig):
     image_size: int = 224
     patch_size: int = 14
     rms_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     qkv_bias: bool = False
     mlp_bias: bool = False
     hidden_act: str = "silu"

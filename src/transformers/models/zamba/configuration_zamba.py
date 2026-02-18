@@ -142,7 +142,7 @@ class ZambaConfig(PreTrainedConfig):
     bos_token_id: int | None = 1
     eos_token_id: int | None = 2
     max_position_embeddings: int = 4096
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     attn_layer_period: int = 6
     attn_layer_offset: int = 4
     use_mamba_kernels: bool = True

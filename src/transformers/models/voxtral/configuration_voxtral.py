@@ -92,14 +92,14 @@ class VoxtralEncoderConfig(PreTrainedConfig):
     num_mel_bins: int = 128
     max_source_positions: int = 1500
     initializer_range: float = 0.02
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     # TODO: @eustlb, we do not use dropout and layerdrop, yet we need to hardcode them
     # to be able to use Whisper with modular (here actually from Qwen2-Audio and copied from).
     # After a future Whisper refactor, we should remove this.
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     layerdrop: float = 0.0
-    activation_dropout: float = 0.0
+    activation_dropout: float | int = 0.0
 
 
 @strict(accept_kwargs=True)

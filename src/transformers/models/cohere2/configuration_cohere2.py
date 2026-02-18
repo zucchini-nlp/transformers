@@ -141,7 +141,7 @@ class Cohere2Config(PreTrainedConfig):
     tie_word_embeddings: bool | None = True
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     sliding_window: int | None = 4096
     layer_types: list[str] | None = None
 

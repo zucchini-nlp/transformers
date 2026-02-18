@@ -151,7 +151,7 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = True
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     moe_intermediate_size: int = 1408
     num_experts_per_tok: int = 8
     n_shared_experts: int = 1
@@ -234,7 +234,7 @@ class Glm4vMoeVisionConfig(PreTrainedConfig):
     hidden_size: int = 1536
     hidden_act: str = "silu"
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_heads: int = 12
     in_channels: int = 3
     image_size: int = 336

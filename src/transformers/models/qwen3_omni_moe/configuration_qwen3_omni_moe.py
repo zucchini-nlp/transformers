@@ -99,10 +99,10 @@ class Qwen3OmniMoeAudioEncoderConfig(PreTrainedConfig):
     encoder_attention_heads: int = 20
     encoder_ffn_dim: int = 5120
     d_model: int = 1280
-    dropout: float = 0.0
-    attention_dropout: float = 0.0
+    dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     activation_function: str = "gelu"
-    activation_dropout: float = 0.0
+    activation_dropout: float | int = 0.0
     scale_embedding: bool = False
     initializer_range: float = 0.02
     max_source_positions: int = 1500
@@ -265,7 +265,7 @@ class Qwen3OmniMoeTextConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
     sliding_window: int | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     decoder_sparse_step: int = 1
     moe_intermediate_size: int = 768
     num_experts_per_tok: int = 8
@@ -501,7 +501,7 @@ class Qwen3OmniMoeTalkerCodePredictorConfig(PreTrainedConfig):
     sliding_window: int | None = None
     max_window_layers: int = 28
     layer_types: list[str] | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
@@ -657,7 +657,7 @@ class Qwen3OmniMoeTalkerTextConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
     sliding_window: int | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     decoder_sparse_step: int = 1
     moe_intermediate_size: int = 384
     num_experts_per_tok: int = 8
@@ -878,7 +878,7 @@ class Qwen3OmniMoeCode2WavConfig(PreTrainedConfig):
     upsample_rates: list[int] | tuple[int, ...] = (8, 5, 4, 3)
     upsampling_ratios: list[int] | tuple[int, ...] = (2, 2)
     decoder_dim: int = 1536
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
 
     @property

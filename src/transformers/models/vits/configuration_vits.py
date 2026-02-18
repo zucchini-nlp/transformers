@@ -163,9 +163,9 @@ class VitsConfig(PreTrainedConfig):
     flow_size: int = 192
     spectrogram_bins: int = 513
     hidden_act: str = "relu"
-    hidden_dropout: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.1
+    hidden_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
     use_stochastic_duration_prediction: bool = True
@@ -182,7 +182,7 @@ class VitsConfig(PreTrainedConfig):
     duration_predictor_flow_bins: int = 10
     duration_predictor_tail_bound: float = 5.0
     duration_predictor_kernel_size: int = 3
-    duration_predictor_dropout: float = 0.5
+    duration_predictor_dropout: float | int = 0.5
     duration_predictor_num_flows: int = 4
     duration_predictor_filter_channels: int = 256
     prior_encoder_num_flows: int = 4
@@ -190,7 +190,7 @@ class VitsConfig(PreTrainedConfig):
     posterior_encoder_num_wavenet_layers: int = 16
     wavenet_kernel_size: int = 5
     wavenet_dilation_rate: int = 1
-    wavenet_dropout: float = 0.0
+    wavenet_dropout: float | int = 0.0
     speaking_rate: float = 1.0
     noise_scale: float = 0.667
     noise_scale_duration: float = 0.8

@@ -173,8 +173,8 @@ class PPDocLayoutV3Config(PreTrainedConfig):
     encoder_layers: int = 1
     encoder_ffn_dim: int = 1024
     encoder_attention_heads: int = 8
-    dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     encode_proj_layers: list[int] | tuple[int, ...] = (2,)
     positional_encoding_temperature: int = 10000
     encoder_activation_function: str = "gelu"
@@ -197,7 +197,7 @@ class PPDocLayoutV3Config(PreTrainedConfig):
     decoder_layers: int = 6
     decoder_attention_heads: int = 8
     decoder_activation_function: str = "relu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_denoising: int = 100
     learn_initial_query: bool = False
     anchor_image_size: int | None = None

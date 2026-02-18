@@ -257,7 +257,7 @@ class LwDetrConfig(PreTrainedConfig):
     c2f_num_blocks: int = 3
     activation_function: str = "silu"
     batch_norm_eps: float = 1e-5
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     decoder_ffn_dim: int = 2048
     decoder_n_points: int = 4
     decoder_layers: int = 3
@@ -266,8 +266,8 @@ class LwDetrConfig(PreTrainedConfig):
     decoder_activation_function: str = "relu"
     num_queries: int = 300
     attention_bias: bool = True
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     group_detr: int = 13
     init_std: float = 0.02
     disable_custom_kernels: bool = True

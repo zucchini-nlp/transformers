@@ -87,7 +87,7 @@ class GraniteSpeechEncoderConfig(PreTrainedConfig):
     output_dim: int = 42
     context_size: int = 200
     max_pos_emb: int = 512
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     conv_kernel_size: int = 15
     conv_expansion_factor: int = 2
 

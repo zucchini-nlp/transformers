@@ -95,8 +95,8 @@ class GPTNeoXJapaneseConfig(PreTrainedConfig):
     bos_token_id: int | None = 31996
     eos_token_id: int | list[int] | None = 31999
     rope_parameters: RopeParameters | dict | None = None
-    attention_dropout: float = 0.1
-    hidden_dropout: float = 0.0
+    attention_dropout: float | int = 0.1
+    hidden_dropout: float | int = 0.0
     is_decoder: bool = False
     pad_token_id: int | None = None
     tie_word_embeddings: bool = True

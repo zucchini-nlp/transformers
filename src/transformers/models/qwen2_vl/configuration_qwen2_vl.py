@@ -153,7 +153,7 @@ class Qwen2VLTextConfig(PreTrainedConfig):
     sliding_window: int | None = 4096
     max_window_layers: int | None = 80
     layer_types: list[str] | None = None
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     rope_parameters: RopeParameters | dict | None = None
     bos_token_id: int | None = 151643
     eos_token_id: int | list[int] | None = 151645

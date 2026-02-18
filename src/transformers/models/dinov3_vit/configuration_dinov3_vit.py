@@ -120,7 +120,7 @@ class DINOv3ViTConfig(BackboneConfigMixin, PreTrainedConfig):
     num_hidden_layers: int = 12
     num_attention_heads: int = 6
     hidden_act: str = "gelu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
     rope_theta: float = 100.0

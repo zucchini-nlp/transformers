@@ -112,7 +112,7 @@ class LukeConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-12
     use_entity_aware_attention: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     pad_token_id: int | None = 1
     bos_token_id: int | None = 0
     eos_token_id: int | None = 2

@@ -157,7 +157,7 @@ class Qwen3_5MoeTextConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     head_dim: int = 256
     linear_conv_kernel_dim: int = 4
     linear_key_head_dim: int = 128

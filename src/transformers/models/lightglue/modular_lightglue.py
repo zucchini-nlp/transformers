@@ -117,7 +117,7 @@ class LightGlueConfig(PreTrainedConfig):
     filter_threshold: float = 0.1
     initializer_range: float = 0.02
     hidden_act: str = "gelu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     attention_bias: bool = True
     # LightGlue can be used with other models than SuperPoint as keypoint detector
     # We provide the trust_remote_code argument to allow the use of other models

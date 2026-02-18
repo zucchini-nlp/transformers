@@ -156,11 +156,11 @@ class InformerConfig(PreTrainedConfig):
     decoder_layers: int = 2
     is_encoder_decoder: bool = True
     activation_function: str = "gelu"
-    dropout: float = 0.05
+    dropout: float | int = 0.05
     encoder_layerdrop: float = 0.1
     decoder_layerdrop: float = 0.1
-    attention_dropout: float = 0.1
-    activation_dropout: float = 0.1
+    attention_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.1
     num_parallel_samples: int = 100
     init_std: float = 0.02
     use_cache: bool = True

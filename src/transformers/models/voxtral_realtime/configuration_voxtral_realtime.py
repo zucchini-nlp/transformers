@@ -114,7 +114,7 @@ class VoxtralRealtimeEncoderConfig(PreTrainedConfig, RotaryEmbeddingConfigMixin)
     activation_function: str = "gelu"
     num_mel_bins: int = 128
     initializer_range: float = 0.02
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     hidden_act: str = "silu"
     max_position_embeddings: int = 1500
     rms_norm_eps: float = 1e-05

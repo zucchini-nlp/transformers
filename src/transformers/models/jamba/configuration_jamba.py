@@ -136,7 +136,7 @@ class JambaConfig(PreTrainedConfig):
     bos_token_id: int | None = 1
     eos_token_id: int | None = 2
     max_position_embeddings: int = 262144
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 2
     num_experts: int = 16
     expert_layer_period: int = 2

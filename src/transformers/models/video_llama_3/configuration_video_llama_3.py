@@ -69,7 +69,7 @@ class VideoLlama3VisionConfig(PreTrainedConfig):
     patch_size: int = 16
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
 
 @strict(accept_kwargs=True)

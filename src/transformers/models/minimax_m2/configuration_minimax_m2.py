@@ -152,7 +152,7 @@ class MiniMaxM2Config(PreTrainedConfig):
     bos_token_id: int | None = 200034
     eos_token_id: int | list[int] | None = 200020
     tie_word_embeddings: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 8
     num_local_experts: int = 256
     output_router_logits: bool = False

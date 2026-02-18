@@ -171,7 +171,7 @@ class OneFormerConfig(PreTrainedConfig):
     decoder_layers: int = 10
     use_task_norm: bool = True
     num_attention_heads: int = 8
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     dim_feedforward: int = 2048
     pre_norm: bool = False
     enforce_input_proj: bool = False

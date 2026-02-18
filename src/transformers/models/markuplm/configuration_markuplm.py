@@ -118,7 +118,7 @@ class MarkupLMConfig(PreTrainedConfig):
     xpath_unit_hidden_size: int = 32
     max_depth: int = 50
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
 
 
 __all__ = ["MarkupLMConfig"]

@@ -111,7 +111,7 @@ class EfficientLoFTRConfig(PreTrainedConfig):
     kv_aggregation_stride: int = 4
     num_attention_layers: int = 4
     num_attention_heads: int = 8
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     attention_bias: bool = False
     mlp_activation_function: str = "leaky_relu"
     coarse_matching_skip_softmax: bool = False

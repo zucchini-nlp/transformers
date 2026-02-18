@@ -91,7 +91,7 @@ class Emu3VQVAEConfig(PreTrainedConfig):
     attn_resolutions: list[int] | tuple[int, ...] = (3,)
     hidden_size: int = 1024
     num_attention_heads: int = 1
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
 
 @strict(accept_kwargs=True)
@@ -192,7 +192,7 @@ class Emu3TextConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     mlp_bias = False
     attention_bias = False
-    attention_dropout: float = 0.1
+    attention_dropout: float | int = 0.1
     initializer_range: float = 0.02
     tie_word_embeddings: bool | None = False
 

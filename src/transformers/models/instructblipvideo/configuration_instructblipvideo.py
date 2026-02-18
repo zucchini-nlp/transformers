@@ -96,7 +96,7 @@ class InstructBlipVideoVisionConfig(PreTrainedConfig):
     patch_size: int = 14
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 1e-10
     qkv_bias: bool = True
 

@@ -99,7 +99,7 @@ class Aimv2VisionConfig(PreTrainedConfig):
     image_size: int = 224
     patch_size: int = 14
     hidden_act: str = "silu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     rms_norm_eps: float = 1e-5
     qkv_bias: bool = False
     mlp_bias: bool = False
@@ -162,7 +162,7 @@ class Aimv2TextConfig(PreTrainedConfig):
     num_attention_heads: int = 6
     max_position_embeddings: int = 77
     hidden_act: str = "silu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     eos_token_id: int | list[int] | None = 49407
     projection_size: int | None = None
     rms_norm_eps: float = 1e-5

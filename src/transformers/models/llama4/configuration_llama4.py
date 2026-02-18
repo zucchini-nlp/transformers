@@ -110,8 +110,8 @@ class Llama4VisionConfig(PreTrainedConfig):
     projector_input_dim: int = 4096
     projector_output_dim: int = 4096
     multi_modal_projector_bias: bool = False
-    projector_dropout: float = 0.0
-    attention_dropout: float = 0.0
+    projector_dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None
 
 
@@ -256,7 +256,7 @@ class Llama4TextConfig(PreTrainedConfig):
     bos_token_id: int | None = 1
     eos_token_id: int | None = 2
     tie_word_embeddings: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 1
     num_local_experts: int = 16
     moe_layers: list[int] | None = None

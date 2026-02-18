@@ -115,7 +115,7 @@ class NanoChatConfig(PretrainedConfig):
     num_key_value_heads: int | None = None
     max_position_embeddings: int = 2048
     hidden_act: str = "relu2"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     rms_norm_eps: float = 1e-6
     initializer_range: float = 0.02
     rope_parameters: RopeParameters | dict | None = None

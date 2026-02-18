@@ -105,7 +105,7 @@ class ConvBertConfig(PreTrainedConfig):
     head_ratio: int = 2
     conv_kernel_size: int = 9
     num_groups: int = 1
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     is_decoder: bool = False
     add_cross_attention: bool = False
     tie_word_embeddings: bool = True

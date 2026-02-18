@@ -132,7 +132,7 @@ class OlmoConfig(PreTrainedConfig):
     tie_word_embeddings: int = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     clip_qkv: float | None = None
 
     def __post_init__(self, **kwargs):

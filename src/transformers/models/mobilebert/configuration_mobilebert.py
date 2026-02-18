@@ -122,7 +122,7 @@ class MobileBertConfig(PreTrainedConfig):
     num_feedforward_networks: int = 4
     normalization_type: str = "no_norm"
     classifier_activation: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):

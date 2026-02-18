@@ -130,7 +130,7 @@ class GraniteMoeSharedConfig(PreTrainedConfig):
     tie_word_embeddings: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     embedding_multiplier: float | None = 1.0
     logits_scaling: float | None = 1.0
     residual_multiplier: float | None = 1.0

@@ -98,7 +98,7 @@ class ProphetNetConfig(PreTrainedConfig):
         "num_attention_heads": "num_encoder_attention_heads",
     }
 
-    activation_dropout: float = 0.1
+    activation_dropout: float | int = 0.1
     activation_function: str = "gelu"
     vocab_size: int = 30522
     hidden_size: int = 1024
@@ -108,8 +108,8 @@ class ProphetNetConfig(PreTrainedConfig):
     decoder_ffn_dim: int = 4096
     num_decoder_layers: int = 12
     num_decoder_attention_heads: int = 16
-    attention_dropout: float = 0.1
-    dropout: float = 0.1
+    attention_dropout: float | int = 0.1
+    dropout: float | int = 0.1
     max_position_embeddings: int = 512
     init_std: float = 0.02
     is_encoder_decoder: bool = True

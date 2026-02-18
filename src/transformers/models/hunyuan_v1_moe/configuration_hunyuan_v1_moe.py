@@ -125,7 +125,7 @@ class HunYuanMoEV1Config(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts: int = 1
     moe_topk: int = 1
     head_dim: int | None = None

@@ -65,7 +65,7 @@ class GptOssConfig(PreTrainedConfig):
     max_position_embeddings: int = 131072
     rms_norm_eps: float = 1e-5
     rope_parameters: dict | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 4
     router_aux_loss_coef: float = 0.9
     output_router_logits: bool = False

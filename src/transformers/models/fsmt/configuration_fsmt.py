@@ -142,9 +142,9 @@ class FSMTConfig(PreTrainedConfig):
     decoder_layers: int = 12
     decoder_attention_heads: int = 16
     decoder_layerdrop: float = 0.0
-    attention_dropout: float = 0.0
-    dropout: float = 0.1
-    activation_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    dropout: float | int = 0.1
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     decoder_start_token_id: int | None = 2
     is_encoder_decoder: bool = True

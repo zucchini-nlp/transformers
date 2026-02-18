@@ -166,12 +166,12 @@ class ModernBertDecoderConfig(PreTrainedConfig):
     cls_token_id: int = 50281
     sep_token_id: int = 50282
     attention_bias: bool = False
-    attention_dropout: float = 0.0
-    embedding_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    embedding_dropout: float | int = 0.0
     mlp_bias: bool = False
-    mlp_dropout: float = 0.0
+    mlp_dropout: float | int = 0.0
     decoder_bias: bool = True
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     classifier_bias: bool = False
     classifier_activation: str = "gelu"
     use_cache: bool = True
@@ -245,7 +245,7 @@ def eager_attention_forward(
     key: torch.Tensor,
     value: torch.Tensor,
     attention_mask: torch.Tensor | None,
-    dropout: float = 0.0,
+    dropout: float | int = 0.0,
     scaling: float | None = None,
     sliding_window: int | None = None,
     **kwargs,

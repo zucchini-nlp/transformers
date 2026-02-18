@@ -132,7 +132,7 @@ class Qwen3VLTextConfig(PreTrainedConfig):
     use_cache: bool = True
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     pad_token_id: int | None = None
 
     def __post_init__(self, **kwargs):

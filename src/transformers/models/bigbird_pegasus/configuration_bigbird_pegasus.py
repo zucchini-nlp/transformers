@@ -125,12 +125,12 @@ class BigBirdPegasusConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "gelu_new"
     d_model: int = 1024
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     decoder_start_token_id: int = 2
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     scale_embedding: bool = True
     pad_token_id: int | None = 0
     bos_token_id: int | None = 2

@@ -95,7 +95,7 @@ class T5Config(PreTrainedConfig):
     use_cache: bool = True
     pad_token_id: int | None = 0
     eos_token_id: int | None = 1
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     is_decoder: bool = False
 
     def __post_init__(self, **kwargs):

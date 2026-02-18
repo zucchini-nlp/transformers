@@ -109,8 +109,8 @@ class MobileViTV2Config(PreTrainedConfig):
     base_attn_unit_dims: list[int] | tuple[int, ...] = (128, 192, 256)
     width_multiplier: float = 1.0
     ffn_multiplier: int = 2
-    attn_dropout: float = 0.0
-    ffn_dropout: float = 0.0
+    attn_dropout: float | int = 0.0
+    ffn_dropout: float | int = 0.0
 
 
 __all__ = ["MobileViTV2Config"]

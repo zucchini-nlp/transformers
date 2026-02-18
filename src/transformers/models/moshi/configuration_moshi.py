@@ -122,7 +122,7 @@ class MoshiDepthConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     use_cache: bool = True
     sliding_window: int = 8
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     ffn_dim: int = 5632
     rms_norm_eps: float = 1e-8
     num_codebooks: int = 8
@@ -258,7 +258,7 @@ class MoshiConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     use_cache: bool = True
     sliding_window: int = 3000
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     ffn_dim: int = 22528
     rms_norm_eps: float = 1e-8
     num_codebooks: int = 8

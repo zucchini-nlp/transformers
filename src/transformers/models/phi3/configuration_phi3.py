@@ -126,7 +126,7 @@ class Phi3Config(PreTrainedConfig):
     num_key_value_heads: int | None = None
     resid_pdrop: float = 0.0
     embd_pdrop: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     hidden_act: str = "silu"
     max_position_embeddings: int = 4096
     original_max_position_embeddings: int = 4096

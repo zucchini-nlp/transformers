@@ -211,12 +211,12 @@ class Wav2Vec2ConformerConfig(PreTrainedConfig):
     num_attention_heads: int = 12
     intermediate_size: int = 3072
     hidden_act: str = "gelu"
-    hidden_dropout: float = 0.1
-    activation_dropout: float = 0.1
-    attention_dropout: float = 0.1
-    feat_proj_dropout: float = 0.0
-    feat_quantizer_dropout: float = 0.0
-    final_dropout: float = 0.1
+    hidden_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    feat_proj_dropout: float | int = 0.0
+    feat_quantizer_dropout: float | int = 0.0
+    final_dropout: float | int = 0.1
     layerdrop: float = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
@@ -262,7 +262,7 @@ class Wav2Vec2ConformerConfig(PreTrainedConfig):
     rotary_embedding_base: int = 10000
     max_source_positions: int = 5000
     conv_depthwise_kernel_size: int = 31
-    conformer_conv_dropout: float = 0.1
+    conformer_conv_dropout: float | int = 0.1
 
     def __post_init__(self, **kwargs):
         self.num_feat_extract_layers = len(self.conv_dim)

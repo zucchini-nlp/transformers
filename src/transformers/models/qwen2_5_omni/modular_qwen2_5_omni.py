@@ -302,7 +302,7 @@ class Qwen2_5OmniTextConfig(PreTrainedConfig):
     sliding_window: int | None = 32768
     max_window_layers: int = 28
     layer_types: list[str] | None = None
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
@@ -596,7 +596,7 @@ class Qwen2_5OmniTalkerConfig(PreTrainedConfig):
     use_sliding_window: bool = False
     sliding_window: int = 32768
     max_window_layers: int = 28
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None
     position_id_per_seconds: int = 25
     seconds_per_chunk: int = 2
@@ -687,7 +687,7 @@ class Qwen2_5OmniDiTConfig(PreTrainedConfig):
     repeats: int = 2
     num_embeds: int = 8193
     mel_dim: int = 80
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     enc_emb_dim: int = 192
     enc_dim: int = 128
     enc_channels: list[int] | tuple[int, ...] = (256, 256, 256, 256, 768)

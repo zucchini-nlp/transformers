@@ -144,8 +144,8 @@ class SeedOssConfig(PreTrainedConfig):
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = True
     attention_out_bias: bool = False
-    attention_dropout: float = 0.1
-    residual_dropout: float = 0.1
+    attention_dropout: float | int = 0.1
+    residual_dropout: float | int = 0.1
     mlp_bias: bool = False
     head_dim: int | None = 128
 

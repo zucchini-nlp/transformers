@@ -135,7 +135,7 @@ class BambaConfig(PreTrainedConfig):
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2
     max_position_embeddings: int | None = 262144
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     attn_layer_indices: list[int] | None = None
     mamba_n_heads: int | None = 128
     mamba_d_head: str | int | None = "auto"

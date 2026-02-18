@@ -114,11 +114,11 @@ class BartConfig(PreTrainedConfig):
     decoder_layerdrop: float | None = 0.0
     activation_function: str | None = "gelu"
     d_model: int | None = 1024
-    dropout: float | None = 0.1
-    attention_dropout: float | None = 0.0
-    activation_dropout: float | None = 0.0
+    dropout: float | int | None = 0.1
+    attention_dropout: float | int | None = 0.0
+    activation_dropout: float | int | None = 0.0
     init_std: float | None = 0.02
-    classifier_dropout: float | None = 0.0
+    classifier_dropout: float | int | None = 0.0
     scale_embedding: bool | None = False
     use_cache: bool | None = True
     pad_token_id: int | None = 1

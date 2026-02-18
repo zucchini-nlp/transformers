@@ -91,7 +91,7 @@ class TrunkConfig(PreTrainedConfig):
     sequence_head_width: int | None = 32
     pairwise_head_width: int | None = 32
     position_bins: int | None = 32
-    dropout: float | None = interval(max=0.4)(default=0.0)
+    dropout: float | int | None = interval(max=0.4)(default=0.0)
     layer_drop: float | None = 0.0
     cpu_grad_checkpoint: bool | None = False
     max_recycles: int | None = interval(min=0)(default=4)
@@ -142,7 +142,7 @@ class EsmFoldConfig(PreTrainedConfig):
     use_esm_attn_map: bool | None = False
     esm_ablate_pairwise: bool | None = False
     esm_ablate_sequence: bool | None = False
-    esm_input_dropout: float | None = 0.0
+    esm_input_dropout: float | int | None = 0.0
     embed_aa: bool | None = True
     bypass_lm: bool | None = False
     lddt_head_hid_dim: int | None = 128

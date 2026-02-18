@@ -119,8 +119,8 @@ class StableLmConfig(PreTrainedConfig):
     use_qkv_bias: bool = False
     qk_layernorm: bool = False
     use_parallel_residual: bool = False
-    hidden_dropout: float = 0.0
-    attention_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     bos_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 0
     pad_token_id: int | None = None

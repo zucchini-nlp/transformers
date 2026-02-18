@@ -121,11 +121,11 @@ class LasrEncoderConfig(PreTrainedConfig):
     num_mel_bins: int = 128
     subsampling_conv_kernel_size: int = 5
     subsampling_conv_stride: int = 2
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     dropout_positions: float = 0.0
     layerdrop: float = 0.1
-    activation_dropout: float = 0.1
-    attention_dropout: float = 0.1
+    activation_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
     max_position_embeddings: int = 10000
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-6

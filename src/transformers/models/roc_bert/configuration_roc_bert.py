@@ -116,7 +116,7 @@ class RoCBertConfig(PreTrainedConfig):
     layer_norm_eps: float = 1e-12
     use_cache: bool = True
     pad_token_id: int | None = 0
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     enable_pronunciation: bool = True
     enable_shape: bool = True
     pronunciation_embed_dim: int = 768

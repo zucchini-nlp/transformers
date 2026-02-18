@@ -147,7 +147,7 @@ class GPT2Config(PreTrainedConfig):
     summary_use_proj: bool = True
     summary_activation: str | None = None
     summary_proj_to_labels: bool = True
-    summary_first_dropout: float = 0.1
+    summary_first_dropout: float | int = 0.1
     scale_attn_weights: bool = True
     use_cache: bool = True
     bos_token_id: int | None = 50256

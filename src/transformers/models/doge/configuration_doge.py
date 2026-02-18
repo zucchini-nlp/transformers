@@ -143,7 +143,7 @@ class DogeConfig(PreTrainedConfig):
     hidden_size: int | None = 1024
     intermediate_size: int | None = 2048
     num_hidden_layers: int | None = 32
-    hidden_dropout: float | None = 0.0
+    hidden_dropout: float | int | None = 0.0
     hidden_act: str | None = "silu"
     initializer_range: float | None = 0.02
     rms_norm_eps: float | None = 1e-06
@@ -154,7 +154,7 @@ class DogeConfig(PreTrainedConfig):
     num_attention_heads: int | None = 8
     num_key_value_heads: int | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     mlp_bias: bool | None = False
     sliding_window: int | None = None
     keep_window_size: int | None = 2048

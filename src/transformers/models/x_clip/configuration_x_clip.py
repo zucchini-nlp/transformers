@@ -91,7 +91,7 @@ class XCLIPTextConfig(PreTrainedConfig):
     max_position_embeddings: int = 77
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
     pad_token_id: int | None = 1
@@ -181,7 +181,7 @@ class XCLIPVisionConfig(PreTrainedConfig):
     num_frames: int = 8
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
     drop_path_rate: float = 0.0
@@ -235,8 +235,8 @@ class XCLIPConfig(PreTrainedConfig):
     prompt_alpha: float = 0.1
     prompt_hidden_act: str = "quick_gelu"
     prompt_num_attention_heads: int = 8
-    prompt_attention_dropout: float = 0.0
-    prompt_projection_dropout: float = 0.0
+    prompt_attention_dropout: float | int = 0.0
+    prompt_projection_dropout: float | int = 0.0
     logit_scale_init_value: float = 2.6592
     initializer_factor: float = 1.0
 

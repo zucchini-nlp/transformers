@@ -110,10 +110,10 @@ class GPTNeoConfig(PreTrainedConfig):
     intermediate_size: int | None = None
     window_size: int = 256
     activation_function: str = "gelu_new"
-    resid_dropout: float = 0.0
-    embed_dropout: float = 0.0
-    attention_dropout: float = 0.0
-    classifier_dropout: float = 0.1
+    resid_dropout: float | int = 0.0
+    embed_dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
+    classifier_dropout: float | int = 0.1
     layer_norm_epsilon: float = 1e-5
     initializer_range: float = 0.02
     use_cache: bool = True

@@ -102,7 +102,7 @@ class XLMRobertaConfig(PreTrainedConfig):
     bos_token_id: int | None = 0
     eos_token_id: int | None = 2
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     is_decoder: bool = False
     add_cross_attention: bool = False
     tie_word_embeddings: bool = True

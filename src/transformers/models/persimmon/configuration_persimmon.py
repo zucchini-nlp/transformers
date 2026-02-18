@@ -94,8 +94,8 @@ class PersimmonConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     qk_layernorm: bool = True
-    hidden_dropout: float = 0.0
-    attention_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
     pad_token_id: int | None = None
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2

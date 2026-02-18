@@ -298,11 +298,11 @@ class EdgeTamVideoConfig(PreTrainedConfig):
     memory_attention_downsample_rate: int = 1
     memory_attention_mlp_hidden_size: int = 2048
     memory_attention_mlp_hidden_act: str = "relu"
-    memory_attention_dropout: float = 0.1
+    memory_attention_dropout: float | int = 0.1
     memory_attention_rope_theta: float | int = 10000
     memory_attention_rope_feat_sizes: list | None = None
     memory_attention_rope_k_sizes: list | None = None
-    memory_attention_rope_dropout: float = 0.1
+    memory_attention_rope_dropout: float | int = 0.1
 
     # spatial perceiver resampler
     perceiver_resampler_num_latents: int = 256
@@ -312,8 +312,8 @@ class EdgeTamVideoConfig(PreTrainedConfig):
     perceiver_resampler_num_attention_heads: int = 1
     perceiver_resampler_attention_head_dim: int = 64
     perceiver_resampler_num_layers: int = 2
-    perceiver_resampler_hidden_dropout: float = 0.0
-    perceiver_resampler_attention_dropout: float = 0.0
+    perceiver_resampler_hidden_dropout: float | int = 0.0
+    perceiver_resampler_attention_dropout: float | int = 0.0
 
     # memory encoder
     memory_encoder_hidden_size: int = 256

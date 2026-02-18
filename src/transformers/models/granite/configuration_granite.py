@@ -139,7 +139,7 @@ class GraniteConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     mlp_bias: bool = False
     embedding_multiplier: float = 1.0
     logits_scaling: float = 1.0

@@ -127,7 +127,7 @@ class EomtDinov3Config(PreTrainedConfig):
     layerscale_value: float = 1.0
     drop_path_rate: float = 0.0
     num_upscale_blocks: int = 2
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_blocks: int = 4
     no_object_weight: float = 0.1
     class_weight: float = 2.0

@@ -81,13 +81,13 @@ class Sam3ViTConfig(PreTrainedConfig):
     patch_size: int = 14
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-6
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     rope_theta: float = 10000.0
     window_size: int = 24
     global_attn_indexes: list[int] | None = None
     layer_scale_init_value: float | None = None
     pretrain_image_size: int = 336
-    hidden_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
     initializer_range: float = 0.02
 
     def __post_init__(self, **kwargs):
@@ -200,9 +200,9 @@ class Sam3GeometryEncoderConfig(PreTrainedConfig):
     num_layers: int = 3
     num_attention_heads: int = 8
     intermediate_size: int = 2048
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     hidden_act: str = "relu"
-    hidden_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
     layer_norm_eps: float = 1e-6
     roi_size: int = 7
     initializer_range: float = 0.02
@@ -241,9 +241,9 @@ class Sam3DETREncoderConfig(PreTrainedConfig):
     num_layers: int = 6
     num_attention_heads: int = 8
     intermediate_size: int = 2048
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     hidden_act: str = "relu"
-    hidden_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
     layer_norm_eps: float = 1e-6
     initializer_range: float = 0.02
 
@@ -284,9 +284,9 @@ class Sam3DETRDecoderConfig(PreTrainedConfig):
     num_queries: int = 200
     num_attention_heads: int = 8
     intermediate_size: int = 2048
-    dropout: float = 0.1
+    dropout: float | int = 0.1
     hidden_act: str = "relu"
-    hidden_dropout: float = 0.0
+    hidden_dropout: float | int = 0.0
     layer_norm_eps: float = 1e-6
     initializer_range: float = 0.02
 
@@ -317,7 +317,7 @@ class Sam3MaskDecoderConfig(PreTrainedConfig):
     hidden_size: int = 256
     num_upsampling_stages: int = 3
     layer_norm_eps: float = 1e-6
-    dropout: float = 0.0
+    dropout: float | int = 0.0
     num_attention_heads: int = 8
     initializer_range: float = 0.02
 

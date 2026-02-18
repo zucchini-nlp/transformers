@@ -106,7 +106,7 @@ class GlmImageVisionConfig(PreTrainedConfig):
     hidden_size: int = 1536
     hidden_act: str = "gelu"
     attention_bias: bool = True
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_heads: int = 16
     in_channels: int = 3
     image_size: int = 2048
@@ -217,7 +217,7 @@ class GlmImageTextConfig(PreTrainedConfig):
     initializer_range: float | None = 0.02
     rms_norm_eps: float | None = 1e-05
     use_cache: bool | None = True
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     rope_parameters: RopeParameters | dict | None = None
     pad_token_id: int = 167841
     vision_vocab_size: int = 16512

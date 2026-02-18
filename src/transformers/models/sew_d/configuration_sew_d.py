@@ -178,11 +178,11 @@ class SEWDConfig(PreTrainedConfig):
     pos_att_type: list[str] | tuple[str, ...] = ("p2c", "c2p")
     norm_rel_ebd: str = "layer_norm"
     hidden_act: str = "gelu_python"
-    hidden_dropout: float = 0.1
-    activation_dropout: float = 0.1
-    attention_dropout: float = 0.1
-    feat_proj_dropout: float = 0.0
-    final_dropout: float = 0.1
+    hidden_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
+    feat_proj_dropout: float | int = 0.0
+    final_dropout: float | int = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-7
     feature_layer_norm_eps: float = 1e-5

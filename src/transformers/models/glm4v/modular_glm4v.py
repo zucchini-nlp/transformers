@@ -130,7 +130,7 @@ class Glm4vVisionConfig(PreTrainedConfig):
     hidden_size: int = 1536
     hidden_act: str = "silu"
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     num_heads: int = 12
     in_channels: int = 3
     image_size: int = 336

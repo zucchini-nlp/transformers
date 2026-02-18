@@ -96,7 +96,7 @@ class CLIPSegTextConfig(PreTrainedConfig):
     max_position_embeddings: int = 77
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
     pad_token_id: int | None = 1
@@ -171,7 +171,7 @@ class CLIPSegVisionConfig(PreTrainedConfig):
     patch_size: int = 32
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     initializer_range: float = 0.02
     initializer_factor: float = 1.0
 
@@ -253,7 +253,7 @@ class CLIPSegConfig(PreTrainedConfig):
     extract_layers: list[int] | tuple[int, ...] = (3, 6, 9)
     reduce_dim: int = 64
     decoder_num_attention_heads: int = 4
-    decoder_attention_dropout: float = 0.0
+    decoder_attention_dropout: float | int = 0.0
     decoder_hidden_act: str = "quick_gelu"
     decoder_intermediate_size: int = 2048
     conditional_layer: int = 0

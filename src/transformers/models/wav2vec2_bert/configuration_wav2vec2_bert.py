@@ -187,11 +187,11 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
     intermediate_size: int = 4096
     feature_projection_input_dim: int = 160
     hidden_act: str = "swish"
-    hidden_dropout: float = 0.0
-    activation_dropout: float = 0.0
-    attention_dropout: float = 0.0
-    feat_proj_dropout: float = 0.0
-    final_dropout: float = 0.1
+    hidden_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
+    attention_dropout: float | int = 0.0
+    feat_proj_dropout: float | int = 0.0
+    final_dropout: float | int = 0.1
     layerdrop: float = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
@@ -226,7 +226,7 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
     left_max_position_embeddings: int = 64
     right_max_position_embeddings: int = 8
     conv_depthwise_kernel_size: int = 31
-    conformer_conv_dropout: float = 0.1
+    conformer_conv_dropout: float | int = 0.1
 
     def __post_init__(self, **kwargs):
         self.output_hidden_size = self.output_hidden_size or self.hidden_size

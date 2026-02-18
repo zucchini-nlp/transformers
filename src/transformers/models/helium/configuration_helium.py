@@ -121,7 +121,7 @@ class HeliumConfig(PreTrainedConfig):
     num_key_value_heads: int = 20
     head_dim: int = 128
     hidden_act: str = "silu"
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     max_position_embeddings: int = 4096
     initializer_range: float = 0.02
     rms_norm_eps: float = 1e-8

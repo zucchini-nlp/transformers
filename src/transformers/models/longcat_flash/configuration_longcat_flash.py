@@ -160,7 +160,7 @@ class LongcatFlashConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     ffn_hidden_size: int = 12288
     q_lora_rank: int = 1536
     kv_lora_rank: int = 512

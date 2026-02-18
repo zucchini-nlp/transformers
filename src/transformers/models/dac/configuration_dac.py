@@ -78,7 +78,7 @@ class DacConfig(PreTrainedConfig):
     n_codebooks: int = 9
     codebook_size: int = 1024
     codebook_dim: int = 8
-    quantizer_dropout: float = 0.0
+    quantizer_dropout: float | int = 0.0
     commitment_loss_weight: float = 0.25
     codebook_loss_weight: float = 1.0
     sampling_rate: int = 16000

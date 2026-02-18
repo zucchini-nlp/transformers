@@ -102,8 +102,8 @@ class ClvpEncoderConfig(PreTrainedConfig):
     num_attention_heads: int = 12
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-5
-    attention_dropout: float = 0.1
-    dropout: float = 0.1
+    attention_dropout: float | int = 0.1
+    dropout: float | int = 0.1
     use_rotary_embedding: bool = True
     use_attention_bias: bool = False
     summary_type: str = "mean"
@@ -251,14 +251,14 @@ class ClvpDecoderConfig(PreTrainedConfig):
     activation_function: str = "gelu_new"
     resid_pdrop: float = 0.1
     embd_pdrop: float = 0.1
-    attention_dropout: float = 0.1
+    attention_dropout: float | int = 0.1
     layer_norm_epsilon: float = 1e-5
     initializer_range: float = 0.02
     summary_type: str = "cls_index"
     summary_use_proj: bool = True
     summary_activation: str | None = None
     summary_proj_to_labels: bool = True
-    summary_first_dropout: float = 0.1
+    summary_first_dropout: float | int = 0.1
     use_cache: bool = True
     bos_token_id: int | None = 8192
     eos_token_id: int | None = 8193

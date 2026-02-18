@@ -117,11 +117,11 @@ class MvpConfig(PreTrainedConfig):
     decoder_layerdrop: float = 0.0
     activation_function: str = "gelu"
     d_model: int = 1024
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     scale_embedding: bool = False
     use_cache: bool = True
     pad_token_id: int | None = 1

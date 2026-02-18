@@ -139,7 +139,7 @@ class MistralConfig(PreTrainedConfig):
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = 4096
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
 
     def __post_init__(self, **kwargs):
         self.head_dim = self.head_dim if self.head_dim is not None else self.hidden_size // self.num_attention_heads

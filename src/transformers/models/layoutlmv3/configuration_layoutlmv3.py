@@ -136,7 +136,7 @@ class LayoutLMv3Config(PreTrainedConfig):
     input_size: int = 224
     num_channels: int = 3
     patch_size: int = 16
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
 
 
 __all__ = ["LayoutLMv3Config"]

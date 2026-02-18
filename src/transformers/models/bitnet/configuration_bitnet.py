@@ -113,7 +113,7 @@ class BitNetConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = 128001
     tie_word_embeddings: bool | None = False
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     rope_parameters: RopeParameters | dict | None = None
 
     def __post_init__(self, **kwargs):

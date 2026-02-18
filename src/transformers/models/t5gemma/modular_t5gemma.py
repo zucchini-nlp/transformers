@@ -192,7 +192,7 @@ class T5GemmaConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     dropout_rate: float = 0.0
     classifier_dropout_rate: float = 0.0
-    attention_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
     tie_word_embeddings: bool = True
     vocab_size: int = 256000
 

@@ -157,10 +157,10 @@ class PatchTSTConfig(PreTrainedConfig):
     ffn_dim: int = 512
     norm_type: str = "batchnorm"
     norm_eps: float = 1e-05
-    attention_dropout: float = 0.0
-    positional_dropout: float = 0.0
-    path_dropout: float = 0.0
-    ff_dropout: float = 0.0
+    attention_dropout: float | int = 0.0
+    positional_dropout: float | int = 0.0
+    path_dropout: float | int = 0.0
+    ff_dropout: float | int = 0.0
     bias: bool = True
     activation_function: str = "gelu"
     pre_norm: bool = True
@@ -177,7 +177,7 @@ class PatchTSTConfig(PreTrainedConfig):
     unmasked_channel_indices: list[int] | None = None
     mask_value: int = 0
     pooling_type: str = "mean"
-    head_dropout: float = 0.0
+    head_dropout: float | int = 0.0
     prediction_length: int = 24
     num_targets: int = 1
     output_range: list | None = None

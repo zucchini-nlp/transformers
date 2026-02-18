@@ -115,9 +115,9 @@ class BlenderbotSmallConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
     activation_function: str = "gelu"
     d_model: int = 512
-    dropout: float = 0.1
-    attention_dropout: float = 0.0
-    activation_dropout: float = 0.0
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.0
+    activation_dropout: float | int = 0.0
     init_std: float = 0.02
     decoder_start_token_id: int | None = 1
     scale_embedding: bool = False

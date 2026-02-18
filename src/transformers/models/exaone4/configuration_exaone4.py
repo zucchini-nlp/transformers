@@ -148,7 +148,7 @@ class Exaone4Config(PreTrainedConfig):
     pad_token_id: int | None = None
     tie_word_embeddings: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     sliding_window: int | None = 4096
     sliding_window_pattern: int | None = 4
     layer_types: list[str] | None = None

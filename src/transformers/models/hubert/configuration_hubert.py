@@ -164,12 +164,12 @@ class HubertConfig(PreTrainedConfig):
     num_attention_heads: int = 12
     intermediate_size: int = 3072
     hidden_act: str = "gelu"
-    hidden_dropout: float = 0.1
-    activation_dropout: float = 0.1
-    attention_dropout: float = 0.1
+    hidden_dropout: float | int = 0.1
+    activation_dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
     feat_proj_layer_norm: bool = True
-    feat_proj_dropout: float = 0.0
-    final_dropout: float = 0.1
+    feat_proj_dropout: float | int = 0.0
+    final_dropout: float | int = 0.1
     layerdrop: float = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5

@@ -124,10 +124,10 @@ class ElectraConfig(PreTrainedConfig):
     summary_type: str = "first"
     summary_use_proj: bool = True
     summary_activation: str = "gelu"
-    summary_last_dropout: float = 0.1
+    summary_last_dropout: float | int = 0.1
     pad_token_id: int | None = 0
     use_cache: bool = True
-    classifier_dropout: float | None = None
+    classifier_dropout: float | int | None = None
     is_decoder: bool = False
     add_cross_attention: bool = False
     bos_token_id: int | None = None

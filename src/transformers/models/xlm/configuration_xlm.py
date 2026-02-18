@@ -149,8 +149,8 @@ class XLMConfig(PreTrainedConfig):
     emb_dim: int = 2048
     n_layers: int = 12
     n_heads: int = 16
-    dropout: float = 0.1
-    attention_dropout: float = 0.1
+    dropout: float | int = 0.1
+    attention_dropout: float | int = 0.1
     gelu_activation: bool = True
     sinusoidal_embeddings: bool = False
     causal: bool = False
@@ -168,7 +168,7 @@ class XLMConfig(PreTrainedConfig):
     summary_use_proj: bool = True
     summary_activation: str | None = None
     summary_proj_to_labels: bool = True
-    summary_first_dropout: float = 0.1
+    summary_first_dropout: float | int = 0.1
     start_n_top: int = 5
     end_n_top: int = 5
     mask_token_id: int | None = 0
