@@ -151,7 +151,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     base_config_key: ClassVar[str] = ""
     sub_configs: ClassVar[dict[str, type["PreTrainedConfig"]]] = {}
     has_no_defaults_at_init: ClassVar[bool] = False
-    keys_to_ignore_at_inference: ClassVar[list[str] | None] = None
+    keys_to_ignore_at_inference: ClassVar[list[str]] = []
     attribute_map: ClassVar[dict[str, str]] = {}
     base_model_tp_plan: ClassVar[dict[str, Any] | None] = None
     base_model_pp_plan: ClassVar[dict[str, Sequence[list[str]]] | None] = None
@@ -739,7 +739,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         ]
         for key, value in kwargs.items():
             if key in valid_fields:
-                config_dict[key] = kwargs[value]
+                config_dict[key] = value
                 if key not in ["torch_dtype", "dtype"]:
                     to_remove.append(key)
 

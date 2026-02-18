@@ -144,13 +144,14 @@ class ConfigTestUtils(unittest.TestCase):
         self.assertListEqual(
             missing_keys,
             [
-                "_output_attentions",
+                "transformers_version",
                 "is_encoder_decoder",
+                "tokenizer_class",
                 "_name_or_path",
                 "_commit_hash",
+                "_output_attentions",
                 "_attn_implementation_internal",
                 "_experts_implementation_internal",
-                "transformers_version",
             ],
         )
         keys_with_defaults = [key for key, value in config_common_kwargs.items() if value == getattr(base_config, key)]
