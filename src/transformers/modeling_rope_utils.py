@@ -931,8 +931,8 @@ def rope_config_validation(config: RotaryEmbeddingConfigMixin, ignore_keys: set 
     """
     warnings.warn(
         "`rope_config_validation` is deprecated and has been removed. "
-        "Its functionality has been moved to RotaryEmbeddingConfigMixin._validate_rope method. "
-        "PreTrainedConfig inherits this class, so please call self._validate_rope() instead. "
+        "Its functionality has been moved to RotaryEmbeddingConfigMixin.validate_rope method. "
+        "PreTrainedConfig inherits this class, so please call self.validate_rope() instead. "
         "Also, make sure to use the new rope_parameters syntax. "
         "You can call self.standardize_rope_params() in the meantime.",
         FutureWarning,
