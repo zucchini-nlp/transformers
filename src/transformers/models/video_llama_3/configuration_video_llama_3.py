@@ -98,8 +98,8 @@ class VideoLlama3Config(PreTrainedConfig):
     sub_configs = {"vision_config": VideoLlama3VisionConfig, "text_config": AutoConfig}
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    text_config: dict | PreTrainedConfig = None
-    vision_config: dict | PreTrainedConfig = None
+    text_config: dict | PreTrainedConfig | None = None
+    vision_config: dict | PreTrainedConfig | None = None
     image_token_id: int = 151655
     video_token_id: int = 151656
     tie_word_embeddings: bool = False

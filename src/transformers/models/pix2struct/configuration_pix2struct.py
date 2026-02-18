@@ -265,7 +265,8 @@ class Pix2StructConfig(PreTrainedConfig):
     def __post_init__(self, **kwargs):
         if self.text_config is None:
             self.text_config = Pix2StructTextConfig(
-                {"is_encoder_decoder": self.is_encoder_decoder, "tie_word_embeddings": self.tie_word_embeddings}
+                is_encoder_decoder=self.is_encoder_decoder,
+                tie_word_embeddings=self.tie_word_embeddings,
             )
             logger.info("`text_config` is `None`. initializing the `Pix2StructTextConfig` with default values.")
         elif isinstance(self.text_config, dict):

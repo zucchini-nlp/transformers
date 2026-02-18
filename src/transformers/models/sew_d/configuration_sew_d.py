@@ -236,13 +236,5 @@ class SEWDConfig(PreTrainedConfig):
     def inputs_to_logits_ratio(self):
         return functools.reduce(operator.mul, self.conv_stride, 1)
 
-    def to_dict(self):
-        """
-        Serializes this instance to a Python dictionary.
-        """
-        output = super().to_dict()
-        output["hidden_dropout"] = output.pop("_hidden_dropout")
-        return output
-
 
 __all__ = ["SEWDConfig"]

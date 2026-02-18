@@ -81,19 +81,14 @@ class VisionEncoderDecoderConfig(PreTrainedConfig):
     is_encoder_decoder: bool = True
 
     def __post_init__(self, **kwargs):
-        if "encoder" not in kwargs or "decoder" not in kwargs:
-            raise ValueError(
-                f"A configuration of type {self.model_type} cannot be instantiated because "
-                f"not both `encoder` and `decoder` sub-configurations are passed, but only {kwargs}"
-            )
+        if "encoder" in kwargs and "decoder" in kwargs:
+            encoder_config = kwargs.pop("encoder")
+            encoder_model_type = encoder_config.pop("model_type")
+            decoder_config = kwargs.pop("decoder")
+            decoder_model_type = decoder_config.pop("model_type")
 
-        encoder_config = kwargs.pop("encoder")
-        encoder_model_type = encoder_config.pop("model_type")
-        decoder_config = kwargs.pop("decoder")
-        decoder_model_type = decoder_config.pop("model_type")
-
-        self.encoder = AutoConfig.for_model(encoder_model_type, **encoder_config)
-        self.decoder = AutoConfig.for_model(decoder_model_type, **decoder_config)
+            self.encoder = AutoConfig.for_model(encoder_model_type, **encoder_config)
+            self.decoder = AutoConfig.for_model(decoder_model_type, **decoder_config)
         super().__post_init__(**kwargs)
 
     @classmethod

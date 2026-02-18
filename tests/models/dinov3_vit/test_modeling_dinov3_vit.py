@@ -112,7 +112,7 @@ class DINOv3ViTModelTester:
             is_decoder=False,
             initializer_range=self.initializer_range,
             num_register_tokens=self.num_register_tokens,
-            stage_names=["embeddings"] + [f"stage{i}" for i in range(1, self.num_hidden_layers + 1)],
+            stage_names=["stem"] + [f"stage{i}" for i in range(1, self.num_hidden_layers + 1)],
             out_indices=[0, 1],
             reshape_hidden_states=True,
         )

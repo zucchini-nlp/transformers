@@ -77,7 +77,7 @@ class BridgeTowerVisionConfig(PreTrainedConfig):
     num_channels: int = 3
     patch_size: int = 16
     image_size: int = 288
-    initializer_factor: int = 1
+    initializer_factor: float | int = 1e-10
     layer_norm_eps: float = 1e-05
     stop_gradient: bool = False
     share_layernorm: bool = True
@@ -150,7 +150,7 @@ class BridgeTowerTextConfig(PreTrainedConfig):
     hidden_size: int = 768
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
-    initializer_factor: int = 1
+    initializer_factor: float | int = 1e-10
     intermediate_size: int = 3072
     hidden_act: str = "gelu"
     hidden_dropout_prob: float = 0.1
@@ -228,7 +228,7 @@ class BridgeTowerConfig(PreTrainedConfig):
     share_cross_modal_transformer_layers: bool = True
     hidden_act: str = "gelu"
     hidden_size: int = 768
-    initializer_factor: int = 1
+    initializer_factor: float | int = 1e-10
     layer_norm_eps: float = 1e-05
     share_link_tower_layers: bool = False
     link_tower_type: str = "add"

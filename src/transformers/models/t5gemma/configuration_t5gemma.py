@@ -231,7 +231,7 @@ class T5GemmaConfig(PreTrainedConfig):
         if isinstance(self.decoder, dict):
             self.decoder = T5GemmaModuleConfig(**self.decoder)
         elif self.decoder is None:
-            self.decoder = self.encoder
+            self.decoder = T5GemmaModuleConfig()
 
         self.encoder.is_decoder = False
         self.encoder.dropout_rate = self.dropout_rate
