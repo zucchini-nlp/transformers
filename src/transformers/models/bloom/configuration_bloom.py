@@ -110,7 +110,7 @@ class BloomConfig(PreTrainedConfig):
     apply_residual_connection_post_layernorm: bool = False
     hidden_dropout: float = 0.0
     attention_dropout: float = 0.0
-    pretraining_tp: int = (1,)  # TP rank used when training with megatro
+    pretraining_tp: int = 1  # TP rank used when training with megatro
     slow_but_exact: bool = False
     tie_word_embeddings: bool = True
 

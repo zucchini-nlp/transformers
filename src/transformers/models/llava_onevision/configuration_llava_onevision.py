@@ -96,8 +96,8 @@ class LlavaOnevisionConfig(PreTrainedConfig):
 
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | PreTrainedConfig | None = None
-    image_token_id: int = 151646
-    video_token_id: int = 151647
+    image_token_index: int = 151646
+    video_token_index: int = 151647
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "full"
     vision_feature_layer: int | list[int] = -1

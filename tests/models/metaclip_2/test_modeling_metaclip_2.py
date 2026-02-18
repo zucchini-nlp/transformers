@@ -214,7 +214,7 @@ class MetaClip2VisionModelTest(MetaClip2ModelTesterMixin, unittest.TestCase):
     def setUp(self):
         self.model_tester = MetaClip2VisionModelTester(self)
         self.config_tester = ConfigTester(
-            self, config_class=MetaClip2VisionConfig, has_text_modality=False, hidden_size=32
+            self, config_class=MetaClip2VisionConfig, has_text_modality=False, hidden_size=36
         )
 
     def test_config(self):

@@ -13,7 +13,7 @@
 # limitations under the License.
 """ResNet model configuration"""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import ClassVar
 
 from huggingface_hub.dataclasses import strict
@@ -86,20 +86,21 @@ class ResNetConfig(BackboneConfigMixin, PreTrainedConfig):
     model_type = "resnet"
     layer_types: ClassVar[list[str]] = ["basic", "bottleneck"]
 
-    num_channels: int | None = 3
-    embedding_size: int | None = 64
-    hidden_sizes: list[int] | None = field(default_factory=lambda: [256, 512, 1024, 2048])
-    depths: list[int] | None = field(default_factory=lambda: [3, 4, 6, 3])
-    layer_type: str | None = "bottleneck"
-    hidden_act: str | None = "relu"
-    downsample_in_first_stage: bool | None = False
-    downsample_in_bottleneck: bool | None = False
+    num_channels: int = 3
+    embedding_size: int = 64
+    hidden_sizes: list[int] | tuple[int, ...] | None = (256, 512, 1024, 2048)
+    depths: list[int] | tuple[int, ...] | None = (3, 4, 6, 3)
+    layer_type: str = "bottleneck"
+    hidden_act: str = "relu"
+    downsample_in_first_stage: bool = False
+    downsample_in_bottleneck: bool = False
 
     def __post_init__(self, **kwargs):
         self.stage_names = ["stem"] + [f"stage{idx}" for idx in range(1, len(self.depths) + 1)]
         self.set_output_features_output_indices(
             out_indices=kwargs.pop("out_indices", None), out_features=kwargs.pop("out_features", None)
         )
+        self.hidden_sizes = list(self.hidden_sizes)
         super().__post_init__(**kwargs)
 
     def validate_layer_type(self):

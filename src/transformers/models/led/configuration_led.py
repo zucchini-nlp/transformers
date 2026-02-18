@@ -130,6 +130,7 @@ class LEDConfig(PreTrainedConfig):
     bos_token_id: int | None = 0
     eos_token_id: int | None = 2
     attention_window: list[int] | int = 512
+    tie_word_embeddings: bool = True
 
 
 __all__ = ["LEDConfig"]

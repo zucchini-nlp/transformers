@@ -91,7 +91,7 @@ class LlavaNextConfig(PreTrainedConfig):
 
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | PreTrainedConfig | None = None
-    image_token_id: int = 32000
+    image_token_index: int = 32000
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: Literal["default", "full"] = "default"
     vision_feature_layer: int | list[int] = -2

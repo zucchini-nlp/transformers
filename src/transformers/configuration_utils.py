@@ -164,7 +164,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
     transformers_version: str | None = None
 
     output_hidden_states: bool | None = False
-    output_attentions: bool | None = False
     return_dict: bool | None = True
     dtype: Union[str, "torch.dtype"] | None = None
 
@@ -223,6 +222,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         self._commit_hash = kwargs.pop("_commit_hash", None)
 
         # Attention/Experts implementation to use, if relevant (it sets it recursively on sub-configs)
+        self._output_attentions: bool | None = kwargs.pop("output_attentions", False)
         self._attn_implementation: str | None = kwargs.pop("attn_implementation", None)
         self._experts_implementation: str | None = kwargs.pop("experts_implementation", None)
 
@@ -256,6 +256,25 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         if self.id2label is None or self.num_labels != num_labels:
             self.id2label = {i: f"LABEL_{i}" for i in range(num_labels)}
             self.label2id = dict(zip(self.id2label.values(), self.id2label.keys()))
+
+    @property
+    def output_attentions(self):
+        """
+        `bool`: Whether or not the model should returns all attentions.
+        """
+        return self._output_attentions
+
+    @output_attentions.setter
+    def output_attentions(self, value: bool):
+        # If we set `output_attentions` explicitly before the attn implementation, dispatch eager
+        if value and self._attn_implementation is None:
+            self._attn_implementation = "eager"
+        if value and self._attn_implementation != "eager":
+            raise ValueError(
+                "The `output_attentions` attribute is not supported when using the `attn_implementation` set to "
+                f"{self._attn_implementation}. Please set it to 'eager' instead."
+            )
+        self._output_attentions = value
 
     @property
     def _attn_implementation(self):

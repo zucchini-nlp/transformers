@@ -187,7 +187,7 @@ class ReformerConfig(PreTrainedConfig):
     lsh_num_chunks_after: int | None = 0
     max_position_embeddings: int = 4096
     num_attention_heads: int = 12
-    num_buckets: int | None = None
+    num_buckets: int | list[int] | None = None
     num_hashes: int = 1
     vocab_size: int = 320
     tie_word_embeddings: bool = False

@@ -67,7 +67,7 @@ class VitPoseConfig(PreTrainedConfig):
     model_type = "vitpose"
     sub_configs = {"backbone_config": AutoConfig}
 
-    backbone_config: PreTrainedConfig | None = None
+    backbone_config: dict | PreTrainedConfig | None = None
     initializer_range: float = 0.02
     scale_factor: int = 4
     use_simple_decoder: bool = True
