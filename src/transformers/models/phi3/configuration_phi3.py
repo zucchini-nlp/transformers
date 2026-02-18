@@ -164,11 +164,11 @@ class Phi3Config(PreTrainedConfig):
             self.rope_parameters["rope_type"] = "longrope"
         return kwargs
 
-    def validate_rope(self, ignore_keys: set | None = None):
+    def validate_rope(self):
         """
         Validate the `rope_parameters` configuration.
         """
-        super().validate_rope(ignore_keys=ignore_keys)
+        super().validate_rope()
 
         # Run Phi3 specific validation
         if not isinstance(self.rope_parameters, dict):

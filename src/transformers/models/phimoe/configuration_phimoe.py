@@ -143,11 +143,11 @@ class PhimoeConfig(PreTrainedConfig):
             self.num_key_value_heads = self.num_attention_heads
         super().__post_init__(**kwargs)
 
-    def validate_rope(self, ignore_keys=None):
+    def validate_rope(self):
         """
         Validate the `rope_parameters` configuration.
         """
-        super().validate_rope(ignore_keys=ignore_keys)
+        super().validate_rope()
 
         # Run model-specific rope validation
         if self.rope_parameters["rope_type"] != "default":
