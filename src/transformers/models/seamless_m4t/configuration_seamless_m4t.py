@@ -241,7 +241,7 @@ class SeamlessM4TConfig(PreTrainedConfig):
     ```"""
 
     model_type = "seamless_m4t"
-    attribute_map = {"num_hidden_layers": "decoder_layers"}
+    attribute_map = {"num_hidden_layers": "decoder_layers", "num_attention_heads": "decoder_attention_heads"}
 
     vocab_size: int = 256102
     t2u_vocab_size: int = 10082

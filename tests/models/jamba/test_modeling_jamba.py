@@ -16,7 +16,7 @@
 import math
 import tempfile
 import unittest
-
+import huggingface_hub
 import pytest
 
 from transformers import AutoTokenizer, BitsAndBytesConfig, JambaConfig, is_torch_available
@@ -70,9 +70,9 @@ class JambaConfigTester(ConfigTester):
         self._create_attn_config(attn_layer_offset=1, attn_layer_period=4)
         self._create_attn_config(attn_layer_offset=2, attn_layer_period=4)
         self._create_attn_config(attn_layer_offset=3, attn_layer_period=4)
-        with self.parent.assertRaises(ValueError):
+        with self.parent.assertRaises(huggingface_hub.errors.StrictDataclassClassValidationError):
             self._create_attn_config(attn_layer_offset=4, attn_layer_period=4)
-        with self.parent.assertRaises(ValueError):
+        with self.parent.assertRaises(huggingface_hub.errors.StrictDataclassClassValidationError):
             self._create_attn_config(attn_layer_offset=5, attn_layer_period=4)
 
     def test_expert_offsets(self):
@@ -80,9 +80,9 @@ class JambaConfigTester(ConfigTester):
         self._create_expert_config(expert_layer_offset=1, expert_layer_period=4)
         self._create_expert_config(expert_layer_offset=2, expert_layer_period=4)
         self._create_expert_config(expert_layer_offset=3, expert_layer_period=4)
-        with self.parent.assertRaises(ValueError):
+        with self.parent.assertRaises(huggingface_hub.errors.StrictDataclassClassValidationError):
             self._create_expert_config(expert_layer_offset=4, expert_layer_period=4)
-        with self.parent.assertRaises(ValueError):
+        with self.parent.assertRaises(huggingface_hub.errors.StrictDataclassClassValidationError):
             self._create_expert_config(expert_layer_offset=5, expert_layer_period=4)
 
     def test_jamba_offset_properties(self):

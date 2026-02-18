@@ -327,9 +327,9 @@ class ReformerModelTester:
 
     def create_and_check_reformer_feed_backward_chunking(self, config, input_ids, input_mask, choice_labels):
         # disable dropout
-        config.hidden_dropout_prob = 0
-        config.local_attention_probs_dropout_prob = 0
-        config.lsh_attention_probs_dropout_prob = 0
+        config.hidden_dropout_prob = 0.0
+        config.local_attention_probs_dropout_prob = 0.0
+        config.lsh_attention_probs_dropout_prob = 0.0
         config.lsh_num_chunks_after = 1
         config.is_decoder = False
 

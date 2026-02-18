@@ -169,8 +169,8 @@ class ExaoneMoeConfig(Exaone4Config):
     attention_dropout: float = 0.0
     sliding_window: int = 4096
     sliding_window_pattern: int = 4
-    layer_types: list[int] | None = None
-    mlp_layer_types: list[int] | None = None
+    layer_types: list[str] | None = None
+    mlp_layer_types: list[str] | None = None
     first_k_dense_replace: int = 1
     moe_intermediate_size: int = 1024
     num_experts: int = 64

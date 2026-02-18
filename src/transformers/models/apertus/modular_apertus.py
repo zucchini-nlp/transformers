@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import torch
 from huggingface_hub.dataclasses import strict
@@ -150,16 +150,7 @@ class ApertusConfig(PreTrainedConfig):
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2
     tie_word_embeddings: bool | None = False
-    rope_parameters: RopeParameters | dict | None = field(
-        default_factory=lambda: {
-            "rope_type": "llama3",
-            "rope_theta": 12000000.0,
-            "factor": 8.0,
-            "original_max_position_embeddings": 8192,
-            "low_freq_factor": 1.0,
-            "high_freq_factor": 4.0,
-        }
-    )
+    rope_parameters: RopeParameters | dict | None = (None,)
     attention_bias: bool | None = False
     attention_dropout: float | None = 0.0
 
@@ -167,6 +158,15 @@ class ApertusConfig(PreTrainedConfig):
         if self.num_key_value_heads is None:
             self.num_key_value_heads = self.num_attention_heads
 
+        if self.rope_parameters is None:
+            self.rope_parameters = {
+                "rope_type": "llama3",
+                "rope_theta": 12000000.0,
+                "factor": 8.0,
+                "original_max_position_embeddings": 8192,
+                "low_freq_factor": 1.0,
+                "high_freq_factor": 4.0,
+            }
         super().__post_init__(**kwargs)
 
 

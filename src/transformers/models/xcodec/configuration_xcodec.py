@@ -91,7 +91,7 @@ class XcodecConfig(PreTrainedConfig):
     target_bandwidths: list[float | int] | None = None
     sample_rate: int = 16000
     kernel_size: int = 3
-    channel_ratios: list[float] | tuple[int, ...] = (1, 1)
+    channel_ratios: list[int] | tuple[int, ...] = (1, 1)
     strides: list[int] | tuple[int, ...] = (1, 1)
     block_dilations: list[int] | tuple[int, ...] = (1, 1)
     unit_kernel_size: int = 3

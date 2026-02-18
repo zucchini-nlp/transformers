@@ -82,8 +82,8 @@ class VipLlavaConfig(PreTrainedConfig):
     }
     sub_configs = {"text_config": AutoConfig, "vision_config": AutoConfig}
 
-    vision_config: dict | PreTrainedConfig | None = (None,)
-    text_config: dict | PreTrainedConfig | None = (None,)
+    vision_config: dict | PreTrainedConfig | None = None
+    text_config: dict | PreTrainedConfig | None = None
     image_token_index: int = 32000
     projector_hidden_act: str = "gelu"
     projector_layernorm_eps: float = 1e-5

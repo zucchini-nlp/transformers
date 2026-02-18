@@ -225,7 +225,7 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
     adapter_act: str = "relu"
     use_intermediate_ffn_before_adapter: bool = False
     output_hidden_size: int | None = None
-    position_embeddings_type: Literal["rotary", "relative", "relative_key"] = "relative_key"
+    position_embeddings_type: Literal["rotary", "relative", "relative_key"] | None = "relative_key"
     rotary_embedding_base: int = 10000
     max_source_positions: int = 5000
     left_max_position_embeddings: int = 64

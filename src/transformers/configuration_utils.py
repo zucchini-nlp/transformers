@@ -933,6 +933,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         # Pop "kwargs" since they are unpacked and set in the post init
         output.pop("kwargs", None)
 
+        to_list = lambda x: [to_list(i) for i in x] if isinstance(x, tuple) else x
         for key, value in output.items():
             # Deal with nested configs like CLIP
             if isinstance(value, PreTrainedConfig):
@@ -942,7 +943,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
             # Some models have defaults as tuples because dataclass
             # doesn't allow mutables. Let's convert back to `list``
             elif isinstance(value, tuple):
-                value = list(value)
+                value = to_list(value)
 
             output[key] = value
 

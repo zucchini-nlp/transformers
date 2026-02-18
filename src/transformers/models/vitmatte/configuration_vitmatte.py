@@ -70,7 +70,7 @@ class VitMatteConfig(PreTrainedConfig):
     model_type = "vitmatte"
     sub_configs = {"backbone_config": AutoConfig}
 
-    backbone_config: PreTrainedConfig | None = None
+    backbone_config: dict | PreTrainedConfig | None = None
     hidden_size: int = 384
     batch_norm_eps: float = 1e-5
     initializer_range: float = 0.02

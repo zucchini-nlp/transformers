@@ -1080,7 +1080,7 @@ class Blip2TextModelWithProjectionTester:
             result2 = model(
                 input_ids,
                 attention_mask=attention_mask,
-                return_dict=not config.use_return_dict,
+                return_dict=not config.return_dict,
                 output_attentions=True,
                 output_hidden_states=True,
             )
@@ -1232,7 +1232,7 @@ class Blip2VisionModelWithProjectionTester:
         with torch.no_grad():
             result2 = model(
                 pixel_values,
-                return_dict=not config.use_return_dict,
+                return_dict=not config.return_dict,
                 output_attentions=True,
                 output_hidden_states=True,
             )

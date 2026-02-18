@@ -167,7 +167,7 @@ class AutoformerConfig(PreTrainedConfig):
     num_parallel_samples: int = 100
     init_std: float = 0.02
     use_cache: bool = True
-    is_encoder_decoder = True
+    is_encoder_decoder: bool = True
     label_length: int = 10
     moving_average: int = 25
     autocorrelation_factor: int = 3
