@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -35,7 +31,6 @@ class VisualBertConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 30522):
@@ -77,7 +72,6 @@ class VisualBertConfig(PreTrainedConfig):
             Whether or not the visual token type and position type embedding weights should be initialized the same as
             the textual token type and positive type embeddings. When set to `True`, the weights of the textual token
             type and position type embeddings are copied to the respective visual embedding layers.
-
 
     Example:
 

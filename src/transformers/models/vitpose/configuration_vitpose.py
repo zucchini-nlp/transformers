@@ -19,11 +19,7 @@ from huggingface_hub.dataclasses import strict
 
 from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -47,7 +43,6 @@ class VitPoseConfig(PreTrainedConfig):
             Factor to upscale the feature maps coming from the ViT backbone.
         use_simple_decoder (`bool`, *optional*, defaults to `True`):
             Whether to use a `VitPoseSimpleDecoder` to decode the feature maps from the backbone into heatmaps. Otherwise it uses `VitPoseClassicDecoder`.
-
 
     Example:
 

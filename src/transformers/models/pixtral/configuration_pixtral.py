@@ -18,10 +18,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)

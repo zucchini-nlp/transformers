@@ -24,10 +24,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -40,7 +36,6 @@ class CohereConfig(PreTrainedConfig):
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the [CohereForAI/c4ai-command-r-v01](https://huggingface.co/CohereForAI/c4ai-command-r-v01) model.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 256000):

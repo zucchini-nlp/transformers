@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -114,7 +110,6 @@ class AutoformerConfig(PreTrainedConfig):
         autocorrelation_factor (`int`, *optional*, defaults to 3):
             "Attention" (i.e. AutoCorrelation mechanism) factor which is used to find top k autocorrelations delays.
             It's recommended in the paper to set it to a number between 1 and 5.
-
 
         Example:
 

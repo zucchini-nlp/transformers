@@ -19,10 +19,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -120,7 +116,6 @@ class DbrxConfig(PreTrainedConfig):
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
 
-
     Args:
         d_model (`int`, *optional*, defaults to 2048):
             Dimensionality of the embeddings and hidden states.
@@ -148,7 +143,6 @@ class DbrxConfig(PreTrainedConfig):
         output_router_logits (`bool`, *optional*, defaults to `False`):
             Whether or not the router logits should be returned by the model. Enabling this will also
             allow the model to output the auxiliary loss. See [here]() for more details.
-
 
     Example:
     ```python

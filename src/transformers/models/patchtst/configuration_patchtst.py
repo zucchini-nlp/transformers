@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from transformers.configuration_utils import PreTrainedConfig
-from transformers.utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -126,7 +122,6 @@ class PatchTSTConfig(PreTrainedConfig):
             values within a range.
         num_parallel_samples (`int`, *optional*, defaults to 100):
             The number of samples is generated in parallel for probabilistic prediction.
-
 
     ```python
     >>> from transformers import PatchTSTConfig, PatchTSTModel

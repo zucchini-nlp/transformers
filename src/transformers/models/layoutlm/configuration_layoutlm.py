@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ... import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -35,7 +31,6 @@ class LayoutLMConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`BertConfig`] and can be used to control the model outputs. Read the
     documentation from [`BertConfig`] for more information.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 30522):

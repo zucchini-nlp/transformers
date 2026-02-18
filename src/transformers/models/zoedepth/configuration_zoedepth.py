@@ -20,11 +20,8 @@ from huggingface_hub.dataclasses import strict
 
 from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
 
-
-logger = logging.get_logger(__name__)
 
 ZOEDEPTH_PRETRAINED_CONFIG_ARCHIVE_MAP = {
     "Intel/zoedepth-nyu": "https://huggingface.co/Intel/zoedepth-nyu/resolve/main/config.json",

@@ -19,10 +19,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -37,7 +33,6 @@ class RecurrentGemmaConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         num_hidden_layers (`int`, *optional*, defaults to 26):

@@ -19,11 +19,7 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -220,7 +216,6 @@ class MoshiConfig(PreTrainedConfig):
                   defines the audio encoder config.
                 - **depth__config** ([`PreTrainedConfig`], *optional*) -- An instance of a configuration object that
                   defines the depth decoder config.
-
 
     Example:
 

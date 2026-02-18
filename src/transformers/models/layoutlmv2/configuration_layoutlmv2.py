@@ -18,10 +18,7 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import is_detectron2_available, logging
-
-
-logger = logging.get_logger(__name__)
+from ...utils import is_detectron2_available
 
 
 # soft dependency
@@ -102,7 +99,6 @@ class LayoutLMv2Config(PreTrainedConfig):
             Dictionary containing the configuration arguments of the Detectron2 visual backbone. Refer to [this
             file](https://github.com/microsoft/unilm/blob/master/layoutlmft/layoutlmft/models/layoutlmv2/detectron2_config.py)
             for details regarding default values.
-
 
     Example:
 

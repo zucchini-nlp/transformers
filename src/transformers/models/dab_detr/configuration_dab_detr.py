@@ -19,11 +19,7 @@ from huggingface_hub.dataclasses import strict
 
 from ...backbone_utils import consolidate_backbone_kwargs_to_config
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -113,7 +109,6 @@ class DabDetrConfig(PreTrainedConfig):
             If `None`, `prior_prob` computed as `prior_prob = 1 / (num_labels + 1)` while initializing model weights.
         tie_word_embeddings (`bool`, *optional*, defaults to `True`):
             Whether to tie weight embeddings
-
 
     Examples:
 

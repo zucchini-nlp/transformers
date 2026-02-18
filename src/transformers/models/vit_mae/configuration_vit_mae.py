@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -35,7 +31,6 @@ class ViTMAEConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         hidden_size (`int`, *optional*, defaults to 768):

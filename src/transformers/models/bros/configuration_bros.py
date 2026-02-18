@@ -18,10 +18,6 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -79,7 +75,6 @@ class BrosConfig(PreTrainedConfig):
             decoder-only or encoder-only architectures.
         add_cross_attention (`bool`, *optional*, defaults to `False`):
             Whether cross-attention layers should be added to the model.
-
 
     Examples:
 

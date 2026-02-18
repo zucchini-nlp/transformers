@@ -19,10 +19,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
 from ...modeling_rope_utils import RopeParameters
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -33,10 +29,8 @@ class Starcoder2Config(PreTrainedConfig):
     Starcoder2 model according to the specified arguments, defining the model architecture. Instantiating a configuration
     with the defaults will yield a similar configuration to that of the [bigcode/starcoder2-7b](https://huggingface.co/bigcode/starcoder2-7b) model.
 
-
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 49152):
@@ -91,7 +85,6 @@ class Starcoder2Config(PreTrainedConfig):
             Whether to use bias term on linear layers of the model.
         tie_word_embeddings (`bool`, *optional*, defaults to `True`):
             Whether to tie weight embeddings
-
 
     ```python
     >>> from transformers import Starcoder2Model, Starcoder2Config

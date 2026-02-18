@@ -18,11 +18,7 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto import CONFIG_MAPPING, AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -53,7 +49,6 @@ class ShieldGemma2Config(PreTrainedConfig):
             The image token index to encode the image prompt.
         initializer_range (`float`, *optional*, defaults to 0.02):
             The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
-
 
     Example:
 

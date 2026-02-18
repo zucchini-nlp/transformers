@@ -19,10 +19,6 @@ from huggingface_hub.dataclasses import strict
 
 from ...backbone_utils import BackboneConfigMixin
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -99,7 +95,6 @@ class HieraConfig(BackboneConfigMixin, PreTrainedConfig):
             many stages the model has). If unset and `out_features` is set, will default to the corresponding stages.
             If unset and `out_features` is unset, will default to the last stage. Must be in the
             same order as defined in the `stage_names` attribute.
-
 
     Example:
 

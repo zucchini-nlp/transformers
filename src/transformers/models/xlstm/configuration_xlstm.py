@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """xLSTM configuration."""
 
 from dataclasses import dataclass
@@ -20,7 +19,7 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import is_xlstm_available, logging
+from ...utils import is_xlstm_available
 
 
 if is_xlstm_available():
@@ -56,9 +55,6 @@ else:
     external_xlstm = False
 
 
-logger = logging.get_logger(__name__)
-
-
 @strict(accept_kwargs=True)
 @dataclass(repr=False)
 class xLSTMConfig(PreTrainedConfig):
@@ -69,7 +65,6 @@ class xLSTMConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         vocab_size (int, optional, *optional*, defaults to 50304):
