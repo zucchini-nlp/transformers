@@ -15,12 +15,11 @@
 """Configuration base class and utilities."""
 
 import copy
-import inspect
 import json
 import math
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass, fields, is_dataclass
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar, Union
 
 from huggingface_hub import create_repo
@@ -723,47 +722,34 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """
         return_unused_kwargs = kwargs.pop("return_unused_kwargs", False)
 
-        # Case 1: dataclass → get dataclass fields
-        if is_dataclass(cls):
-            valid_fields = [field.name for field in fields(cls)]
-        # Case 2: for BC with remote code configs → inspect __init__ params
-        else:
-            sig = inspect.signature(cls.__init__)
-            valid_fields = [name for name, param in sig.parameters.items() if name != "self"]
-
-        valid_fields.extend(
-            [
-                "num_labels",
-                "attn_implementation",
-                "experts_implementation",
-                "output_attentions",
-                "torch_dtype",
-                "dtype",
-                "name_or_path",
-            ]
-        )
-        for key in list(kwargs):
-            if key in valid_fields:
-                config_dict[key] = kwargs[key]
-                if key not in ["torch_dtype", "dtype"]:
-                    kwargs.pop(key)
-
-        config = cls(**config_dict)
-
         # The commit hash might have been updated in the `config_dict`, we don't want the kwargs to erase that update.
         if "_commit_hash" in kwargs and "_commit_hash" in config_dict:
             kwargs.setdefault("_commit_hash", config_dict["_commit_hash"])
 
         # To remove arg here are those passed along for our internal telemetry but we still need to remove them
         to_remove = ["_from_auto", "_from_pipeline"]
+        valid_fields = [
+            "num_labels",
+            "attn_implementation",
+            "experts_implementation",
+            "output_attentions",
+            "torch_dtype",
+            "dtype",
+            "name_or_path",
+        ]
+        for key, value in kwargs.items():
+            if key in valid_fields:
+                config_dict[key] = kwargs[value]
+                if key not in ["torch_dtype", "dtype"]:
+                    to_remove.append(key)
 
-        # Set attrbutes that aren't config fields but are created at `post_init`
+        config = cls(**config_dict)
+
         for key, value in kwargs.items():
             if hasattr(config, key):
                 current_attr = getattr(config, key)
                 # To authorize passing a custom subconfig as kwarg in models that have nested configs.
-                # We need to update
-                # only custom kwarg values instead and keep other attributes in subconfig.
+                # We need to update only custom kwarg values instead and keep other attr in subconfig.
                 if isinstance(current_attr, PreTrainedConfig) and isinstance(value, dict):
                     current_attr_updated = current_attr.to_dict()
                     current_attr_updated.update(value)
