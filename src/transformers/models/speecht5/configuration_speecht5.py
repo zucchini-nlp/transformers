@@ -269,6 +269,8 @@ class SpeechT5Config(PreTrainedConfig):
         return functools.reduce(operator.mul, self.conv_stride, 1)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class SpeechT5HifiGanConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`SpeechT5HifiGanModel`]. It is used to instantiate
@@ -324,31 +326,16 @@ class SpeechT5HifiGanConfig(PreTrainedConfig):
 
     model_type = "hifigan"
 
-    def __init__(
-        self,
-        model_in_dim=80,
-        sampling_rate=16000,
-        upsample_initial_channel=512,
-        upsample_rates=[4, 4, 4, 4],
-        upsample_kernel_sizes=[8, 8, 8, 8],
-        resblock_kernel_sizes=[3, 7, 11],
-        resblock_dilation_sizes=[[1, 3, 5], [1, 3, 5], [1, 3, 5]],
-        initializer_range=0.01,
-        leaky_relu_slope=0.1,
-        normalize_before=True,
-        **kwargs,
-    ):
-        self.model_in_dim = model_in_dim
-        self.sampling_rate = sampling_rate
-        self.upsample_initial_channel = upsample_initial_channel
-        self.upsample_rates = upsample_rates
-        self.upsample_kernel_sizes = upsample_kernel_sizes
-        self.resblock_kernel_sizes = resblock_kernel_sizes
-        self.resblock_dilation_sizes = resblock_dilation_sizes
-        self.initializer_range = initializer_range
-        self.leaky_relu_slope = leaky_relu_slope
-        self.normalize_before = normalize_before
-        super().__init__(**kwargs)
+    model_in_dim: int = 80
+    sampling_rate: int = 16000
+    upsample_initial_channel: int = 512
+    upsample_rates: list[int] | tuple[int, ...] = (4, 4, 4, 4)
+    upsample_kernel_sizes: list[int] | tuple[int, ...] = (8, 8, 8, 8)
+    resblock_kernel_sizes: list[int] | tuple[int, ...] = (3, 7, 11)
+    resblock_dilation_sizes: list | tuple = ((1, 3, 5), (1, 3, 5), (1, 3, 5))
+    initializer_range: float = 0.01
+    leaky_relu_slope: float = 0.1
+    normalize_before: bool = True
 
 
 __all__ = ["SpeechT5Config", "SpeechT5HifiGanConfig"]

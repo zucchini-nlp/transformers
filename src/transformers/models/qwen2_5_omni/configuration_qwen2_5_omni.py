@@ -724,6 +724,8 @@ class Qwen2_5OmniBigVGANConfig(PreTrainedConfig):
     upsample_kernel_sizes: list[int] | tuple[int, ...] = (11, 7, 4, 4, 4, 4)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class Qwen2_5OmniToken2WavConfig(PreTrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Qwen2_5OmniToken2WavModel`].

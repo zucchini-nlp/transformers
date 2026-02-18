@@ -18,7 +18,6 @@ import torch
 from ... import initialization as init
 from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import BaseModelOutputWithPooling
-from ...modeling_rope_utils import RopeParameters
 from ...modeling_utils import PreTrainedModel
 from ...utils import logging
 from ..qwen3_5.configuration_qwen3_5 import Qwen3_5VisionConfig
@@ -166,48 +165,19 @@ class Qwen3_5MoeTextConfig(Qwen3NextConfig):
         "layers.*.mlp.shared_expert.down_proj": "rowwise",
     }
 
-    def __init__(
-        self,
-        vocab_size=248320,
-        hidden_size=2048,
-        num_hidden_layers=40,
-        num_attention_heads=16,
-        num_key_value_heads=2,
-        hidden_act="silu",
-        max_position_embeddings=32768,
-        initializer_range=0.02,
-        rms_norm_eps=1e-6,
-        use_cache=True,
-        tie_word_embeddings=False,
-        rope_parameters: RopeParameters | dict[str, RopeParameters] | None = None,
-        attention_bias=False,
-        attention_dropout=0.0,
-        head_dim=256,
-        linear_conv_kernel_dim=4,
-        linear_key_head_dim=128,
-        linear_value_head_dim=128,
-        linear_num_key_heads=16,
-        linear_num_value_heads=32,
-        moe_intermediate_size=512,
-        shared_expert_intermediate_size=512,
-        num_experts_per_tok=8,
-        num_experts=256,
-        output_router_logits=False,
-        router_aux_loss_coef=0.001,
-        layer_types=None,
-        pad_token_id: int | None = None,
-        bos_token_id: int | None = None,
-        eos_token_id: int | None = None,
-        **kwargs,
-    ):
+    vocab_size: int = 248320
+    hidden_size: int = 2048
+    num_hidden_layers: int = 40
+    num_experts_per_tok: int = 8
+    num_experts: int = 256
+    intermediate_size = AttributeError()
+    decoder_sparse_step = AttributeError()
+    norm_topk_prob = AttributeError()
+    mlp_only_layers = AttributeError()
+
+    def __post_init__(self, **kwargs):
         kwargs["ignore_keys_at_rope_validation"] = {"mrope_section", "mrope_interleaved"}
-        super().__init__(
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
-        del self.intermediate_size
-        del self.decoder_sparse_step
-        del self.norm_topk_prob
+        super().__post_init__(**kwargs)
         del self.mlp_only_layers
 
 
@@ -255,30 +225,10 @@ class Qwen3_5MoeConfig(Qwen3VLConfig):
     >>> configuration = model.config
     ```"""
 
-    model_type = "qwen3_5_moe"
-    sub_configs = {"vision_config": Qwen3_5MoeVisionConfig, "text_config": Qwen3_5MoeTextConfig}
-
-    def __init__(
-        self,
-        text_config=None,
-        vision_config=None,
-        image_token_id=248056,
-        video_token_id=248057,
-        vision_start_token_id=248053,
-        vision_end_token_id=248054,
-        tie_word_embeddings=False,
-        **kwargs,
-    ):
-        super().__init__(
-            text_config=text_config,
-            vision_config=vision_config,
-            image_token_id=image_token_id,
-            video_token_id=video_token_id,
-            vision_start_token_id=vision_start_token_id,
-            vision_end_token_id=vision_end_token_id,
-            tie_word_embeddings=tie_word_embeddings,
-            **kwargs,
-        )
+    image_token_id: int = 248056
+    video_token_id: int = 248057
+    vision_start_token_id: int = 248053
+    vision_end_token_id: int = 248054
 
 
 class Qwen3_5MoeVisionRotaryEmbedding(Qwen3_5VisionRotaryEmbedding):

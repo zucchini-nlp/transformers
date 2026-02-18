@@ -119,6 +119,8 @@ class PeAudioEncoderConfig(PreTrainedConfig):
         super().__post_init__(**kwargs)
 
 
+@strict(accept_kwargs=True)
+@dataclass(repr=False)
 class PeAudioConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`PeAudioModel`]. It is used to instantiate a
@@ -160,29 +162,23 @@ class PeAudioConfig(PretrainedConfig):
         "num_attention_heads": 16,
     }
 
-    def __init__(
-        self,
-        text_config: dict | PreTrainedConfig | None = None,
-        audio_config: dict | PreTrainedConfig | None = None,
-        **kwargs,
-    ):
-        if isinstance(text_config, dict):
-            text_config["model_type"] = text_config.get("model_type", "modernbert")
-            text_config = CONFIG_MAPPING[text_config["model_type"]](
-                **{**self._default_text_config_kwargs, **text_config}
+    text_config: dict | PreTrainedConfig | None = None
+    audio_config: dict | PreTrainedConfig | None = None
+
+    def __post_init__(self, **kwargs):
+        if isinstance(self.text_config, dict):
+            self.text_config["model_type"] = self.text_config.get("model_type", "modernbert")
+            self.text_config = CONFIG_MAPPING[self.text_config["model_type"]](
+                **{**self._default_text_config_kwargs, **self.text_config}
             )
-        elif text_config is None:
-            text_config = CONFIG_MAPPING["modernbert"](**self._default_text_config_kwargs)
+        elif self.text_config is None:
+            self.text_config = CONFIG_MAPPING["modernbert"](**self._default_text_config_kwargs)
 
-        if isinstance(audio_config, dict):
-            audio_config = PeAudioEncoderConfig(**audio_config)
-        elif audio_config is None:
-            audio_config = PeAudioEncoderConfig()
-
-        self.text_config = text_config
-        self.audio_config = audio_config
-
-        super().__init__(**kwargs)
+        if isinstance(self.audio_config, dict):
+            self.audio_config = PeAudioEncoderConfig(**self.audio_config)
+        elif self.audio_config is None:
+            self.audio_config = PeAudioEncoderConfig()
+        super().__post_init__(**kwargs)
 
 
 __all__ = ["PeAudioEncoderConfig", "PeAudioConfig"]
