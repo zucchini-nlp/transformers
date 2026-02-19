@@ -26,7 +26,7 @@ from ...cache_utils import Cache, DynamicCache
 from ...configuration_utils import PreTrainedConfig
 from ...feature_extraction_utils import BatchFeature
 from ...image_utils import ImageInput
-from ...masking_utils import create_causal_mask
+from ...masking_utils import create_bidirectional_mask, create_causal_mask, packed_sequence_mask_function
 from ...modeling_flash_attention_utils import FlashAttentionKwargs
 from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import BaseModelOutputWithPast, BaseModelOutputWithPooling
@@ -826,7 +826,7 @@ class Glm4vVisionModel(Glm4vPreTrainedModel):
             image_type_ids[:, 1].to(hidden_states.device),
         )
 
-        hidden_states = hidden_states[None, ...] # unsqueeze batch dim
+        hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
         total_length = grid_thw.prod(-1).sum()
         packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
         for i in range(len(cu_seqlens) - 1):
