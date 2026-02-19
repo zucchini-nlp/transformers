@@ -44,7 +44,7 @@ from ...image_utils import (
     make_list_of_images,
     to_numpy_array,
 )
-from ...masking_utils import create_bidirectional_mask, create_causal_mask
+from ...masking_utils import create_bidirectional_mask, create_causal_mask, packed_sequence_mask_function
 from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithPast, BaseModelOutputWithPooling
 from ...modeling_utils import PreTrainedModel
 from ...models.qwen2_vl.image_processing_qwen2_vl import Qwen2VLImageProcessor
@@ -977,7 +977,7 @@ class PaddleOCRVisionEncoder(VideoLlama3VisionEncoder):
             The temporal, height and width of feature shape of each image in LLM.
         """
         device = inputs_embeds.device
-        hidden_states = inputs_embeds
+        hidden_states = inputs_embeds[None, ...]  # unsqueeze batch dim
         attention_mask = create_bidirectional_mask(
             config=self.config,
             inputs_embeds=inputs_embeds,
@@ -1001,11 +1001,24 @@ class PaddleOCRVisionEncoder(VideoLlama3VisionEncoder):
         rotary_embeddings = rotary_embeddings.repeat(1, 2)
         position_embeddings = (rotary_embeddings.cos(), rotary_embeddings.sin())
 
+        seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+        packed_sequence = torch.repeat_interleave(
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+        ).unsqueeze(0)
+
+        attention_mask = create_bidirectional_mask(
+            config=self.config,
+            inputs_embeds=hidden_states,
+            attention_mask=None,
+            and_mask_function=packed_sequence_mask_function(packed_sequence),
+        )
+
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
                 hidden_states,
                 cu_seqlens=cu_seqlens,
                 position_embeddings=position_embeddings,
+                attention_mask=attention_mask,
                 **kwargs,
             )
 

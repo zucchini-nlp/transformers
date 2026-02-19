@@ -28,7 +28,7 @@ from ...cache_utils import Cache, DynamicCache
 from ...configuration_utils import PreTrainedConfig
 from ...feature_extraction_utils import BatchFeature
 from ...image_utils import ImageInput
-from ...masking_utils import create_causal_mask, create_bidirectional_mask, packed_sequence_mask_function
+from ...masking_utils import create_bidirectional_mask, create_causal_mask, packed_sequence_mask_function
 from ...modeling_flash_attention_utils import FlashAttentionKwargs
 from ...modeling_outputs import BaseModelOutputWithPast, BaseModelOutputWithPooling
 from ...modeling_rope_utils import RopeParameters, dynamic_rope_update
@@ -679,7 +679,7 @@ class Qwen3VLVisionModel(Qwen3VLPreTrainedModel):
 
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
 
-        rotary_pos_emb = rotary_pos_emb.reshape(seq_len, -1)
+        rotary_pos_emb = rotary_pos_emb.reshape(hidden_states.shape[0], -1)
         emb = torch.cat((rotary_pos_emb, rotary_pos_emb), dim=-1)
         position_embeddings = (emb.cos(), emb.sin())
 
@@ -694,12 +694,10 @@ class Qwen3VLVisionModel(Qwen3VLPreTrainedModel):
         cu_seqlens = F.pad(cu_seqlens, (1, 0), value=0)
 
         hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
-        total_length = grid_thw.prod(-1).sum()
-        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
-        for i in range(len(cu_seqlens) - 1):
-            start = cu_seqlens[i]
-            end = cu_seqlens[i + 1]
-            packed_sequence[:, start:end] = i
+        seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+        packed_sequence = torch.repeat_interleave(
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+        ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,

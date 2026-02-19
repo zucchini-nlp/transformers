@@ -772,12 +772,10 @@ class Glm4vVisionModel(Glm4vPreTrainedModel):
         )
 
         hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
-        total_length = grid_thw.prod(-1).sum()
-        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
-        for i in range(len(cu_seqlens) - 1):
-            start = cu_seqlens[i]
-            end = cu_seqlens[i + 1]
-            packed_sequence[:, start:end] = i
+        seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+        packed_sequence = torch.repeat_interleave(
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+        ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,

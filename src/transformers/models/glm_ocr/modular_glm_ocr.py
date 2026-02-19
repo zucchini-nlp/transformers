@@ -18,6 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ...masking_utils import create_bidirectional_mask, packed_sequence_mask_function
 from ...modeling_outputs import BaseModelOutputWithPooling
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS
 from ..glm4v.configuration_glm4v import Glm4vConfig, Glm4vTextConfig, Glm4vVisionConfig
@@ -35,7 +36,6 @@ from ..glm4v.modeling_glm4v import (
     Glm4vVisionPatchMerger,
     apply_rotary_pos_emb_vision,
     eager_attention_forward,
-    is_flash_attention_requested,
 )
 
 
@@ -363,12 +363,10 @@ class GlmOcrVisionModel(Glm4vVisionModel):
         cu_seqlens = F.pad(cu_seqlens, (1, 0), value=0)
 
         hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
-        total_length = grid_thw.prod(-1).sum()
-        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
-        for i in range(len(cu_seqlens) - 1):
-            start = cu_seqlens[i]
-            end = cu_seqlens[i + 1]
-            packed_sequence[:, start:end] = i
+        seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+        packed_sequence = torch.repeat_interleave(
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+        ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,

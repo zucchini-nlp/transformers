@@ -21,7 +21,7 @@ from torch import nn
 
 from ... import initialization as init
 from ...cache_utils import Cache
-from ...masking_utils import create_causal_mask, create_bidirectional_mask, packed_sequence_mask_function
+from ...masking_utils import create_bidirectional_mask, create_causal_mask, packed_sequence_mask_function
 from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import BaseModelOutputWithPast, BaseModelOutputWithPooling
 from ...modeling_rope_utils import RopeParameters
@@ -596,12 +596,10 @@ class Qwen3_5VisionModel(Qwen3VLVisionModel):
         cu_seqlens = F.pad(cu_seqlens, (1, 0), value=0)
 
         hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
-        total_length = grid_thw.prod(-1).sum()
-        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
-        for i in range(len(cu_seqlens) - 1):
-            start = cu_seqlens[i]
-            end = cu_seqlens[i + 1]
-            packed_sequence[:, start:end] = i
+        seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
+        packed_sequence = torch.repeat_interleave(
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+        ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
