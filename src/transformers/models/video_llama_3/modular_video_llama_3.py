@@ -1209,6 +1209,9 @@ class VideoLlama3Processor(Qwen2VLProcessor):
 
         return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors)
 
+    def model_input_names(self):
+        raise AttributeError("VideoLlama doesn't need to override it")
+
 
 class VideoLlama3ImageProcessorKwargs(Qwen2VLImageProcessorKwargs):
     pass
