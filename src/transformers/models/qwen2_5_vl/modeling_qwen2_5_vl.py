@@ -229,7 +229,7 @@ class Qwen2_5_VLVisionAttention(nn.Module):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs,
     ) -> torch.Tensor:
-        seq_length = hidden_states.shape[1]
+        seq_length = hidden_states.shape[0]
         query_states, key_states, value_states = (
             self.qkv(hidden_states).reshape(seq_length, 3, self.num_heads, -1).permute(1, 0, 2, 3).unbind(0)
         )
@@ -449,7 +449,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         seq_len = hidden_states.shape[0]
         hidden_states = hidden_states.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         hidden_states = hidden_states[window_index, :, :]
-        hidden_states = hidden_states.reshape(seq_len, -1)[None, ...]  # unsqueeze batch dim
+        hidden_states = hidden_states.reshape(seq_len, -1)
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         rotary_pos_emb = rotary_pos_emb[window_index, :, :]
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len, -1)
@@ -470,11 +470,10 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         packed_sequence = torch.repeat_interleave(
             torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
         ).unsqueeze(0)
-        print(packed_sequence, seq_lengths, hidden_states.shape)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
-            inputs_embeds=hidden_states,
+            inputs_embeds=hidden_states[None, ...],
             attention_mask=None,
             and_mask_function=packed_sequence_mask_function(packed_sequence),
         )

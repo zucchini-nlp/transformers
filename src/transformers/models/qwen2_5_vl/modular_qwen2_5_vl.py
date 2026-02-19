@@ -317,7 +317,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         seq_len = hidden_states.shape[0]
         hidden_states = hidden_states.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         hidden_states = hidden_states[window_index, :, :]
-        hidden_states = hidden_states.reshape(seq_len, -1)[None, ...]  # unsqueeze batch dim
+        hidden_states = hidden_states.reshape(seq_len, -1)
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         rotary_pos_emb = rotary_pos_emb[window_index, :, :]
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len, -1)
@@ -341,7 +341,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
-            inputs_embeds=hidden_states,
+            inputs_embeds=hidden_states[None, ...],
             attention_mask=None,
             and_mask_function=packed_sequence_mask_function(packed_sequence),
         )

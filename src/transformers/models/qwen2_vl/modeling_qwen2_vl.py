@@ -401,7 +401,7 @@ class VisionAttention(nn.Module):
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs,
     ) -> torch.Tensor:
-        seq_length = hidden_states.shape[1]
+        seq_length = hidden_states.shape[0]
         query_states, key_states, value_states = (
             self.qkv(hidden_states).reshape(seq_length, 3, self.num_heads, -1).permute(1, 0, 2, 3).unbind(0)
         )
@@ -761,7 +761,7 @@ class Qwen2VisionTransformerPretrainedModel(Qwen2VLPreTrainedModel):
             The temporal, height and width dimensions of feature shape for each image. Each row contains [t, h, w] values.
         """
         hidden_states = self.patch_embed(hidden_states)
-        hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
+
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
         emb = torch.cat((rotary_pos_emb, rotary_pos_emb), dim=-1)
         position_embeddings = (emb.cos(), emb.sin())
@@ -783,7 +783,7 @@ class Qwen2VisionTransformerPretrainedModel(Qwen2VLPreTrainedModel):
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
-            inputs_embeds=hidden_states,
+            inputs_embeds=hidden_states[None, ...],
             attention_mask=None,
             and_mask_function=packed_sequence_mask_function(packed_sequence),
         )

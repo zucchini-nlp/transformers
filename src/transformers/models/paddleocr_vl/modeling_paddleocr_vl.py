@@ -64,7 +64,7 @@ class PaddleOCRProjector(nn.Module):
         self.linear_2 = nn.Linear(hidden_size, config.text_config.hidden_size, bias=True)
 
     def forward(self, image_features: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
-        image_features_chunks = image_features.split(image_grid_thw.prod(dim=1).tolist(), dim=1)
+        image_features_chunks = image_features.split(image_grid_thw.prod(dim=1).tolist(), dim=0)
         m1, m2 = self.merge_kernel_size
 
         processed_features = []
@@ -685,7 +685,7 @@ class PaddleOCRVisionAttention(nn.Module):
             position_embeddings (`tuple(torch.Tensor, torch.Tensor)` of shape `(num_patches, head_dim // 2)`):
                 The cosine and sine position embeddings for vision attention.
         """
-        seq_length = hidden_states.shape[1]
+        seq_length = hidden_states.shape[0]
         query_states = self.q_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         key_states = self.k_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         value_states = self.v_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
@@ -825,17 +825,10 @@ class PaddleOCRVisionEncoder(nn.Module):
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
         """
-        device = inputs_embeds.device
-        hidden_states = inputs_embeds[None, ...]  # unsqueeze batch dim
-        attention_mask = create_bidirectional_mask(
-            config=self.config,
-            inputs_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-        )
         split_hids = []
         split_wids = []
         for t, h, w in image_grid_thw:
-            image_pids = torch.arange(t * h * w, device=device) % (h * w)
+            image_pids = torch.arange(t * h * w, device=inputs_embeds.device) % (h * w)
             sample_hids = image_pids // w
             sample_wids = image_pids % w
             split_hids.append(sample_hids)
@@ -852,19 +845,19 @@ class PaddleOCRVisionEncoder(nn.Module):
 
         seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
         packed_sequence = torch.repeat_interleave(
-            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
+            torch.arange(len(seq_lengths), device=inputs_embeds.device), seq_lengths
         ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
-            inputs_embeds=hidden_states,
+            inputs_embeds=inputs_embeds[None, ...],
             attention_mask=None,
             and_mask_function=packed_sequence_mask_function(packed_sequence),
         )
 
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
-                hidden_states,
+                inputs_embeds,
                 cu_seqlens=cu_seqlens,
                 position_embeddings=position_embeddings,
                 attention_mask=attention_mask,

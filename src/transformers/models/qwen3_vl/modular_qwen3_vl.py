@@ -693,7 +693,6 @@ class Qwen3VLVisionModel(Qwen3VLPreTrainedModel):
         )
         cu_seqlens = F.pad(cu_seqlens, (1, 0), value=0)
 
-        hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
         seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
         packed_sequence = torch.repeat_interleave(
             torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
@@ -701,7 +700,7 @@ class Qwen3VLVisionModel(Qwen3VLPreTrainedModel):
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
-            inputs_embeds=hidden_states,
+            inputs_embeds=hidden_states[None, ...],
             attention_mask=None,
             and_mask_function=packed_sequence_mask_function(packed_sequence),
         )
