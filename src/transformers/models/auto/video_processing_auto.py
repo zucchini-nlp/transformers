@@ -360,10 +360,6 @@ class AutoVideoProcessor:
 
         if video_processor_class is not None:
             video_processor_class = video_processor_class_from_name(video_processor_class)
-        elif not is_torchvision_available():
-            raise ValueError(
-                f"{pretrained_model_name_or_path} requires `torchvision` to be installed. Please install `torchvision` and try again."
-            )
 
         has_remote_code = video_processor_auto_map is not None
         has_local_code = video_processor_class is not None or type(config) in VIDEO_PROCESSOR_MAPPING
@@ -387,13 +383,14 @@ class AutoVideoProcessor:
         # Last try: we use the VIDEO_PROCESSOR_MAPPING.
         elif type(config) in VIDEO_PROCESSOR_MAPPING:
             video_processor_class = VIDEO_PROCESSOR_MAPPING[type(config)]
-
             if video_processor_class is not None:
                 return video_processor_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
-            else:
-                raise ValueError(
-                    "This video processor cannot be instantiated. Please make sure you have `torchvision` installed."
-                )
+
+        # Raise a more informative error message if torchvision isn't found, otherwise just fallback to default
+        if not is_torchvision_available():
+            raise ValueError(
+                f"{pretrained_model_name_or_path} requires `torchvision` to be installed. Please install `torchvision` and try again."
+            )
 
         raise ValueError(
             f"Unrecognized video processor in {pretrained_model_name_or_path}. Should have a "
