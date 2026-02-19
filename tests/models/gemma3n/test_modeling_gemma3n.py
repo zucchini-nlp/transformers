@@ -847,12 +847,6 @@ class Gemma3nVision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitt
     def test_get_audio_features_attentions(self, return_dict: bool | None):
         pass
 
-    @unittest.skip(
-        "Timm backbone buffers can't be init correctly on loading back! Specifically `vision_tower.timm_model.rope.pos_embed`"
-    )
-    def test_save_load(self):
-        pass
-
     @pytest.mark.generate
     @unittest.skip("Gemma3n does not support QuantizedCache as it performs cache manipulation in the forward pass")
     def test_generate_with_quant_cache(self):
