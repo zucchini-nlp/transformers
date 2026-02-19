@@ -980,6 +980,7 @@ class GlmImageModel(GlmImagePreTrainedModel):
         grid_thw: list[int, int, int],
         temp_merge_size: int = 1,
         spatial_merge_size: int = 1,
+        time_interval: int = 1,
         device: str | torch.device | None = None,
     ):
         llm_grid_t, llm_grid_h, llm_grid_w = (
@@ -989,11 +990,14 @@ class GlmImageModel(GlmImagePreTrainedModel):
         )
 
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
-        h_grids = image_seq_length // llm_grid_h + start_position
-        w_grids = image_seq_length // llm_grid_w + start_position
-        position_width = torch.arange(start_position, w_grids, device=device).repeat(llm_grid_w)
-        position_height = torch.arange(start_position, h_grids, device=device).repeat_interleave(llm_grid_h)
+        position_width = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat(
+            llm_grid_h * llm_grid_t
+        )
+        position_height = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat_interleave(
+            llm_grid_w * llm_grid_t
+        )
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
+        position_temporal = position_temporal * time_interval
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
         return vision_position_ids
@@ -1074,9 +1078,6 @@ class GlmImageModel(GlmImagePreTrainedModel):
             for img_idx, (start, end) in enumerate(zip(image_start_positions, image_end_positions)):
                 if curr_grids is None or img_idx >= len(curr_grids):
                     break
-                grid = curr_grids[img_idx]
-                # grid format is [temporal, height, width]
-                _, height, width = grid.tolist()
 
                 # Text tokens before this image
                 llm_pos_length = start - prev_image_end
@@ -1087,14 +1088,10 @@ class GlmImageModel(GlmImagePreTrainedModel):
                 # For an image with height H and width W:
                 # - position_width cycles [0, 1, ..., W-1] for each row, repeated H times
                 # - position_height stays constant per row, [0]*W, [1]*W, ..., [H-1]*W
-                image_seq_length = height * width
-                position_width = torch.arange(current_pos, current_pos + width, device=device).repeat(height)
-                position_height = torch.arange(current_pos, current_pos + height, device=device).repeat_interleave(
-                    width
+                vision_position_ids = self.get_vision_position_ids(
+                    start_position=current_pos, grid_thw=curr_grids[img_idx], device=device
                 )
-                position_temporal = torch.full((image_seq_length,), current_pos, device=device, dtype=torch.long)
-                vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
-                current_pos += max(height, width)
+                current_pos += max(curr_grids[img_idx][1], curr_grids[img_idx][2])
 
                 prev_image_end = end
                 curr_position_ids.append(torch.cat([llm_position_ids, vision_position_ids], dim=-1))

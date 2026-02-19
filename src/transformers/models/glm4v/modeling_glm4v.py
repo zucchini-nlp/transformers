@@ -967,14 +967,14 @@ class Glm4vModel(Glm4vPreTrainedModel):
         )
 
         image_seq_length = llm_grid_h * llm_grid_w * llm_grid_t
-        position_width = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat(
-            llm_grid_w * llm_grid_t
-        )
-        position_width = position_width * time_interval
-        position_height = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat_interleave(
+        position_width = torch.arange(start_position, start_position + llm_grid_w, device=device).repeat(
             llm_grid_h * llm_grid_t
         )
+        position_height = torch.arange(start_position, start_position + llm_grid_h, device=device).repeat_interleave(
+            llm_grid_w * llm_grid_t
+        )
         position_temporal = torch.full((image_seq_length,), start_position, device=device, dtype=torch.long)
+        position_temporal = position_temporal * time_interval
         vision_position_ids = torch.stack([position_temporal, position_height, position_width], dim=0)
 
         return vision_position_ids
