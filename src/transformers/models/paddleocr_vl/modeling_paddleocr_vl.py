@@ -64,7 +64,7 @@ class PaddleOCRProjector(nn.Module):
         self.linear_2 = nn.Linear(hidden_size, config.text_config.hidden_size, bias=True)
 
     def forward(self, image_features: torch.Tensor, image_grid_thw: torch.Tensor) -> torch.Tensor:
-        image_features_chunks = image_features.split(image_grid_thw.prod(dim=1).tolist(), dim=0)
+        image_features_chunks = image_features.split(image_grid_thw.prod(dim=1).tolist(), dim=1)
         m1, m2 = self.merge_kernel_size
 
         processed_features = []
@@ -685,7 +685,7 @@ class PaddleOCRVisionAttention(nn.Module):
             position_embeddings (`tuple(torch.Tensor, torch.Tensor)` of shape `(num_patches, head_dim // 2)`):
                 The cosine and sine position embeddings for vision attention.
         """
-        seq_length = hidden_states.shape[0]
+        seq_length = hidden_states.shape[1]
         query_states = self.q_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         key_states = self.k_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         value_states = self.v_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)

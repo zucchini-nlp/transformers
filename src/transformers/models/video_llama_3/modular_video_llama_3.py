@@ -303,7 +303,7 @@ class VideoLlama3VisionAttention(SiglipAttention):
             position_embeddings (`tuple(torch.Tensor, torch.Tensor)` of shape `(num_patches, head_dim // 2)`):
                 The cosine and sine position embeddings for vision attention.
         """
-        seq_length = hidden_states.shape[0]
+        seq_length = hidden_states.shape[1]
         query_states = self.q_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         key_states = self.k_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)
         value_states = self.v_proj(hidden_states).view(seq_length, self.num_heads, self.head_dim)

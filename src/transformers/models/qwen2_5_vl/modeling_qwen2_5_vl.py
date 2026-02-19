@@ -437,7 +437,6 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
             `torch.Tensor`: hidden_states.
         """
         hidden_states = self.patch_embed(hidden_states)
-        hidden_states = hidden_states[None, ...]  # unsqueeze batch dim
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
         window_index, cu_window_seqlens = self.get_window_index(grid_thw)
         cu_window_seqlens = torch.tensor(
@@ -447,10 +446,10 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         )
         cu_window_seqlens = torch.unique_consecutive(cu_window_seqlens)
 
-        seq_len, _ = hidden_states.size()
+        seq_len = hidden_states.shape[0]
         hidden_states = hidden_states.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         hidden_states = hidden_states[window_index, :, :]
-        hidden_states = hidden_states.reshape(seq_len, -1)
+        hidden_states = hidden_states.reshape(seq_len, -1)[None, ...]  # unsqueeze batch dim
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len // self.spatial_merge_unit, self.spatial_merge_unit, -1)
         rotary_pos_emb = rotary_pos_emb[window_index, :, :]
         rotary_pos_emb = rotary_pos_emb.reshape(seq_len, -1)
@@ -471,6 +470,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         packed_sequence = torch.repeat_interleave(
             torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
         ).unsqueeze(0)
+        print(packed_sequence, seq_lengths, hidden_states.shape)
 
         attention_mask = create_bidirectional_mask(
             config=self.config,
