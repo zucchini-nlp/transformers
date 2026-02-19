@@ -361,13 +361,13 @@ class Gemma3nAudioConfig(PreTrainedConfig):
     conf_conv_kernel_size: int = 5
     conf_reduction_factor: int = 4
     conf_residual_weight: float = 0.5
-    sscp_conv_channel_size: tuple[int, int] = (128, 32)
+    sscp_conv_channel_size: list[int] | tuple[int, int] = (128, 32)
     sscp_conv_group_norm_eps: float = 1e-3
-    sscp_conv_kernel_size: tuple[tuple[int, int], tuple[int, int]] = (
+    sscp_conv_kernel_size: list | tuple[tuple[int, int], tuple[int, int]] = (
         (3, 3),
         (3, 3),
     )
-    sscp_conv_stride_size: tuple[tuple[int, int], tuple[int, int]] = (
+    sscp_conv_stride_size: list | tuple[tuple[int, int], tuple[int, int]] = (
         (2, 2),
         (2, 2),
     )

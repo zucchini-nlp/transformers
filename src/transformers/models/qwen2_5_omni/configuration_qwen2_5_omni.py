@@ -587,7 +587,7 @@ class Qwen2_5OmniTalkerConfig(PreTrainedConfig):
     use_cache: bool = True
     tie_word_embeddings: bool = False
     use_sliding_window: bool = False
-    sliding_window: int = 32768
+    sliding_window: int | None = 32768
     max_window_layers: int = 28
     attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None
