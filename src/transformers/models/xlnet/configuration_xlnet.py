@@ -154,7 +154,7 @@ class XLNetConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-12
     dropout: float | int = 0.1
-    mem_len: int = 512
+    mem_len: int | None = 512
     reuse_len: int | None = None
     use_mems_eval: bool = True
     use_mems_train: bool = False

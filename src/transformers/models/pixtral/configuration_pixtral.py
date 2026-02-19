@@ -79,8 +79,8 @@ class PixtralVisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 24
     num_attention_heads: int = 16
     num_channels: int = 3
-    image_size: int = 1024
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 1024
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_act: str = "gelu"
     attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None

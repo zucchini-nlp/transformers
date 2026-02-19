@@ -172,7 +172,7 @@ class Siglip2VisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
     num_channels: int = 3
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_act: str = "gelu_pytorch_tanh"
     layer_norm_eps: float = 1e-6
     attention_dropout: float | int = 0.0

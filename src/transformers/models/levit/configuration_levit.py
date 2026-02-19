@@ -80,12 +80,12 @@ class LevitConfig(PreTrainedConfig):
 
     model_type = "levit"
 
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     num_channels: int = 3
     kernel_size: int = 3
     stride: int = 2
     padding: int = 1
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_sizes: list[int] | tuple[int, ...] = (128, 256, 384)
     num_attention_heads: list[int] | tuple[int, ...] = (4, 8, 12)
     depths: list[int] | tuple[int, ...] = (4, 4, 4)

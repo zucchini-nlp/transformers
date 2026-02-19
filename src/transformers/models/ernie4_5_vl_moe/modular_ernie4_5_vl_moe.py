@@ -755,7 +755,7 @@ class Ernie4_5VLVisionMLP(VisionMlp):
 class Ernie4_5_VL_MoePatchEmbed(Qwen2_5_VisionPatchEmbed):
     def __init__(
         self,
-        patch_size: int = 14,
+        patch_size: int | list[int] | tuple[int, int] = 14,
         in_channels: int = 3,
         embed_dim: int = 1152,
     ) -> None:
@@ -1449,7 +1449,7 @@ class Ernie4_5_VL_MoeImageProcessor(Glm4vImageProcessor):
         image_mean: float | list[float] | None = None,
         image_std: float | list[float] | None = None,
         do_convert_rgb: bool = True,
-        patch_size: int = 14,
+        patch_size: int | list[int] | tuple[int, int] = 14,
         temporal_patch_size: int | None = None,
         merge_size: int = 2,
         **kwargs,

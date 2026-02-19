@@ -35,9 +35,9 @@ class Qwen2VLVisionConfig(PreTrainedConfig):
     mlp_ratio: int = 4
     num_heads: int = 16
     in_channels: int = 3
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     spatial_merge_size: int = 2
-    temporal_patch_size: int = 2
+    temporal_patch_size: int | list[int] | tuple[int, int] = 2
     initializer_range: float = 0.02
 
 

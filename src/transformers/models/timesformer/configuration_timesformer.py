@@ -85,8 +85,8 @@ class TimesformerConfig(PreTrainedConfig):
 
     model_type = "timesformer"
 
-    image_size: int = 224
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     num_frames: int = 8
     hidden_size: int = 768

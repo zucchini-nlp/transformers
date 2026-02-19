@@ -88,9 +88,9 @@ class Qwen2_5OmniVisionEncoderConfig(PreTrainedConfig):
     intermediate_size: int = 3420
     num_heads: int = 16
     in_channels: int = 3
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     spatial_merge_size: int = 2
-    temporal_patch_size: int = 2
+    temporal_patch_size: int | list[int] | tuple[int, int] = 2
     window_size: int = 112
     out_hidden_size: int = 3584
     fullatt_block_indexes: list[int] | tuple[int, ...] = (7, 15, 23, 31)

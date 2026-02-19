@@ -153,7 +153,7 @@ class LightOnOcrProcessor(ProcessorMixin):
         self,
         image_processor=None,
         tokenizer=None,
-        patch_size: int = 14,
+        patch_size: int | list[int] | tuple[int, int] = 14,
         spatial_merge_size: int = 2,
         chat_template=None,
         **kwargs,

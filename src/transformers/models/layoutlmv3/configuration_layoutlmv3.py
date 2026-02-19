@@ -135,7 +135,7 @@ class LayoutLMv3Config(PreTrainedConfig):
     visual_embed: bool = True
     input_size: int = 224
     num_channels: int = 3
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     classifier_dropout: float | int | None = None
 
 

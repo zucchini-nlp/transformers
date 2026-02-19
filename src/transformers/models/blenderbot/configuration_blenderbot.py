@@ -109,8 +109,8 @@ class BlenderbotConfig(PreTrainedConfig):
     decoder_layers: int = 24
     decoder_ffn_dim: int = 10240
     decoder_attention_heads: int = 32
-    encoder_layerdrop: float = 0.0
-    decoder_layerdrop: float = 0.0
+    encoder_layerdrop: float | int = 0.0
+    decoder_layerdrop: float | int = 0.0
     use_cache: bool = True
     is_encoder_decoder: bool = True
     activation_function: str = "gelu"

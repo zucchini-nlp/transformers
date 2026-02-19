@@ -142,8 +142,8 @@ class EomtDinov3Config(EomtConfig):
     hidden_dropout_prob: float = 0.0
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-6
-    image_size: int = 640
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 640
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     layerscale_value: float = 1.0
     drop_path_rate: float = 0.0

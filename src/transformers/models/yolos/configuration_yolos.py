@@ -106,7 +106,7 @@ class YolosConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-12
     image_size: list[int] | tuple[int, ...] = (512, 864)
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     qkv_bias: bool = True
     num_detection_tokens: int = 100

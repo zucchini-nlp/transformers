@@ -132,7 +132,7 @@ class LwDetrViTConfig(VitDetConfig):
 
     model_type = "lw_detr_vit"
 
-    image_size: int = 256
+    image_size: int | list[int] | tuple[int, int] = 256
     cae_init_values: float = 0.1
     num_windows: int = 16
 

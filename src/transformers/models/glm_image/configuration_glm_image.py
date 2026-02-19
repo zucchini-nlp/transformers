@@ -109,8 +109,8 @@ class GlmImageVisionConfig(PreTrainedConfig):
     attention_dropout: float | int = 0.0
     num_heads: int = 16
     in_channels: int = 3
-    image_size: int = 2048
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 2048
+    patch_size: int | list[int] | tuple[int, int] = 16
     spatial_merge_size: int = 1
     intermediate_size: int = 6144
     initializer_range: float = 0.02

@@ -96,7 +96,7 @@ class Aimv2VisionConfig(SiglipVisionConfig):
     intermediate_size: int = 2816
     num_hidden_layers: int = 24
     num_attention_heads: int = 8
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     rms_norm_eps: float = 1e-5
     attention_dropout: float | int = 0.0
     qkv_bias: bool = False

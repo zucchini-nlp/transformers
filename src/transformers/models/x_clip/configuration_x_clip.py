@@ -176,8 +176,8 @@ class XCLIPVisionConfig(PreTrainedConfig):
     mit_num_hidden_layers: int = 1
     mit_num_attention_heads: int = 8
     num_channels: int = 3
-    image_size: int = 224
-    patch_size: int = 32
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 32
     num_frames: int = 8
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5

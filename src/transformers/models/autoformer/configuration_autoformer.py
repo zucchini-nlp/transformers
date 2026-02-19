@@ -155,8 +155,8 @@ class AutoformerConfig(PreTrainedConfig):
     decoder_ffn_dim: int = 32
     activation_function: str = "gelu"
     dropout: float | int = 0.1
-    encoder_layerdrop: float = 0.1
-    decoder_layerdrop: float = 0.1
+    encoder_layerdrop: float | int = 0.1
+    decoder_layerdrop: float | int = 0.1
     attention_dropout: float | int = 0.1
     activation_dropout: float | int = 0.1
     num_parallel_samples: int = 100

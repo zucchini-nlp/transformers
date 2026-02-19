@@ -106,8 +106,8 @@ class MLCDVisionConfig(PreTrainedConfig):
     num_attention_heads: int = 16
     num_key_value_groups: int = 1
     num_channels: int = 3
-    image_size: int = 336
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 336
+    patch_size: int | list[int] | tuple[int, int] = 14
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-5
     attention_dropout: float | int = 0.0

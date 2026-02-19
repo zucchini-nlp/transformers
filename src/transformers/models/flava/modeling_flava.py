@@ -337,7 +337,7 @@ class PatchEmbeddings(nn.Module):
 
     def __init__(
         self,
-        image_size: int = 224,
+        image_size: int | list[int] | tuple[int, int] = 224,
         patch_size: int | tuple[int, int] = 16,
         num_channels: int = 3,
         embed_dim: int = 768,

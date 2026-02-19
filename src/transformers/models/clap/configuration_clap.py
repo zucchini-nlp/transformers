@@ -203,7 +203,7 @@ class ClapAudioConfig(PreTrainedConfig):
     num_mel_bins: int = 64
     spec_size: int = 256
     hidden_act: str = "gelu"
-    patch_size: int = 4
+    patch_size: int | list[int] | tuple[int, int] = 4
     patch_stride: int | list[int] | tuple[int, ...] = (4, 4)
     num_classes: int = 527
     hidden_size: int = 768

@@ -139,8 +139,8 @@ class GlmImageVisionConfig(Glm4vVisionConfig):
     hidden_act: str = "gelu"
     attention_bias: bool = True
     num_heads: int = 16
-    image_size: int = 2048
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 2048
+    patch_size: int | list[int] | tuple[int, int] = 16
     layer_norm_eps: float = 1e-06
     spatial_merge_size: int = 1
     intermediate_size: int = 6144

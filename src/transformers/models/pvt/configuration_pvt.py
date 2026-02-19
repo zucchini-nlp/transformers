@@ -90,7 +90,7 @@ class PvtConfig(PreTrainedConfig):
 
     model_type = "pvt"
 
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     num_channels: int = 3
     num_encoder_blocks: int = 4
     depths: list[int] | tuple[int, ...] = (2, 2, 2, 2)

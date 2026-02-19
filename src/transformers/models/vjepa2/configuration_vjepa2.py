@@ -99,7 +99,7 @@ class VJEPA2Config(PreTrainedConfig):
 
     model_type = "vjepa2"
 
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     crop_size: int = 256
     frames_per_clip: int = 64
     tubelet_size: int = 2

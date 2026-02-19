@@ -94,8 +94,8 @@ class MobileViTConfig(PreTrainedConfig):
     model_type = "mobilevit"
 
     num_channels: int = 3
-    image_size: int = 256
-    patch_size: int = 2
+    image_size: int | list[int] | tuple[int, int] = 256
+    patch_size: int | list[int] | tuple[int, int] = 2
     hidden_sizes: list[int] | tuple[int, ...] = (144, 192, 240)
     neck_hidden_sizes: list[int] | tuple[int, ...] = (16, 32, 64, 96, 128, 160, 640)
     num_attention_heads: int = 4

@@ -118,8 +118,8 @@ class Phi4MultimodalVisionConfig(SiglipVisionConfig):
     intermediate_size: int = 4304
     num_hidden_layers: int = 27
     num_attention_heads: int = 16
-    image_size: int = 448
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 448
+    patch_size: int | list[int] | tuple[int, int] = 14
     crop_size: int = 448
     image_token_id: int = 200010
     feature_layer: int = -2

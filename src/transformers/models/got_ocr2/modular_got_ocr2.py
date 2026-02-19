@@ -101,8 +101,8 @@ class GotOcr2VisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
     num_channels: int = 3
-    image_size: int = 1024
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 1024
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-06
     attention_dropout: float | int = 0.0

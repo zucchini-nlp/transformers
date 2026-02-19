@@ -95,7 +95,7 @@ class EfficientNetConfig(PreTrainedConfig):
     model_type = "efficientnet"
 
     num_channels: int = 3
-    image_size: int = 600
+    image_size: int | list[int] | tuple[int, int] = 600
     width_coefficient: float = 2.0
     depth_coefficient: float = 3.1
     depth_divisor: int = 8

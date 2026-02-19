@@ -130,7 +130,7 @@ class JanusVisionConfig(SiglipVisionConfig):
     hidden_size: int = 1024
     num_hidden_layers: int = 24
     num_attention_heads: int = 16
-    image_size: int = 384
+    image_size: int | list[int] | tuple[int, int] = 384
     hidden_act: str = "gelu"
     mlp_ratio: float | int = 4.0
     attention_bias: bool = True

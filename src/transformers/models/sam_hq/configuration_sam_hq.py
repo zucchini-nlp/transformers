@@ -55,8 +55,8 @@ class SamHQPromptEncoderConfig(PreTrainedConfig):
     base_config_key = "prompt_encoder_config"
 
     hidden_size: int = 256
-    image_size: int = 1024
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 1024
+    patch_size: int | list[int] | tuple[int, int] = 16
     mask_input_channels: int = 16
     num_point_embeddings: int = 4
     hidden_act: str = "gelu"
@@ -146,8 +146,8 @@ class SamHQVisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
     num_channels: int = 3
-    image_size: int = 1024
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 1024
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-06
     attention_dropout: float | int = 0.0

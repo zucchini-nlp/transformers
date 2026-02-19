@@ -99,12 +99,12 @@ class SegGptConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-6
     image_size: int | list[int] | tuple[int, ...] = (896, 448)
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     qkv_bias: bool = True
     mlp_dim: int | None = None
     drop_path_rate: float = 0.1
-    pretrain_image_size: int = 224
+    pretrain_image_size: int | list[int] | tuple[int, int] = 224
     decoder_hidden_size: int = 64
     use_relative_position_embeddings: bool = True
     merge_index: int = 2

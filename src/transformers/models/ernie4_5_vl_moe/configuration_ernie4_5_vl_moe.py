@@ -70,7 +70,7 @@ class Ernie4_5_VL_MoeVisionConfig(PreTrainedConfig):
     hidden_act: str = "quick_gelu"
     num_heads: int = 16
     in_channels: int = 3
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     spatial_merge_size: int = 2
     initializer_range: float = 0.02
 

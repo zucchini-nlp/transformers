@@ -250,8 +250,8 @@ class SeamlessM4Tv2Config(PreTrainedConfig):
     use_cache: bool = True
     max_position_embeddings: int = 4096
     is_encoder_decoder: bool = True
-    encoder_layerdrop: float = 0.05
-    decoder_layerdrop: float = 0.05
+    encoder_layerdrop: float | int = 0.05
+    decoder_layerdrop: float | int = 0.05
     activation_function: str = "relu"
     dropout: float | int = 0.1
     attention_dropout: float | int = 0.1
@@ -274,7 +274,7 @@ class SeamlessM4Tv2Config(PreTrainedConfig):
     speech_encoder_hidden_act: str = "swish"
     speech_encoder_dropout: float | int = 0.0
     add_adapter: bool = True
-    speech_encoder_layerdrop: float = 0.1
+    speech_encoder_layerdrop: float | int = 0.1
     feature_projection_input_dim: int = 160
     adaptor_kernel_size: int = 8
     adaptor_stride: int = 8

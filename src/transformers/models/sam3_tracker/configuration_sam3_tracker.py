@@ -59,8 +59,8 @@ class Sam3TrackerPromptEncoderConfig(PreTrainedConfig):
 
     hidden_size: int = 256
 
-    image_size: int = 1008
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 1008
+    patch_size: int | list[int] | tuple[int, int] = 14
     mask_input_channels: int = 16
     num_point_embeddings: int = 4
     hidden_act: str = "gelu"

@@ -71,9 +71,9 @@ class IdeficsVisionConfig(PreTrainedConfig):
     attribute_map = {"hidden_size": "embed_dim"}
 
     embed_dim: int = 768
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     intermediate_size: int = 5120
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     num_hidden_layers: int = 32
     num_attention_heads: int = 16
     num_channels: int = 3

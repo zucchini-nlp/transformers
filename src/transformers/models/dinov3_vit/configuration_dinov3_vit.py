@@ -114,7 +114,7 @@ class DINOv3ViTConfig(BackboneConfigMixin, PreTrainedConfig):
 
     model_type = "dinov3_vit"
 
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_size: int = 384
     intermediate_size: int = 1536
     num_hidden_layers: int = 12
@@ -124,7 +124,7 @@ class DINOv3ViTConfig(BackboneConfigMixin, PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
     rope_theta: float = 100.0
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     num_channels: int = 3
     query_bias: bool = True
     key_bias: bool = False

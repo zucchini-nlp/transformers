@@ -100,8 +100,8 @@ class MllamaVisionConfig(PreTrainedConfig):
     num_channels: int = 3
     intermediate_size: int = 5120
     vision_output_dim: int = 7680
-    image_size: int = 448
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 448
+    patch_size: int | list[int] | tuple[int, int] = 14
     norm_eps: float = 1e-5
     max_num_tiles: int = 4
     intermediate_layers_indices: list[int] | None = None

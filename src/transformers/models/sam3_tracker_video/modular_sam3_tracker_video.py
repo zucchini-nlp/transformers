@@ -83,8 +83,8 @@ class Sam3TrackerVideoPromptEncoderConfig(Sam2VideoPromptEncoderConfig):
 
     base_config_key = "prompt_encoder_config"
 
-    image_size: int = 1008
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 1008
+    patch_size: int | list[int] | tuple[int, int] = 14
 
 
 class Sam3TrackerVideoProcessor(Sam2VideoProcessor):

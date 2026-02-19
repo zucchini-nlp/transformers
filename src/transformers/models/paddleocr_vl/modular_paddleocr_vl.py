@@ -186,8 +186,8 @@ class PaddleOCRVLImageProcessor(Qwen2VLImageProcessor):
         do_convert_rgb: bool = True,
         min_pixels: int = 384 * 384,
         max_pixels: int = 1536 * 1536,
-        patch_size: int = 14,
-        temporal_patch_size: int = 1,
+        patch_size: int | list[int] | tuple[int, int] = 14,
+        temporal_patch_size: int | list[int] | tuple[int, int] = 1,
         merge_size: int = 2,
         **kwargs,
     ) -> None:
@@ -344,8 +344,8 @@ class PaddleOCRVLImageProcessorFast(BaseImageProcessorFast):
         do_convert_rgb: bool = True,
         min_pixels: int = 384 * 384,
         max_pixels: int = 1536 * 1536,
-        patch_size: int = 14,
-        temporal_patch_size: int = 1,
+        patch_size: int | list[int] | tuple[int, int] = 14,
+        temporal_patch_size: int | list[int] | tuple[int, int] = 1,
         merge_size: int = 2,
         **kwargs,
     ) -> None:
@@ -630,8 +630,8 @@ class PaddleOCRVisionConfig(SiglipVisionConfig):
     intermediate_size: int = 4304
     num_hidden_layers: int = 27
     num_attention_heads: int = 16
-    image_size: int = 384
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 384
+    patch_size: int | list[int] | tuple[int, int] = 14
     spatial_merge_size: int = 2
 
 

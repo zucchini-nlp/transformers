@@ -170,8 +170,8 @@ class Owlv2VisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
     num_channels: int = 3
-    image_size: int = 768
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 768
+    patch_size: int | list[int] | tuple[int, int] = 16
     hidden_act: str = "quick_gelu"
     layer_norm_eps: float = 1e-5
     attention_dropout: float | int = 0.0

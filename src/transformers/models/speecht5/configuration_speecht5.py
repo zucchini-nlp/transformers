@@ -193,11 +193,11 @@ class SpeechT5Config(PreTrainedConfig):
     encoder_layers: int = 12
     encoder_attention_heads: int = 12
     encoder_ffn_dim: int = 3072
-    encoder_layerdrop: float = 0.1
+    encoder_layerdrop: float | int = 0.1
     decoder_layers: int = 6
     decoder_ffn_dim: int = 3072
     decoder_attention_heads: int = 12
-    decoder_layerdrop: float = 0.1
+    decoder_layerdrop: float | int = 0.1
     hidden_act: str = "gelu"
     positional_dropout: float | int = 0.1
     hidden_dropout: float | int = 0.1

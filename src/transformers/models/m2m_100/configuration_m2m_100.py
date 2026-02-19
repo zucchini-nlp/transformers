@@ -106,8 +106,8 @@ class M2M100Config(PreTrainedConfig):
     decoder_layers: int = 12
     decoder_ffn_dim: int = 4096
     decoder_attention_heads: int = 16
-    encoder_layerdrop: float = 0.05
-    decoder_layerdrop: float = 0.05
+    encoder_layerdrop: float | int = 0.05
+    decoder_layerdrop: float | int = 0.05
     use_cache: bool = True
     is_encoder_decoder: bool = True
     activation_function: str = "relu"

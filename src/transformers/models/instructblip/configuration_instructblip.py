@@ -86,8 +86,8 @@ class InstructBlipVisionConfig(PreTrainedConfig):
     intermediate_size: int = 6144
     num_hidden_layers: int = 39
     num_attention_heads: int = 16
-    image_size: int = 224
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 14
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-6
     attention_dropout: float | int = 0.0

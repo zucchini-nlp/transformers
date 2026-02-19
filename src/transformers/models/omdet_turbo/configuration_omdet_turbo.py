@@ -151,7 +151,7 @@ class OmDetTurboConfig(PreTrainedConfig):
     text_config: dict | PreTrainedConfig | None = None
     backbone_config: dict | PreTrainedConfig | None = None
     apply_layernorm_after_vision_backbone: bool = True
-    image_size: int = 640
+    image_size: int | list[int] | tuple[int, int] = 640
     disable_custom_kernels: bool = False
     layer_norm_eps: float = 1e-5
     batch_norm_eps: float = 1e-5

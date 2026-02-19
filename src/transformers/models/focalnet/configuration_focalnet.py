@@ -106,8 +106,8 @@ class FocalNetConfig(BackboneConfigMixin, PreTrainedConfig):
 
     model_type = "focalnet"
 
-    image_size: int = 224
-    patch_size: int = 4
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 4
     num_channels: int = 3
     embed_dim: int = 96
     use_conv_embed: bool = False

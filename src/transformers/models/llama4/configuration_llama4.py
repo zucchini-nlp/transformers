@@ -101,8 +101,8 @@ class Llama4VisionConfig(PreTrainedConfig):
     num_channels: int = 3
     intermediate_size: int = 5632
     vision_output_dim: int = 7680
-    image_size: int = 448
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 448
+    patch_size: int | list[int] | tuple[int, int] = 14
     norm_eps: float = 1e-5
     vision_feature_select_strategy: str = "default"
     initializer_range: float = 0.02

@@ -100,7 +100,7 @@ class DinatConfig(BackboneConfigMixin, PreTrainedConfig):
         "num_hidden_layers": "num_layers",
     }
 
-    patch_size: int = 4
+    patch_size: int | list[int] | tuple[int, int] = 4
     num_channels: int = 3
     embed_dim: int = 64
     depths: list[int] | tuple[int, ...] = (3, 4, 6, 5)

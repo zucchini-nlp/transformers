@@ -87,7 +87,7 @@ class Qwen2AudioEncoderConfig(PreTrainedConfig):
     encoder_layers: int = 32
     encoder_attention_heads: int = 20
     encoder_ffn_dim: int = 5120
-    encoder_layerdrop: float = 0.0
+    encoder_layerdrop: float | int = 0.0
     d_model: int = 1280
     dropout: float | int = 0.0
     attention_dropout: float | int = 0.0

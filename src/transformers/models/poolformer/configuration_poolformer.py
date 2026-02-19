@@ -85,7 +85,7 @@ class PoolFormerConfig(PreTrainedConfig):
     model_type = "poolformer"
 
     num_channels: int = 3
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     stride: int = 16
     pool_size: int = 3
     mlp_ratio: float = 4.0

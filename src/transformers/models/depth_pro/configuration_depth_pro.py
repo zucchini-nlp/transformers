@@ -94,7 +94,7 @@ class DepthProConfig(PreTrainedConfig):
     sub_configs = {"image_model_config": AutoConfig, "patch_model_config": AutoConfig, "fov_model_config": AutoConfig}
 
     fusion_hidden_size: int = 256
-    patch_size: int = 384
+    patch_size: int | list[int] | tuple[int, int] = 384
     initializer_range: float = 0.02
     intermediate_hook_ids: list[int] | tuple[int, ...] = (11, 5)
     intermediate_feature_dims: list[int] | tuple[int, ...] = (256, 256)

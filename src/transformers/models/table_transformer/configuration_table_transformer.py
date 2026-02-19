@@ -133,8 +133,8 @@ class TableTransformerConfig(PreTrainedConfig):
     decoder_layers: int = 6
     decoder_ffn_dim: int = 2048
     decoder_attention_heads: int = 8
-    encoder_layerdrop: float = 0.0
-    decoder_layerdrop: float = 0.0
+    encoder_layerdrop: float | int = 0.0
+    decoder_layerdrop: float | int = 0.0
     is_encoder_decoder: bool = True
     activation_function: str = "relu"
     d_model: int = 256

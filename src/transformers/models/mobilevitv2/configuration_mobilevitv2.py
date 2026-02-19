@@ -92,8 +92,8 @@ class MobileViTV2Config(PreTrainedConfig):
     model_type = "mobilevitv2"
 
     num_channels: int = 3
-    image_size: int = 256
-    patch_size: int = 2
+    image_size: int | list[int] | tuple[int, int] = 256
+    patch_size: int | list[int] | tuple[int, int] = 2
     expand_ratio: float = 2.0
     hidden_act: str = "swish"
     conv_kernel_size: int = 3

@@ -137,11 +137,11 @@ class FSMTConfig(PreTrainedConfig):
     encoder_ffn_dim: int = 4096
     encoder_layers: int = 12
     encoder_attention_heads: int = 16
-    encoder_layerdrop: float = 0.0
+    encoder_layerdrop: float | int = 0.0
     decoder_ffn_dim: int = 4096
     decoder_layers: int = 12
     decoder_attention_heads: int = 16
-    decoder_layerdrop: float = 0.0
+    decoder_layerdrop: float | int = 0.0
     attention_dropout: float | int = 0.0
     dropout: float | int = 0.1
     activation_dropout: float | int = 0.0

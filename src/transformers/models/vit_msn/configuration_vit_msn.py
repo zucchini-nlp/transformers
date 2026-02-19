@@ -87,8 +87,8 @@ class ViTMSNConfig(PreTrainedConfig):
     attention_probs_dropout_prob: float = 0.0
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-06
-    image_size: int = 224
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     qkv_bias: bool = True
 

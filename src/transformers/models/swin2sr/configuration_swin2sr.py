@@ -101,8 +101,8 @@ class Swin2SRConfig(PreTrainedConfig):
         "num_hidden_layers": "num_layers",
     }
 
-    image_size: int = 64
-    patch_size: int = 1
+    image_size: int | list[int] | tuple[int, int] = 64
+    patch_size: int | list[int] | tuple[int, int] = 1
     num_channels: int = 3
     num_channels_out: int | None = None
     embed_dim: int = 180

@@ -96,8 +96,8 @@ class Aimv2VisionConfig(PreTrainedConfig):
     num_hidden_layers: int = 24
     num_attention_heads: int = 8
     num_channels: int = 3
-    image_size: int = 224
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 14
     hidden_act: str = "silu"
     attention_dropout: float | int = 0.0
     rms_norm_eps: float = 1e-5

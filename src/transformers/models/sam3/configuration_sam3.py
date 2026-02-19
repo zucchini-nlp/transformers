@@ -77,8 +77,8 @@ class Sam3ViTConfig(PreTrainedConfig):
     num_hidden_layers: int = 32
     num_attention_heads: int = 16
     num_channels: int = 3
-    image_size: int = 1008
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 1008
+    patch_size: int | list[int] | tuple[int, int] = 14
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-6
     attention_dropout: float | int = 0.0
@@ -86,7 +86,7 @@ class Sam3ViTConfig(PreTrainedConfig):
     window_size: int = 24
     global_attn_indexes: list[int] | None = None
     layer_scale_init_value: float | None = None
-    pretrain_image_size: int = 336
+    pretrain_image_size: int | list[int] | tuple[int, int] = 336
     hidden_dropout: float | int = 0.0
     initializer_range: float = 0.02
 

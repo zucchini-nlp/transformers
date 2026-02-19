@@ -110,8 +110,8 @@ class PixioConfig(Dinov2Config):
     num_hidden_layers: int = 32
     num_attention_heads: int = 16
     n_cls_tokens: int = 8
-    image_size: int = 256
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 256
+    patch_size: int | list[int] | tuple[int, int] = 16
 
     layerscale_value = AttributeError()
     use_swiglu_ffn = AttributeError()

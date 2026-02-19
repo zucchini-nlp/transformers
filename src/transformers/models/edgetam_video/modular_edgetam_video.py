@@ -226,7 +226,7 @@ class EdgeTamVideoConfig(PreTrainedConfig):
     mask_decoder_config: dict | PreTrainedConfig | None = None
     initializer_range: float = 0.02
     num_maskmem: int = 7
-    image_size: int = 1024
+    image_size: int | list[int] | tuple[int, int] = 1024
     sigmoid_scale_for_mem_enc: float = 20.0
     sigmoid_bias_for_mem_enc: float = -10.0
     enable_occlusion_spatial_embedding: bool = True

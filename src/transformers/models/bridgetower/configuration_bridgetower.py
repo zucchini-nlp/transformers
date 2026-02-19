@@ -75,8 +75,8 @@ class BridgeTowerVisionConfig(PreTrainedConfig):
     hidden_size: int = 768
     num_hidden_layers: int = 12
     num_channels: int = 3
-    patch_size: int = 16
-    image_size: int = 288
+    patch_size: int | list[int] | tuple[int, int] = 16
+    image_size: int | list[int] | tuple[int, int] = 288
     initializer_factor: float | int = 1e-10
     layer_norm_eps: float = 1e-05
     stop_gradient: bool = False

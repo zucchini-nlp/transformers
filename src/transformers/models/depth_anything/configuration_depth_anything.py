@@ -78,7 +78,7 @@ class DepthAnythingConfig(PreTrainedConfig):
     sub_configs = {"backbone_config": AutoConfig}
 
     backbone_config: dict | PreTrainedConfig | None = None
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     initializer_range: float = 0.02
     reassemble_hidden_size: int = 384
     reassemble_factors: list[int | float] | tuple[int | float, ...] = (4, 2, 1, 0.5)

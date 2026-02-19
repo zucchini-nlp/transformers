@@ -73,9 +73,9 @@ class Qwen2_5_VLVisionConfig(PreTrainedConfig):
     intermediate_size: int = 3420
     num_heads: int = 16
     in_channels: int = 3
-    patch_size: int = 14
+    patch_size: int | list[int] | tuple[int, int] = 14
     spatial_merge_size: int = 2
-    temporal_patch_size: int = 2
+    temporal_patch_size: int | list[int] | tuple[int, int] = 2
     tokens_per_second: int = 4
     window_size: int = 112
     out_hidden_size: int = 3584

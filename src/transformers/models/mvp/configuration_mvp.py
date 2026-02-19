@@ -113,8 +113,8 @@ class MvpConfig(PreTrainedConfig):
     decoder_layers: int = 12
     decoder_ffn_dim: int = 4096
     decoder_attention_heads: int = 16
-    encoder_layerdrop: float = 0.0
-    decoder_layerdrop: float = 0.0
+    encoder_layerdrop: float | int = 0.0
+    decoder_layerdrop: float | int = 0.0
     activation_function: str = "gelu"
     d_model: int = 1024
     dropout: float | int = 0.1

@@ -89,8 +89,8 @@ class DonutSwinConfig(PreTrainedConfig):
         "num_hidden_layers": "num_layers",
     }
 
-    image_size: int = 224
-    patch_size: int = 4
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 4
     num_channels: int = 3
     embed_dim: int = 96
     depths: list[int] | tuple[int, ...] = (2, 2, 6, 2)

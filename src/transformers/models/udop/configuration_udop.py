@@ -113,8 +113,8 @@ class UdopConfig(PreTrainedConfig):
     pad_token_id: int | None = 0
     eos_token_id: int | None = 1
     max_2d_position_embeddings: int = 1024
-    image_size: int = 224
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     is_decoder: bool = False
     add_cross_attention: bool = False

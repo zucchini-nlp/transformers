@@ -237,11 +237,11 @@ class Glm4vMoeVisionConfig(PreTrainedConfig):
     attention_dropout: float | int = 0.0
     num_heads: int = 12
     in_channels: int = 3
-    image_size: int = 336
-    patch_size: int = 14
+    image_size: int | list[int] | tuple[int, int] = 336
+    patch_size: int | list[int] | tuple[int, int] = 14
     rms_norm_eps: float = 1e-05
     spatial_merge_size: int = 2
-    temporal_patch_size: int = 2
+    temporal_patch_size: int | list[int] | tuple[int, int] = 2
     out_hidden_size: int = 4096
     intermediate_size: int = 13696
     initializer_range: float = 0.02

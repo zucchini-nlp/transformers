@@ -168,8 +168,8 @@ class GroupViTVisionConfig(PreTrainedConfig):
     num_group_tokens: list[int] | tuple[int, ...] = (64, 8, 0)
     num_output_groups: list[int] | tuple[int, ...] = (64, 8, 8)
     num_attention_heads: int = 6
-    image_size: int = 224
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-5

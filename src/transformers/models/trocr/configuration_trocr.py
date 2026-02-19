@@ -105,7 +105,7 @@ class TrOCRConfig(PreTrainedConfig):
     activation_dropout: float | int = 0.0
     decoder_start_token_id: int = 2
     init_std: float = 0.02
-    decoder_layerdrop: float = 0.0
+    decoder_layerdrop: float | int = 0.0
     use_cache: bool = True
     scale_embedding: bool = False
     use_learned_position_embeddings: bool = True

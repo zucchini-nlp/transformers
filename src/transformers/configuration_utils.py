@@ -1168,13 +1168,11 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         # handle legacy models with flat config structure, when we only want one of the configs
         if not return_both and len(valid_text_config_names) == 0 and config_to_return.is_encoder_decoder:
             config_to_return = copy.deepcopy(config_to_return)
-            prefix_to_discard = "encoder" if decoder else "decoder"
             prefix_to_keep = "decoder" if decoder else "encoder"
             for key in config_to_return.to_dict():
-                # NOTE: We don't want to discard the key if it is mapped from a different attribute name at read time
-                # Since we can't truly delete a cls attribte on a dataclass, we set the value to `Nonw`
-                # if key.startswith(prefix_to_discard) and key not in config_to_return.attribute_map.values():
-                #     setattr(config_to_return, key, None)
+                # NOTE: We can't discard keys because:
+                # 1) we can't truly delete a cls attribte on a dataclass; 2) we can't set the value to `None` due to
+                # strict validation. So we just keep it as is, since there are only a couple old models falling in this condition
                 if key.startswith(prefix_to_keep):
                     # [encoder/decoder]_layers -> num_hidden_layers
                     if key == prefix_to_keep + "_layers":

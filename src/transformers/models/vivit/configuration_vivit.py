@@ -80,7 +80,7 @@ class VivitConfig(PreTrainedConfig):
 
     model_type = "vivit"
 
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     num_frames: int = 32
     tubelet_size: list[int] | tuple[int, ...] = (2, 16, 16)
     num_channels: int = 3

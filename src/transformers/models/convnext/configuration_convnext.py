@@ -83,7 +83,7 @@ class ConvNextConfig(BackboneConfigMixin, PreTrainedConfig):
     model_type = "convnext"
 
     num_channels: int = 3
-    patch_size: int = 4
+    patch_size: int | list[int] | tuple[int, int] = 4
     num_stages: int = 4
     hidden_sizes: list[int] | tuple[int, ...] | None = (96, 192, 384, 768)
     depths: list[int] | tuple[int, ...] | None = (3, 3, 9, 3)
@@ -92,7 +92,7 @@ class ConvNextConfig(BackboneConfigMixin, PreTrainedConfig):
     layer_norm_eps: float = 1e-12
     layer_scale_init_value: float = 1e-6
     drop_path_rate: float = 0.0
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     _out_features: list[str] | None = None
     _out_indices: list[int] | None = None
 

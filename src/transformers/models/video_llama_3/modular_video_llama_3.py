@@ -1220,8 +1220,8 @@ class VideoLlama3ImageProcessor(Qwen2VLImageProcessor):
         do_convert_rgb: bool = True,
         min_pixels: int | None = None,
         max_pixels: int | None = None,
-        patch_size: int = 14,
-        temporal_patch_size: int = 1,
+        patch_size: int | list[int] | tuple[int, int] = 14,
+        temporal_patch_size: int | list[int] | tuple[int, int] = 1,
         merge_size: int = 1,
         **kwargs,
     ) -> None:

@@ -37,9 +37,9 @@ class Qwen3VLVisionConfig(PreTrainedConfig):
     intermediate_size: int = 4304
     num_heads: int = 16
     in_channels: int = 3
-    patch_size: int = 16
+    patch_size: int | list[int] | tuple[int, int] = 16
     spatial_merge_size: int = 2
-    temporal_patch_size: int = 2
+    temporal_patch_size: int | list[int] | tuple[int, int] = 2
     out_hidden_size: int = 3584
     num_position_embeddings: int = 2304
     deepstack_visual_indexes: list[int] | tuple[int, ...] = (8, 16, 24)

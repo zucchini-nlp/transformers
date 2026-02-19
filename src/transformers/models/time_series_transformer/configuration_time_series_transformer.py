@@ -150,8 +150,8 @@ class TimeSeriesTransformerConfig(PreTrainedConfig):
     activation_function: str = "gelu"
     d_model: int = 64
     dropout: float | int = 0.1
-    encoder_layerdrop: float = 0.1
-    decoder_layerdrop: float = 0.1
+    encoder_layerdrop: float | int = 0.1
+    decoder_layerdrop: float | int = 0.1
     attention_dropout: float | int = 0.1
     activation_dropout: float | int = 0.1
     num_parallel_samples: int = 100

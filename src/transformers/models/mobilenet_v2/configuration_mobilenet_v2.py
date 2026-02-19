@@ -87,7 +87,7 @@ class MobileNetV2Config(PreTrainedConfig):
     model_type = "mobilenet_v2"
 
     num_channels: int = 3
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     depth_multiplier: float = 1.0
     depth_divisible_by: int = 8
     min_depth: int = 8

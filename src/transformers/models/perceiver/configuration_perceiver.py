@@ -128,7 +128,7 @@ class PerceiverConfig(PreTrainedConfig):
     use_query_residual: bool = True
     vocab_size: int = 262
     max_position_embeddings: int = 2048
-    image_size: int = 56
+    image_size: int | list[int] | tuple[int, int] = 56
     train_size: list[int] | tuple[int, ...] = (368, 496)
     num_frames: int = 16
     audio_samples_per_frame: int = 1920

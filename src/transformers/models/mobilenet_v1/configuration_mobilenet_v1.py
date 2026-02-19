@@ -71,7 +71,7 @@ class MobileNetV1Config(PreTrainedConfig):
     model_type = "mobilenet_v1"
 
     num_channels: int = 3
-    image_size: int = 224
+    image_size: int | list[int] | tuple[int, int] = 224
     depth_multiplier: float = 1.0
     min_depth: int = 8
     hidden_act: str = "relu6"

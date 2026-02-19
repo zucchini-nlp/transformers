@@ -90,7 +90,7 @@ class MgpstrConfig(PreTrainedConfig):
     model_type = "mgp-str"
 
     image_size: list[int] | tuple[int, ...] = (32, 128)
-    patch_size: int = 4
+    patch_size: int | list[int] | tuple[int, int] = 4
     num_channels: int = 3
     max_token_length: int = 27
     num_character_labels: int = 38
@@ -99,7 +99,7 @@ class MgpstrConfig(PreTrainedConfig):
     hidden_size: int = 768
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
-    mlp_ratio: float = 4.0
+    mlp_ratio: float | int = 4.0
     qkv_bias: bool = True
     distilled: bool = False
     layer_norm_eps: float = 1e-5

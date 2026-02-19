@@ -94,8 +94,8 @@ class VideoMAEConfig(PreTrainedConfig):
 
     model_type = "videomae"
 
-    image_size: int = 224
-    patch_size: int = 16
+    image_size: int | list[int] | tuple[int, int] = 224
+    patch_size: int | list[int] | tuple[int, int] = 16
     num_channels: int = 3
     num_frames: int = 16
     tubelet_size: int = 2
