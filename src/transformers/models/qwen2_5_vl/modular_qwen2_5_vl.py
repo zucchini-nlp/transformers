@@ -157,14 +157,14 @@ class Qwen2_5_VLVisionBlock(GradientCheckpointingLayer):
         self,
         hidden_states: torch.Tensor,
         cu_seqlens: torch.Tensor,
-        rotary_pos_emb: torch.Tensor | None = None,
+        attention_mask: torch.Tensor | None = None,
         position_embeddings: tuple[torch.Tensor, torch.Tensor] | None = None,
         **kwargs,
     ) -> torch.Tensor:
         hidden_states = hidden_states + self.attn(
             self.norm1(hidden_states),
             cu_seqlens=cu_seqlens,
-            rotary_pos_emb=rotary_pos_emb,
+            attention_mask=attention_mask,
             position_embeddings=position_embeddings,
             **kwargs,
         )
@@ -304,6 +304,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
             `torch.Tensor`: hidden_states.
         """
         hidden_states = self.patch_embed(hidden_states)
+        hidden_states = hidden_states[None, ...] # unsqueeze batch dim
         rotary_pos_emb = self.rot_pos_emb(grid_thw)
         window_index, cu_window_seqlens = self.get_window_index(grid_thw)
         cu_window_seqlens = torch.tensor(
@@ -333,6 +334,20 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
         )
         cu_seqlens = F.pad(cu_seqlens, (1, 0), value=0)
 
+        total_length = grid_thw.prod(-1).sum()
+        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
+        for i in range(len(cu_seqlens) - 1):
+            start = cu_seqlens[i]
+            end = cu_seqlens[i + 1]
+            packed_sequence[:, start:end] = i
+
+        attention_mask = create_bidirectional_mask(
+            config=self.config,
+            inputs_embeds=hidden_states,
+            attention_mask=None,
+            and_mask_function=packed_sequence_mask_function(packed_sequence),
+        )
+
         for layer_num, blk in enumerate(self.blocks):
             if layer_num in self.fullatt_block_indexes:
                 cu_seqlens_now = cu_seqlens
@@ -342,6 +357,7 @@ class Qwen2_5_VisionTransformerPretrainedModel(Qwen2_5_VLPreTrainedModel):
             hidden_states = blk(
                 hidden_states,
                 cu_seqlens=cu_seqlens_now,
+                attention_mask=attention_mask,
                 position_embeddings=position_embeddings,
                 **kwargs,
             )

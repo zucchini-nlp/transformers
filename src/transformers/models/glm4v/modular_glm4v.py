@@ -826,10 +826,26 @@ class Glm4vVisionModel(Glm4vPreTrainedModel):
             image_type_ids[:, 1].to(hidden_states.device),
         )
 
+        hidden_states = hidden_states[None, ...] # unsqueeze batch dim
+        total_length = grid_thw.prod(-1).sum()
+        packed_sequence = torch.zeros(1, total_length, device=hidden_states.device, dtype=torch.long)
+        for i in range(len(cu_seqlens) - 1):
+            start = cu_seqlens[i]
+            end = cu_seqlens[i + 1]
+            packed_sequence[:, start:end] = i
+
+        attention_mask = create_bidirectional_mask(
+            config=self.config,
+            inputs_embeds=hidden_states,
+            attention_mask=None,
+            and_mask_function=packed_sequence_mask_function(packed_sequence),
+        )
+
         for blk in self.blocks:
             hidden_states = blk(
                 hidden_states,
                 cu_seqlens=cu_seqlens,
+                attention_mask=attention_mask,
                 position_embeddings=position_embeddings,
                 **kwargs,
             )
