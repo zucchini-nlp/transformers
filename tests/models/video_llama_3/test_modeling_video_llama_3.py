@@ -305,6 +305,7 @@ class VideoLlama3VisionModelTester:
         self.initializer_range = initializer_range
         self.scope = scope
         self.seq_length = (self.image_size // self.patch_size) ** 2
+        self.encoder_seq_length = self.seq_length * batch_size
 
     def get_config(self):
         return VideoLlama3VisionConfig(
