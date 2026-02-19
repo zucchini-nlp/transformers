@@ -97,22 +97,22 @@ class BitNetConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
     default_theta = 500000.0
 
-    vocab_size: int | None = 128256
-    hidden_size: int | None = 2560
-    intermediate_size: int | None = 6912
-    num_hidden_layers: int | None = 30
-    num_attention_heads: int | None = 20
+    vocab_size: int = 128256
+    hidden_size: int = 2560
+    intermediate_size: int = 6912
+    num_hidden_layers: int = 30
+    num_attention_heads: int = 20
     num_key_value_heads: int | None = 5
-    hidden_act: str | None = "relu2"
-    max_position_embeddings: int | None = 2048
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
+    hidden_act: str = "relu2"
+    max_position_embeddings: int = 2048
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
     pad_token_id: int | None = None
     bos_token_id: int | None = 128000
     eos_token_id: int | list[int] | None = 128001
-    tie_word_embeddings: bool | None = False
-    attention_bias: bool | None = False
+    tie_word_embeddings: bool = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
     rope_parameters: RopeParameters | dict | None = None
 

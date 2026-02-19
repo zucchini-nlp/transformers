@@ -153,7 +153,7 @@ class xLSTMConfig(PreTrainedConfig):
     vocab_size: int = 50304
     hidden_size: int = 4096
     embedding_dim: int | None = None
-    num_hidden_layers: int | None = 32
+    num_hidden_layers: int = 32
     num_blocks: int | None = None
     num_heads: int = 8
     use_bias: bool = False

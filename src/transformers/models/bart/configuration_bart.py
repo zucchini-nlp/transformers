@@ -102,8 +102,8 @@ class BartConfig(PreTrainedConfig):
         "num_hidden_layers": "encoder_layers",
     }
 
-    vocab_size: int | None = 50265
-    max_position_embeddings: int | None = 1024
+    vocab_size: int = 50265
+    max_position_embeddings: int = 1024
     encoder_layers: int | None = 12
     encoder_ffn_dim: int | None = 4096
     encoder_attention_heads: int | None = 16
@@ -120,7 +120,7 @@ class BartConfig(PreTrainedConfig):
     init_std: float | None = 0.02
     classifier_dropout: float | int | None = 0.0
     scale_embedding: bool | None = False
-    use_cache: bool | None = True
+    use_cache: bool = True
     pad_token_id: int | None = 1
     bos_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 2
@@ -128,7 +128,7 @@ class BartConfig(PreTrainedConfig):
     decoder_start_token_id: int | None = 2
     forced_eos_token_id: int | list[int] | None = 2
     is_decoder: bool | None = False
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         # Set the default `num_labels` only if `id2label` is not

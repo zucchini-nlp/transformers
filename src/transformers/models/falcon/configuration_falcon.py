@@ -111,14 +111,14 @@ class FalconConfig(PreTrainedConfig):
     model_type = "falcon"
     keys_to_ignore_at_inference = ["past_key_values"]
 
-    vocab_size: int | None = 65024
-    hidden_size: int | None = 4544
-    num_hidden_layers: int | None = 32
-    num_attention_heads: int | None = 71
+    vocab_size: int = 65024
+    hidden_size: int = 4544
+    num_hidden_layers: int = 32
+    num_attention_heads: int = 71
     num_ln_in_parallel_attn: int | None = None
     layer_norm_epsilon: float | None = 1e-5
-    initializer_range: float | None = 0.02
-    use_cache: bool | None = True
+    initializer_range: float = 0.02
+    use_cache: bool = True
     hidden_dropout: float | int | None = 0.0
     attention_dropout: float | int | None = 0.0
     num_kv_heads: int | None = None
@@ -127,14 +127,14 @@ class FalconConfig(PreTrainedConfig):
     multi_query: bool | None = True
     parallel_attn: bool | None = True
     bias: bool | None = False
-    max_position_embeddings: int | None = 2048
+    max_position_embeddings: int = 2048
     rope_parameters: RopeParameters | dict | None = None
     bos_token_id: int | None = 11
     eos_token_id: int | list[int] | None = 11
     pad_token_id: int | None = None
-    ffn_hidden_size: int | None = None
+    ffn_hidden_size: int = None
     activation: str | None = "gelu"
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         # Backward compatibility with n_embed kwarg

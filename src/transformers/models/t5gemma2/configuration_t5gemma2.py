@@ -119,26 +119,26 @@ class T5Gemma2TextConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 262_208
-    hidden_size: int | None = 2304
-    intermediate_size: int | None = 9216
-    num_hidden_layers: int | None = 26
-    num_attention_heads: int | None = 8
-    num_key_value_heads: int | None = 4
-    head_dim: int | None = 256
-    hidden_activation: str | None = "gelu_pytorch_tanh"
-    max_position_embeddings: int | None = 131_072
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
+    vocab_size: int = 262_208
+    hidden_size: int = 2304
+    intermediate_size: int = 9216
+    num_hidden_layers: int = 26
+    num_attention_heads: int = 8
+    num_key_value_heads: int = 4
+    head_dim: int = 256
+    hidden_activation: str = "gelu_pytorch_tanh"
+    max_position_embeddings: int = 131_072
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
     pad_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 1
     bos_token_id: int | None = 2
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
     rope_parameters: dict | None = None
-    attention_bias: bool | None = False
-    attention_dropout: float | int | None = 0.0
-    query_pre_attn_scalar: int | None = 256
+    attention_bias: bool = False
+    attention_dropout: float | None = 0.0
+    query_pre_attn_scalar: int = 256
     sliding_window: int | None = 4096
     layer_types: list[str] | None = None
     final_logit_softcapping: float | None = None
@@ -372,26 +372,26 @@ class T5Gemma2DecoderConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 262_208
-    hidden_size: int | None = 2304
-    intermediate_size: int | None = 9216
-    num_hidden_layers: int | None = 26
-    num_attention_heads: int | None = 8
-    num_key_value_heads: int | None = 4
-    head_dim: int | None = 256
-    hidden_activation: str | None = "gelu_pytorch_tanh"
-    max_position_embeddings: int | None = 131_072
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
+    vocab_size: int = 262_208
+    hidden_size: int = 2304
+    intermediate_size: int = 9216
+    num_hidden_layers: int = 26
+    num_attention_heads: int = 8
+    num_key_value_heads: int = 4
+    head_dim: int = 256
+    hidden_activation: str = "gelu_pytorch_tanh"
+    max_position_embeddings: int = 131_072
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
     pad_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 1
     bos_token_id: int | None = 2
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
     rope_parameters: dict | None = None
-    attention_bias: bool | None = False
-    attention_dropout: float | int | None = 0.0
-    query_pre_attn_scalar: int | None = 256
+    attention_bias: bool = False
+    attention_dropout: float | None = 0.0
+    query_pre_attn_scalar: int = 256
     sliding_window: int | None = 4096
     layer_types: list[str] | None = None
     final_logit_softcapping: float | None = None

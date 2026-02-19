@@ -144,25 +144,25 @@ class Cohere2Config(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 256000
-    hidden_size: int | None = 8192
-    intermediate_size: int | None = 22528
-    logit_scale: float | None = 0.0625
-    num_hidden_layers: int | None = 40
-    num_attention_heads: int | None = 64
+    vocab_size: int = 256000
+    hidden_size: int = 8192
+    intermediate_size: int = 22528
+    logit_scale: float = 0.0625
+    num_hidden_layers: int = 40
+    num_attention_heads: int = 64
     num_key_value_heads: int | None = None
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 8192
-    initializer_range: float | None = 0.02
-    layer_norm_eps: float | None = 1e-5
-    use_cache: int | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 8192
+    initializer_range: float = 0.02
+    layer_norm_eps: float = 1e-5
+    use_cache: int = True
     pad_token_id: int | None = 0
     bos_token_id: int | None = 5
     eos_token_id: int | list[int] | None = 255001
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
-    attention_dropout: float | int | None = 0.0
+    attention_bias: bool = False
+    attention_dropout: float | int = 0.0
     sliding_window: int | None = 4096
     layer_types: list[str] | None = None
 

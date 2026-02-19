@@ -228,20 +228,20 @@ class EsmConfig(PreTrainedConfig):
     model_type = "esm"
     sub_configs = {"esmfold_config": EsmFoldConfig}
 
-    vocab_size: int | None = None
+    vocab_size: int = None
     mask_token_id: int | None = None
     pad_token_id: int | None = None
-    hidden_size: int | None = 768
-    num_hidden_layers: int | None = 12
-    num_attention_heads: int | None = 12
-    intermediate_size: int | None = 3072
+    hidden_size: int = 768
+    num_hidden_layers: int = 12
+    num_attention_heads: int = 12
+    intermediate_size: int = 3072
     hidden_dropout_prob: float | None = 0.1
     attention_probs_dropout_prob: float | None = 0.1
-    max_position_embeddings: int | None = 1026
-    initializer_range: float | None = 0.02
+    max_position_embeddings: int = 1026
+    initializer_range: float = 0.02
     layer_norm_eps: float | None = 1e-12
     position_embedding_type: str | None = "absolute"
-    use_cache: bool | None = True
+    use_cache: bool = True
     emb_layer_norm_before: bool | None = None
     token_dropout: bool | None = False
     is_folding_model: bool | None = False
@@ -249,7 +249,7 @@ class EsmConfig(PreTrainedConfig):
     vocab_list: list[str] | tuple[str, ...] | None = None
     is_decoder: bool | None = False
     add_cross_attention: bool | None = False
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         if self.is_folding_model:

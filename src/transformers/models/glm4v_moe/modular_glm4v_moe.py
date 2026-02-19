@@ -163,10 +163,10 @@ class Glm4vMoeTextConfig(Glm4MoeConfig):
     }
     ignore_keys_at_rope_validation = {"mrope_section"}
 
-    vocab_size: int | None = 151424
-    max_position_embeddings: int | None = 65536
-    attention_bias: bool | None = True
-    router_aux_loss_coef: float | None = 0.0001
+    vocab_size: int = 151424
+    max_position_embeddings: int = 65536
+    attention_bias: bool = True
+    router_aux_loss_coef: float = 0.0001
 
     def __post_init__(self, **kwargs):
         super().__post_init__(self, **kwargs)

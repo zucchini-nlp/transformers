@@ -82,7 +82,7 @@ class RagConfig(PreTrainedConfig):
     model_type = "rag"
     has_no_defaults_at_init = True
 
-    vocab_size: int | None = None
+    vocab_size: int = None
     is_encoder_decoder: bool = True
     prefix: str | None = None
     bos_token_id: int | None = None
@@ -111,14 +111,19 @@ class RagConfig(PreTrainedConfig):
     dataset_revision: str | None = None
 
     def __post_init__(self, **kwargs):
-        if "question_encoder" in kwargs and "generator" in kwargs:
-            question_encoder_config = kwargs.pop("question_encoder")
-            question_encoder_model_type = question_encoder_config.pop("model_type")
-            decoder_config = kwargs.pop("generator")
-            decoder_model_type = decoder_config.pop("model_type")
+        if "question_encoder" not in kwargs or "generator" not in kwargs:
+            raise ValueError(
+                f"A configuration of type {self.model_type} cannot be instantiated because not both `question_encoder` and"
+                f" `generator` sub-configurations are passed, but only {kwargs}"
+            )
 
-            self.question_encoder = AutoConfig.for_model(question_encoder_model_type, **question_encoder_config)
-            self.generator = AutoConfig.for_model(decoder_model_type, **decoder_config)
+        question_encoder_config = kwargs.pop("question_encoder")
+        question_encoder_model_type = question_encoder_config.pop("model_type")
+        decoder_config = kwargs.pop("generator")
+        decoder_model_type = decoder_config.pop("model_type")
+
+        self.question_encoder = AutoConfig.for_model(question_encoder_model_type, **question_encoder_config)
+        self.generator = AutoConfig.for_model(decoder_model_type, **decoder_config)
 
         super().__post_init__(**kwargs)
 

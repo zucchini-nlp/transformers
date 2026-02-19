@@ -227,9 +227,9 @@ class AriaConfig(PreTrainedConfig):
     text_config: dict | AriaTextConfig | None = None
     vision_feature_layer: int | list[int] = -1
     projector_patch_to_query_dict: dict | None = None
-    image_token_index: int | None = 9
-    initializer_range: float | None = 0.02
-    tie_word_embeddings: bool | None = False
+    image_token_index: int = 9
+    initializer_range: float = 0.02
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         # Convert the keys and values of projector_patch_to_query_dict to integers

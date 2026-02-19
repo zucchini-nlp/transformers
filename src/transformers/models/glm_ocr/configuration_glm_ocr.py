@@ -182,12 +182,12 @@ class GlmOcrTextConfig(PreTrainedConfig):
     num_hidden_layers: int = 16
     num_attention_heads: int = 16
     num_key_value_heads: int = 8
-    hidden_act: str | None = "silu"
+    hidden_act: str = "silu"
     max_position_embeddings: int = 131072
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-05
-    use_cache: bool | None = True
-    attention_dropout: float | int | None = 0.0
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-05
+    use_cache: bool = True
+    attention_dropout: float | int = 0.0
     rope_parameters: RopeParameters | dict | None = None
     pad_token_id: int | None = None
 

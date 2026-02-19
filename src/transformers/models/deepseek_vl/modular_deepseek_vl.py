@@ -84,7 +84,7 @@ class DeepseekVLConfig(PreTrainedConfig):
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None
     image_token_id: int = 100015
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         if self.text_config is None:

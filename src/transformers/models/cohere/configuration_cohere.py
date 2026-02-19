@@ -119,24 +119,24 @@ class CohereConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
-    vocab_size: int | None = 256000
-    hidden_size: int | None = 8192
-    intermediate_size: int | None = 22528
+    vocab_size: int = 256000
+    hidden_size: int = 8192
+    intermediate_size: int = 22528
     logit_scale: float | None = 0.0625
-    num_hidden_layers: int | None = 40
-    num_attention_heads: int | None = 64
+    num_hidden_layers: int = 40
+    num_attention_heads: int = 64
     num_key_value_heads: int | None = None
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 8192
-    initializer_range: float | None = 0.02
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 8192
+    initializer_range: float = 0.02
     layer_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
+    use_cache: bool = True
     pad_token_id: int | None = 0
     bos_token_id: int | None = 5
     eos_token_id: int | list[int] | None = 255001
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
     use_qk_norm: bool | None = False
 

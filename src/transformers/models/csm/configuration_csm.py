@@ -110,25 +110,25 @@ class CsmDepthDecoderConfig(PreTrainedConfig):
     default_theta = 500000.0
 
     num_codebooks: int | None = 32
-    backbone_hidden_size: int | None = 2048
-    vocab_size: int | None = 2051
-    hidden_size: int | None = 1024
-    intermediate_size: int | None = 8192
-    num_hidden_layers: int | None = 4
-    num_attention_heads: int | None = 8
+    backbone_hidden_size: int = 2048
+    vocab_size: int = 2051
+    hidden_size: int = 1024
+    intermediate_size: int = 8192
+    num_hidden_layers: int = 4
+    num_attention_heads: int = 8
     num_key_value_heads: int | None = 2
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 33
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 33
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
-    mlp_bias: bool | None = False
+    mlp_bias: bool = False
     head_dim: int | None = None
 
     def __post_init__(self, **kwargs):
@@ -244,18 +244,18 @@ class CsmConfig(PreTrainedConfig):
     }
 
     num_codebooks: int | None = 32
-    vocab_size: int | None = 2051
-    text_vocab_size: int | None = 128256
-    hidden_size: int | None = 2048
-    intermediate_size: int | None = 8192
-    num_hidden_layers: int | None = 16
-    num_attention_heads: int | None = 32
+    vocab_size: int = 2051
+    text_vocab_size: int = 128256
+    hidden_size: int = 2048
+    intermediate_size: int = 8192
+    num_hidden_layers: int = 16
+    num_attention_heads: int = 32
     num_key_value_heads: int | None = 8
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 2048
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 2048
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
     pad_token_id: int | None = 128002
     codebook_pad_token_id: int | None = 2050
     codebook_eos_token_id: int | list[int] | None = 0
@@ -264,9 +264,9 @@ class CsmConfig(PreTrainedConfig):
     audio_token_id: int | None = 128002
     audio_eos_token_id: int | list[int] | None = 128003
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
-    mlp_bias: bool | None = False
+    mlp_bias: bool = False
     head_dim: int | None = None
     tie_codebooks_embeddings: bool | None = True
     depth_decoder_config: dict | PreTrainedConfig | None = None

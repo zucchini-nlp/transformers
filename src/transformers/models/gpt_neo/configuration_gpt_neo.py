@@ -107,7 +107,7 @@ class GPTNeoConfig(PreTrainedConfig):
     num_layers: int = 24
     attention_types: list | tuple | None = None
     num_heads: int = 16
-    intermediate_size: int | None = None
+    intermediate_size: int = None
     window_size: int = 256
     activation_function: str = "gelu_new"
     resid_dropout: float | int = 0.0

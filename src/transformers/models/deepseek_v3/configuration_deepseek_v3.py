@@ -150,39 +150,39 @@ class DeepseekV3Config(PreTrainedConfig):
         "num_local_experts": "n_routed_experts",
     }
 
-    vocab_size: int | None = 129280
-    hidden_size: int | None = 7168
-    intermediate_size: int | None = 18432
-    moe_intermediate_size: int | None = 2048
-    num_hidden_layers: int | None = 61
-    num_attention_heads: int | None = 128
+    vocab_size: int = 129280
+    hidden_size: int = 7168
+    intermediate_size: int = 18432
+    moe_intermediate_size: int = 2048
+    num_hidden_layers: int = 61
+    num_attention_heads: int = 128
     num_key_value_heads: int | None = 128
-    n_shared_experts: int | None = 1
-    n_routed_experts: int | None = 256
-    routed_scaling_factor: float | None = 2.5
-    kv_lora_rank: int | None = 512
-    q_lora_rank: int | None = 1536
-    qk_rope_head_dim: int | None = 64
+    n_shared_experts: int = 1
+    n_routed_experts: int = 256
+    routed_scaling_factor: float = 2.5
+    kv_lora_rank: int = 512
+    q_lora_rank: int = 1536
+    qk_rope_head_dim: int = 64
     v_head_dim: int | None = 128
-    qk_nope_head_dim: int | None = 128
+    qk_nope_head_dim: int = 128
     n_group: int | None = 8
     topk_group: int | None = 4
     num_experts_per_tok: int | None = 8
     first_k_dense_replace: int | None = 3
     norm_topk_prob: bool | None = True
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 4096
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 4096
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
     pad_token_id: int | None = None
     bos_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 1
     pretraining_tp: int | None = 1
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     rope_interleave: bool | None = True
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
 
     def __post_init__(self, **kwargs):

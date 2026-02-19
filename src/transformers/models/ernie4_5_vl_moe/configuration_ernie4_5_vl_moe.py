@@ -179,21 +179,21 @@ class Ernie4_5_VL_MoeTextConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 103424
+    vocab_size: int = 103424
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    hidden_size: int | None = 2560
-    intermediate_size: int | None = 12288
-    num_hidden_layers: int | None = 28
-    num_attention_heads: int | None = 20
+    hidden_size: int = 2560
+    intermediate_size: int = 12288
+    num_hidden_layers: int = 28
+    num_attention_heads: int = 20
     num_key_value_heads: int | None = 4
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 131072
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
-    tie_word_embeddings: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 131072
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
+    tie_word_embeddings: bool = True
     rope_parameters: RopeParameters | dict | None = None
     use_bias: int | None = False
     moe_intermediate_size: list[int] | None = None

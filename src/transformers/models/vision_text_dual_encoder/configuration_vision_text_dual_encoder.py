@@ -18,14 +18,11 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
 from ..chinese_clip.configuration_chinese_clip import ChineseCLIPVisionConfig
 from ..clip.configuration_clip import CLIPVisionConfig
 from ..siglip.configuration_siglip import SiglipVisionConfig
 
-
-logger = logging.get_logger(__name__)
 
 VISION_MODEL_CONFIGS = {
     "clip_vision_model": CLIPVisionConfig,
@@ -87,22 +84,25 @@ class VisionTextDualEncoderConfig(PreTrainedConfig):
     logit_scale_init_value: float = 2.6592
 
     def __post_init__(self, **kwargs):
-        if "vision_config" in kwargs and "text_config" in kwargs:
-            vision_config = kwargs.pop("vision_config")
-            text_config = kwargs.pop("text_config")
+        if "vision_config" not in kwargs or "text_config" not in kwargs:
+            raise ValueError(
+                f"A configuration of type {self.model_type} cannot be instantiated because not both `vision_config` and"
+                f" `text_config` sub-configurations are passed, but only {kwargs}"
+            )
+        vision_config = kwargs.pop("vision_config")
+        text_config = kwargs.pop("text_config")
 
-            vision_model_type = vision_config.pop("model_type")
-            text_model_type = text_config.pop("model_type")
+        vision_model_type = vision_config.pop("model_type")
+        text_model_type = text_config.pop("model_type")
 
-            vision_config_class = VISION_MODEL_CONFIGS.get(vision_model_type)
-            if vision_config_class is not None:
-                self.vision_config = vision_config_class(**vision_config)
-            else:
-                self.vision_config = AutoConfig.for_model(vision_model_type, **vision_config)
-                if hasattr(self.vision_config, "vision_config"):
-                    self.vision_config = self.vision_config.vision_config
-
-            self.text_config = AutoConfig.for_model(text_model_type, **text_config)
+        vision_config_class = VISION_MODEL_CONFIGS.get(vision_model_type)
+        if vision_config_class is not None:
+            self.vision_config = vision_config_class(**vision_config)
+        else:
+            self.vision_config = AutoConfig.for_model(vision_model_type, **vision_config)
+            if hasattr(self.vision_config, "vision_config"):
+                self.vision_config = self.vision_config.vision_config
+        self.text_config = AutoConfig.for_model(text_model_type, **text_config)
 
         super().__post_init__(**kwargs)
 

@@ -18,11 +18,7 @@ from dataclasses import dataclass
 from huggingface_hub.dataclasses import strict
 
 from ...configuration_utils import PreTrainedConfig
-from ...utils import logging
 from ..auto.configuration_auto import AutoConfig
-
-
-logger = logging.get_logger(__name__)
 
 
 @strict(accept_kwargs=True)
@@ -36,7 +32,6 @@ class MusicgenMelodyDecoderConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 2048):
@@ -96,7 +91,7 @@ class MusicgenMelodyDecoderConfig(PreTrainedConfig):
     num_hidden_layers: int = 24
     ffn_dim: int = 4096
     num_attention_heads: int = 16
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     use_cache: bool = True
     activation_function: str = "gelu"
     hidden_size: int = 1024
@@ -201,13 +196,23 @@ class MusicgenMelodyConfig(PreTrainedConfig):
         if isinstance(self.text_encoder, dict):
             text_encoder_model_type = self.text_encoder.pop("model_type")
             self.text_encoder = AutoConfig.for_model(text_encoder_model_type, **self.text_encoder)
+        elif self.text_encoder is None:
+            raise ValueError(
+                f"A configuration of type {self.model_type} cannot be instantiated because text_encoder is not passed"
+            )
 
         if isinstance(self.audio_encoder, dict):
             audio_encoder_model_type = self.audio_encoder.pop("model_type")
             self.audio_encoder = AutoConfig.for_model(audio_encoder_model_type, **self.audio_encoder)
+        elif self.audio_encoder is None:
+            raise ValueError(
+                f"A configuration of type {self.model_type} cannot be instantiated because audio_encoder is not passed"
+            )
 
         if isinstance(self.decoder, dict):
             self.decoder = MusicgenMelodyDecoderConfig(**self.decoder)
+        elif self.decoder is None:
+            self.decoder = MusicgenMelodyDecoderConfig()
 
         self.is_encoder_decoder = True
         super().__post_init__(**kwargs)

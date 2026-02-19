@@ -139,30 +139,30 @@ class Dots1Config(PreTrainedConfig):
         "num_local_experts": "n_routed_experts",
     }
 
-    vocab_size: int | None = 152064
-    hidden_size: int | None = 4608
-    intermediate_size: int | None = 10944
-    moe_intermediate_size: int | None = 1408
-    num_hidden_layers: int | None = 62
-    num_attention_heads: int | None = 32
+    vocab_size: int = 152064
+    hidden_size: int = 4608
+    intermediate_size: int = 10944
+    moe_intermediate_size: int = 1408
+    num_hidden_layers: int = 62
+    num_attention_heads: int = 32
     num_key_value_heads: int | None = 32
-    n_shared_experts: int | None = None
-    n_routed_experts: int | None = None
+    n_shared_experts: int = None
+    n_routed_experts: int = None
     n_group: int | None = 1
     topk_group: int | None = 1
     num_experts_per_tok: int | None = None
     first_k_dense_replace: int | None = 0
     norm_topk_prob: bool | None = False
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 2048
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
-    tie_word_embeddings: bool | None = False
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 2048
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
-    routed_scaling_factor: float | None = 1.0
+    routed_scaling_factor: float = 1.0
     sliding_window: int | None = 4096
     max_window_layers: int | None = 62
     layer_types: list[str] | None = None

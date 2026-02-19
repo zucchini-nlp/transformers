@@ -84,7 +84,7 @@ class PaliGemmaConfig(PreTrainedConfig):
     vocab_size: int = 257152
     projection_dim: int = 2048
     hidden_size: int = 2048
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
 
     def __post_init__(self, **kwargs):
         if isinstance(self.vision_config, dict):

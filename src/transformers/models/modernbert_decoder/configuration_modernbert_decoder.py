@@ -127,7 +127,7 @@ class ModernBertDecoderConfig(PreTrainedConfig):
     keys_to_ignore_at_inference = ["past_key_values"]
     default_theta = {"global": 160_000.0, "local": 10_000.0}
 
-    vocab_size: int | None = 50368
+    vocab_size: int = 50368
     hidden_size: int = 768
     intermediate_size: int = 1152
     num_hidden_layers: int = 22

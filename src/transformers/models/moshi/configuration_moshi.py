@@ -115,7 +115,7 @@ class MoshiDepthConfig(PreTrainedConfig):
     num_hidden_layers: int = 6
     num_attention_heads: int = 16
     num_key_value_heads: int | None = None
-    audio_vocab_size: int | None = 2048
+    audio_vocab_size: int = 2048
     max_position_embeddings: int = 9
     hidden_act: str = "silu"
     head_dim: int | None = None
@@ -250,7 +250,7 @@ class MoshiConfig(PreTrainedConfig):
     num_hidden_layers: int = 32
     num_attention_heads: int = 32
     num_key_value_heads: int | None = None
-    audio_vocab_size: int | None = None
+    audio_vocab_size: int = None
     max_position_embeddings: int = 3000
     rope_parameters: RopeParameters | dict | None = None
     hidden_act: str = "silu"

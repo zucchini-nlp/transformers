@@ -35,21 +35,21 @@ class BltLocalEncoderConfig(PreTrainedConfig):
     model_type = "blt_local_encoder"
     default_theta = 500000.0
 
-    vocab_size: int | None = 260
+    vocab_size: int = 260
     cross_attn_all_layers: bool | None = False
     cross_attn_k: int | None = 2
     hidden_size_global: int | None = 2048
-    hidden_size: int | None = 1024
-    num_attention_heads: int | None = 16
+    hidden_size: int = 1024
+    num_attention_heads: int = 16
     num_key_value_heads: int | None = None
-    num_hidden_layers: int | None = 1
-    rms_norm_eps: float | None = 1e-5
+    num_hidden_layers: int = 1
+    rms_norm_eps: float = 1e-5
     dropout: float | int | None = 0.0
-    max_position_embeddings: int | None = 24576
+    max_position_embeddings: int = 24576
     rope_parameters: RopeParameters | dict | None = None
-    hidden_act: str | None = "silu"
-    intermediate_size: int | None = None
-    initializer_range: float | None = 0.02
+    hidden_act: str = "silu"
+    intermediate_size: int = None
+    initializer_range: float = 0.02
 
     def __post_init__(self, **kwargs):
         self.intermediate_size = self.intermediate_size or int(8 * self.hidden_size / 3)
@@ -67,25 +67,25 @@ class BltLocalDecoderConfig(PreTrainedConfig):
     model_type = "blt_local_decoder"
     default_theta = 500000.0
 
-    vocab_size: int | None = 260
+    vocab_size: int = 260
     cross_attn_all_layers: bool | None = True
     cross_attn_k: int | None = 2
     hidden_size_global: int | None = 2048
-    hidden_size: int | None = 1024
-    num_attention_heads: int | None = 16
+    hidden_size: int = 1024
+    num_attention_heads: int = 16
     num_key_value_heads: int | None = None
-    num_hidden_layers: int | None = 9
-    rms_norm_eps: float | None = 1e-5
+    num_hidden_layers: int = 9
+    rms_norm_eps: float = 1e-5
     dropout: float | int | None = 0.0
-    max_position_embeddings: int | None = 24576
+    max_position_embeddings: int = 24576
     rope_parameters: RopeParameters | dict | None = None
-    hidden_act: str | None = "silu"
-    intermediate_size: int | None = 2816
-    initializer_range: float | None = 0.02
+    hidden_act: str = "silu"
+    intermediate_size: int = 2816
+    initializer_range: float = 0.02
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         self.head_dim = self.hidden_size // self.num_attention_heads
@@ -104,18 +104,18 @@ class BltGlobalTransformerConfig(PreTrainedConfig):
     model_type = "blt_global_transformer"
     default_theta = 500000.0
 
-    hidden_size: int | None = 2048
-    num_attention_heads: int | None = 16
+    hidden_size: int = 2048
+    num_attention_heads: int = 16
     num_key_value_heads: int | None = None
-    num_hidden_layers: int | None = 25
-    rms_norm_eps: float | None = 1e-5
+    num_hidden_layers: int = 25
+    rms_norm_eps: float = 1e-5
     dropout: float | int | None = 0.0
-    max_position_embeddings: int | None = 4096
+    max_position_embeddings: int = 4096
     rope_parameters: RopeParameters | dict | None = None
-    hidden_act: str | None = "silu"
-    intermediate_size: int | None = 5632
-    initializer_range: float | None = 0.02
-    tie_word_embeddings: bool | None = False
+    hidden_act: str = "silu"
+    intermediate_size: int = 5632
+    initializer_range: float = 0.02
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         self.num_key_value_heads = self.num_key_value_heads or self.num_attention_heads
@@ -168,18 +168,18 @@ class BltPatcherConfig(PreTrainedConfig):
 
     model_type = "blt_patcher"
 
-    vocab_size: int | None = 260
-    hidden_size: int | None = 768
-    num_hidden_layers: int | None = 14
-    num_attention_heads: int | None = 12
+    vocab_size: int = 260
+    hidden_size: int = 768
+    num_hidden_layers: int = 14
+    num_attention_heads: int = 12
     num_key_value_heads: int | None = None
-    max_position_embeddings: int | None = 8192
-    rms_norm_eps: float | None = 1e-5
+    max_position_embeddings: int = 8192
+    rms_norm_eps: float = 1e-5
     dropout: float | int | None = 0.0
-    intermediate_size: int | None = 2048
+    intermediate_size: int = 2048
     rope_parameters: RopeParameters | dict | None = None
-    initializer_range: float | None = 0.02
-    tie_word_embeddings: bool | None = False
+    initializer_range: float = 0.02
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         self.num_key_value_heads = self.num_key_value_heads or self.num_attention_heads
@@ -270,8 +270,8 @@ class BltConfig(PreTrainedConfig):
         "global_config": BltGlobalTransformerConfig,
     }
 
-    vocab_size: int | None = 260
-    max_position_embeddings: int | None = 4096
+    vocab_size: int = 260
+    max_position_embeddings: int = 4096
     patch_in_forward: bool | None = True
     patch_size: int | None = 4
     patching_mode: str | None = "entropy"
@@ -286,11 +286,11 @@ class BltConfig(PreTrainedConfig):
     encoder_config: dict | PreTrainedConfig | None = None
     decoder_config: dict | PreTrainedConfig | None = None
     global_config: dict | PreTrainedConfig | None = None
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    initializer_range: float | None = 0.02
+    initializer_range: float = 0.02
     rope_parameters: RopeParameters | dict | None = None
 
     def __post_init__(self, **kwargs):

@@ -186,19 +186,19 @@ class EvollaConfig(PreTrainedConfig):
     default_theta = 500000.0
 
     protein_encoder_config: dict | PreTrainedConfig | None = None
-    vocab_size: int | None = 128256  # llama vocab size
-    hidden_size: int | None = 4096  # llama hidden size
-    intermediate_size: int | None = 14336  # llama intermediate size
-    num_hidden_layers: int | None = 32  # llama num layers
-    num_attention_heads: int | None = 32  # llama num heads
+    vocab_size: int = 128256  # llama vocab size
+    hidden_size: int = 4096  # llama hidden size
+    intermediate_size: int = 14336  # llama intermediate size
+    num_hidden_layers: int = 32  # llama num layers
+    num_attention_heads: int = 32  # llama num heads
     num_key_value_heads: int | None = 8  # llama num key-value heads
-    hidden_act: str | None = "silu"  # llama activation function
-    max_position_embeddings: int | None = 8192  # llama rope max length
-    rms_norm_eps: float | None = 1e-05
+    hidden_act: str = "silu"  # llama activation function
+    max_position_embeddings: int = 8192  # llama rope max length
+    rms_norm_eps: float = 1e-05
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: float | int | None = 0.0
-    mlp_bias: bool | None = False
+    mlp_bias: bool = False
     aligner_ffn_mult: int | None = 4
     aligner_enable_bias: bool | None = True
     aligner_attention_probs_dropout_prob: float | None = 0.1
@@ -208,12 +208,12 @@ class EvollaConfig(PreTrainedConfig):
     resampler_heads: int | None = 8
     resampler_num_latents: int | None = 64
     resampler_ff_mult: int | None = 4
-    initializer_range: float | None = 0.02
+    initializer_range: float = 0.02
     pad_token_id: int | None = None
     bos_token_id: int | None = 128000
     eos_token_id: int | list[int] | None = 128009
-    use_cache: bool | None = False
-    tie_word_embeddings: bool | None = False
+    use_cache: bool = False
+    tie_word_embeddings: bool = False
     is_decoder: bool | None = False
     add_cross_attention: bool | None = False
 

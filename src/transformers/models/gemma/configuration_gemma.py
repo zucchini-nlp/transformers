@@ -117,25 +117,25 @@ class GemmaConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 256000
-    hidden_size: int | None = 3072
-    intermediate_size: int | None = 24576
-    num_hidden_layers: int | None = 28
-    num_attention_heads: int | None = 16
-    num_key_value_heads: int | None = 16
-    head_dim: int | None = 256
-    hidden_act: str | None = "gelu_pytorch_tanh"
-    max_position_embeddings: int | None = 8192
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
+    vocab_size: int = 256000
+    hidden_size: int = 3072
+    intermediate_size: int = 24576
+    num_hidden_layers: int = 28
+    num_attention_heads: int = 16
+    num_key_value_heads: int = 16
+    head_dim: int = 256
+    hidden_act: str = "gelu_pytorch_tanh"
+    max_position_embeddings: int = 8192
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
     pad_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 1
     bos_token_id: int | None = 2
-    tie_word_embeddings: bool | None = True
+    tie_word_embeddings: bool = True
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
-    attention_dropout: float | int | None = 0.0
+    attention_bias: bool = False
+    attention_dropout: float | int = 0.0
     use_bidirectional_attention: bool | None = None
 
 

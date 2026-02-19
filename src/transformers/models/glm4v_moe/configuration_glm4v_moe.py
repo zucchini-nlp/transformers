@@ -137,20 +137,20 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
         "num_local_experts": "n_routed_experts",
     }
 
-    vocab_size: int | None = 151424
+    vocab_size: int = 151424
     hidden_size: int = 4096
     intermediate_size: int = 10944
     num_hidden_layers: int = 46
     num_attention_heads: int = 96
     num_key_value_heads: int = 8
     hidden_act: str = "silu"
-    max_position_embeddings: int | None = 65536
+    max_position_embeddings: int = 65536
     initializer_range: float = 0.02
     rms_norm_eps: float = 1e-5
     use_cache: bool = True
     tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = True
+    attention_bias: bool = True
     attention_dropout: float | int = 0.0
     moe_intermediate_size: int = 1408
     num_experts_per_tok: int = 8
@@ -167,7 +167,7 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
     pad_token_id: int | None = None
     base_config_key = "text_config"
     ignore_keys_at_rope_validation = {"mrope_section"}
-    router_aux_loss_coef: float | None = 0.0001
+    router_aux_loss_coef: float = 0.0001
 
     def __post_init__(self, **kwargs):
         kwargs.setdefault("partial_rotary_factor", 0.5)  # assign default for BC

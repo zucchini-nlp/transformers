@@ -82,14 +82,19 @@ class SpeechEncoderDecoderConfig(PreTrainedConfig):
     is_encoder_decoder: int | None = True
 
     def __post_init__(self, **kwargs):
-        if "encoder" in kwargs or "decoder" in kwargs:
-            encoder_config = kwargs.pop("encoder")
-            encoder_model_type = encoder_config.pop("model_type")
-            decoder_config = kwargs.pop("decoder")
-            decoder_model_type = decoder_config.pop("model_type")
+        if "encoder" not in kwargs or "decoder" not in kwargs:
+            raise ValueError(
+                f"A configuration of type {self.model_type} cannot be instantiated because not both `encoder` and"
+                f" `decoder` sub-configurations are passed, but only {kwargs}"
+            )
 
-            self.encoder = AutoConfig.for_model(encoder_model_type, **encoder_config)
-            self.decoder = AutoConfig.for_model(decoder_model_type, **decoder_config)
+        encoder_config = kwargs.pop("encoder")
+        encoder_model_type = encoder_config.pop("model_type")
+        decoder_config = kwargs.pop("decoder")
+        decoder_model_type = decoder_config.pop("model_type")
+
+        self.encoder = AutoConfig.for_model(encoder_model_type, **encoder_config)
+        self.decoder = AutoConfig.for_model(decoder_model_type, **decoder_config)
         super().__post_init__(**kwargs)
 
     @classmethod

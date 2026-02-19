@@ -205,7 +205,7 @@ class Wav2Vec2ConformerConfig(PreTrainedConfig):
 
     model_type = "wav2vec2-conformer"
 
-    vocab_size: int | None = None
+    vocab_size: int = None
     hidden_size: int = 768
     num_hidden_layers: int = 12
     num_attention_heads: int = 12
@@ -257,7 +257,7 @@ class Wav2Vec2ConformerConfig(PreTrainedConfig):
     adapter_kernel_size: int = 3
     adapter_stride: int = 2
     num_adapter_layers: int = 3
-    output_hidden_size: int | None = None
+    output_hidden_size: int = None
     position_embeddings_type: str | None = "relative"
     rotary_embedding_base: int = 10000
     max_source_positions: int = 5000

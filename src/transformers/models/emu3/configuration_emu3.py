@@ -194,7 +194,7 @@ class Emu3TextConfig(PreTrainedConfig):
     attention_bias = False
     attention_dropout: float | int = 0.1
     initializer_range: float = 0.02
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
 
 
 @strict(accept_kwargs=True)

@@ -102,17 +102,17 @@ class Jais2Config(PreTrainedConfig):
     vocab_size: int = 150272
     hidden_size: int = 3328
     intermediate_size: int = 26624
-    num_hidden_layers: int | None = 32
+    num_hidden_layers: int = 32
     num_attention_heads: int = 26
     num_key_value_heads: int | None = None
     hidden_act: str = "relu2"
     max_position_embeddings: int = 8192
-    initializer_range: float | None = interval(min=0.0, max=1.0)(default=0.2)
-    use_cache: bool | None = True
+    initializer_range: float = interval(min=0.0, max=1.0)(default=0.2)
+    use_cache: bool = True
     pad_token_id: int | None = None
     bos_token_id: int | None = 0
     eos_token_id: int | list[int] | None = 150024
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = True
     attention_dropout: int | float | None = 0.0

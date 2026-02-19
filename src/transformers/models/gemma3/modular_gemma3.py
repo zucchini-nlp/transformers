@@ -148,8 +148,8 @@ class Gemma3TextConfig(Gemma2Config, PreTrainedConfig):
     model_type = "gemma3_text"
     default_theta = {"global": 1_000_000.0, "local": 10_000.0}
 
-    vocab_size: int | None = 262_208
-    max_position_embeddings: int | None = 131_072
+    vocab_size: int = 262_208
+    max_position_embeddings: int = 131_072
     layer_types: list[str] | None = None
     final_logit_softcapping: float | None = None
     attn_logit_softcapping: float | None = None

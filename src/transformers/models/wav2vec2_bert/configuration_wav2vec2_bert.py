@@ -180,7 +180,7 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
 
     model_type = "wav2vec2-bert"
 
-    vocab_size: int | None = None
+    vocab_size: int = None
     hidden_size: int = 1024
     num_hidden_layers: int = 24
     num_attention_heads: int = 16
@@ -219,7 +219,7 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
     num_adapter_layers: int = 1
     adapter_act: str = "relu"
     use_intermediate_ffn_before_adapter: bool = False
-    output_hidden_size: int | None = None
+    output_hidden_size: int = None
     position_embeddings_type: Literal["rotary", "relative", "relative_key"] | None = "relative_key"
     rotary_embedding_base: int = 10000
     max_source_positions: int = 5000

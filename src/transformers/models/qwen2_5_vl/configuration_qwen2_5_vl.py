@@ -152,17 +152,17 @@ class Qwen2_5_VLTextConfig(PreTrainedConfig):
     }
     ignore_keys_at_rope_validation = {"mrope_section"}
 
-    vocab_size: int | None = 152064
-    hidden_size: int | None = 8192
-    intermediate_size: int | None = 29568
-    num_hidden_layers: int | None = 80
-    num_attention_heads: int | None = 64
+    vocab_size: int = 152064
+    hidden_size: int = 8192
+    intermediate_size: int = 29568
+    num_hidden_layers: int = 80
+    num_attention_heads: int = 64
     num_key_value_heads: int | None = 8
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 32768
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-05
-    use_cache: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 32768
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-05
+    use_cache: bool = True
     use_sliding_window: bool | None = False
     sliding_window: int | None = 4096
     max_window_layers: int | None = 80

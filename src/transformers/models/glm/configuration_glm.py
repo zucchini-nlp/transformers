@@ -107,25 +107,25 @@ class GlmConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 151552
-    hidden_size: int | None = 4096
-    intermediate_size: int | None = 13696
-    num_hidden_layers: int | None = 40
-    num_attention_heads: int | None = 32
+    vocab_size: int = 151552
+    hidden_size: int = 4096
+    intermediate_size: int = 13696
+    num_hidden_layers: int = 40
+    num_attention_heads: int = 32
     num_key_value_heads: int | None = 2
     head_dim: int | None = 128
-    hidden_act: str | None = "silu"
+    hidden_act: str = "silu"
     attention_dropout: float | int | None = 0.0
-    max_position_embeddings: int | None = 131072
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 0.00000015625
-    use_cache: bool | None = True
-    tie_word_embeddings: bool | None = False
+    max_position_embeddings: int = 131072
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 0.00000015625
+    use_cache: bool = True
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     pad_token_id: int | None = 151329
     eos_token_id: int | list[int] | None = None
     bos_token_id: int | None = None
-    attention_bias: bool | None = True
+    attention_bias: bool = True
 
     def __post_init__(self, **kwargs):
         kwargs.setdefault("partial_rotary_factor", 0.5)  # assign default for BC

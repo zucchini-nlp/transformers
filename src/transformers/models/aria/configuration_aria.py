@@ -118,27 +118,27 @@ class AriaTextConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 32000
-    hidden_size: int | None = 4096
+    vocab_size: int = 32000
+    hidden_size: int = 4096
 
     intermediate_size: int = 4096
-    num_hidden_layers: int | None = 32
-    num_attention_heads: int | None = 32
+    num_hidden_layers: int = 32
+    num_attention_heads: int = 32
     num_key_value_heads: int | None = None
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 2048
-    initializer_range: float | None = interval(min=0.0, max=1.0)(default=0.2)
-    rms_norm_eps: float | None = 1e-6
-    use_cache: bool | None = True
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 2048
+    initializer_range: float = interval(min=0.0, max=1.0)(default=0.2)
+    rms_norm_eps: float = 1e-6
+    use_cache: bool = True
     pad_token_id: int | None = 2
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2
     pretraining_tp: int | None = 1
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
     attention_dropout: int | float | None = 0.0
-    mlp_bias: bool | None = False
+    mlp_bias: bool = False
     head_dim: int | None = None
     base_config_key = "text_config"
     moe_num_experts: int = 8
@@ -201,9 +201,9 @@ class AriaConfig(PreTrainedConfig):
     text_config: dict | AriaTextConfig | None = None
     vision_feature_layer: int | list[int] = -1
     projector_patch_to_query_dict: dict | None = None
-    image_token_index: int | None = 9
-    initializer_range: float | None = 0.02
-    tie_word_embeddings: bool | None = False
+    image_token_index: int = 9
+    initializer_range: float = 0.02
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         # Convert the keys and values of projector_patch_to_query_dict to integers

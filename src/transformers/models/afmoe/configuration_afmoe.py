@@ -133,21 +133,21 @@ class AfmoeConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
 
-    vocab_size: int | None = 200192
-    hidden_size: int | None = 2048
-    intermediate_size: int | None = 6144
-    moe_intermediate_size: int | None = 1408
-    num_hidden_layers: int | None = 32
+    vocab_size: int = 200192
+    hidden_size: int = 2048
+    intermediate_size: int = 6144
+    moe_intermediate_size: int = 1408
+    num_hidden_layers: int = 32
     num_dense_layers: int | None = 1
-    num_attention_heads: int | None = 16
+    num_attention_heads: int = 16
     num_key_value_heads: int | None = None
     head_dim: int | None = 128
-    hidden_act: str | None = "silu"
-    max_position_embeddings: int | None = 16384
-    initializer_range: float | None = 0.02
-    rms_norm_eps: float | None = 1e-5
-    use_cache: bool | None = True
-    tie_word_embeddings: bool | None = False
+    hidden_act: str = "silu"
+    max_position_embeddings: int = 16384
+    initializer_range: float = 0.02
+    rms_norm_eps: float = 1e-5
+    use_cache: bool = True
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     num_experts: int | None = 64
     num_experts_per_tok: int | None = 6
@@ -161,7 +161,7 @@ class AfmoeConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = None
     pad_token_id: int | None = None
     bos_token_id: int | None = None
-    attention_bias: bool | None = False
+    attention_bias: bool = False
 
     def __post_init__(self, **kwargs):
         if self.layer_types is None:

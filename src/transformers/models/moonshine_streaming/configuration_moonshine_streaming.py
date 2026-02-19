@@ -189,7 +189,7 @@ class MoonshineStreamingConfig(PreTrainedConfig):
     intermediate_size: int = 1280
     num_hidden_layers: int = 6
     num_attention_heads: int = 8
-    hidden_act: str | None = "silu"
+    hidden_act: str = "silu"
     max_position_embeddings: int = 4096
     use_cache: bool = True
     pad_token_id: int | None = 0

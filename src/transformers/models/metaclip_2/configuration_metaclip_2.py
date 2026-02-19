@@ -95,17 +95,17 @@ class MetaClip2TextConfig(PreTrainedConfig):
     model_type = "metaclip_2_text_model"
     base_config_key = "text_config"
 
-    vocab_size: int | None = 49408
-    hidden_size: int | None = 512
-    intermediate_size: int | None = 2048
+    vocab_size: int = 49408
+    hidden_size: int = 512
+    intermediate_size: int = 2048
     projection_dim: int | None = 512
-    num_hidden_layers: int | None = 12
-    num_attention_heads: int | None = 8
-    max_position_embeddings: int | None = 77
-    hidden_act: str | None = "quick_gelu"
+    num_hidden_layers: int = 12
+    num_attention_heads: int = 8
+    max_position_embeddings: int = 77
+    hidden_act: str = "quick_gelu"
     layer_norm_eps: float | None = 1e-5
     attention_dropout: int | float | None = 0.0
-    initializer_range: float | None = 0.02
+    initializer_range: float = 0.02
     initializer_factor: float | None = 1.0
 
     # This differs from `MetaClip2Tokenizer`'s default and from openai/metaclip_2
@@ -183,18 +183,18 @@ class MetaClip2VisionConfig(PreTrainedConfig):
     model_type = "metaclip_2_vision_model"
     base_config_key = "vision_config"
 
-    hidden_size: int | None = 768
-    intermediate_size: int | None = 3072
+    hidden_size: int = 768
+    intermediate_size: int = 3072
     projection_dim: int | None = 512
-    num_hidden_layers: int | None = 12
-    num_attention_heads: int | None = 12
+    num_hidden_layers: int = 12
+    num_attention_heads: int = 12
     num_channels: int | None = 3
     image_size: int | None = 224
     patch_size: int | None = 32
-    hidden_act: str | None = "quick_gelu"
+    hidden_act: str = "quick_gelu"
     layer_norm_eps: float | None = 1e-5
     attention_dropout: int | float | None = 0.0
-    initializer_range: float | None = 0.02
+    initializer_range: float = 0.02
     initializer_factor: float | None = 1.0
 
     def validate_architecture(self):

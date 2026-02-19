@@ -172,19 +172,19 @@ class DbrxConfig(PreTrainedConfig):
     n_heads: int | None = 16
     n_layers: int | None = 24
     max_seq_len: int | None = 2048
-    vocab_size: int | None = 32000
+    vocab_size: int = 32000
     resid_pdrop: float | None = 0.0
     emb_pdrop: float | None = 0.0
     attn_config: DbrxAttentionConfig | dict | None = None
     ffn_config: DbrxFFNConfig | dict | None = None
-    use_cache: bool | None = True
-    initializer_range: float | None = 0.02
+    use_cache: bool = True
+    initializer_range: float = 0.02
     output_router_logits: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
     pad_token_id: int | None = None
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = None
-    tie_word_embeddings: bool | None = False
+    tie_word_embeddings: bool = False
 
     def __post_init__(self, **kwargs):
         if self.attn_config is None:
