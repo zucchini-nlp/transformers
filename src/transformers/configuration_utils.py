@@ -57,6 +57,19 @@ _FLOAT_TAG_KEY = "__float__"
 _FLOAT_TAG_VALUES = {"Infinity": float("inf"), "-Infinity": float("-inf"), "NaN": float("nan")}
 
 
+ALLOWED_LAYER_TYPES = (
+    "full_attention",
+    "sliding_attention",
+    "chunked_attention",
+    "linear_attention",  # used in minimax
+    "conv",  # used in LFMv2
+    "mamba",
+    "attention",
+    "sparse",
+    "dense",
+)
+
+
 @strict(accept_kwargs=True)
 @dataclass(repr=False)
 class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
@@ -192,8 +205,8 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
             self.dtype = getattr(torch, self.dtype)
 
         # Keep the default value of `num_labels=2` in case users have saved a classfier with 2 labels
-        # Our config prev wouldn't save `id2label` for 2 labels because it is the default. In all other
-        # cases we except the model to hold an `id2label` field if it's a clf model, or nothing otherwise
+        # Our configs prev wouldn't save `id2label` for 2 labels because it is the default. In all other
+        # cases we expect the config dict to have an `id2label` field if it's a clf model, or not otherwise
         if self.id2label is None:
             self.num_labels = kwargs.get("num_labels", 2)
         else:
@@ -345,16 +358,6 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
 
     def validate_architecture(self):
         """Part of `@strict`-powered validation. Validates the architecture of the config."""
-        # if (
-        #     hasattr(self, "hidden_size")
-        #     and hasattr(self, "num_attention_heads")
-        #     and self.hidden_size % self.num_attention_heads != 0
-        # ):
-        #     raise ValueError(
-        #         f"The hidden size ({self.hidden_size}) is not a multiple of the number of attention "
-        #         f"heads ({self.num_attention_heads})."
-        #     )
-
         if (
             hasattr(self, "head_dim")
             and hasattr(self, "num_heads")
@@ -385,10 +388,8 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin):
         """Check that `layer_types` is correctly defined."""
         if not (getattr(self, "layer_types", None) is not None and hasattr(self, "num_hidden_layers")):
             return
-        elif not all(layer_type in ALLOWED_ATTENTION_LAYER_TYPES for layer_type in self.layer_types):
-            raise ValueError(
-                f"The `layer_types` entries must be in {ALLOWED_ATTENTION_LAYER_TYPES} but got {self.layer_types}"
-            )
+        elif not all(layer_type in ALLOWED_LAYER_TYPES for layer_type in self.layer_types):
+            raise ValueError(f"The `layer_types` entries must be in {ALLOWED_LAYER_TYPES} but got {self.layer_types}")
         elif self.num_hidden_layers is not None and self.num_hidden_layers != len(self.layer_types):
             raise ValueError(
                 f"`num_hidden_layers` ({self.num_hidden_layers}) must be equal to the number of layer types "
@@ -1254,20 +1255,3 @@ if PreTrainedConfig.push_to_hub.__doc__ is not None:
 
 # The alias is only here for BC - we did not have the correct CamelCasing before
 PretrainedConfig = PreTrainedConfig
-
-
-ALLOWED_ATTENTION_LAYER_TYPES = (
-    "full_attention",
-    "sliding_attention",
-    "chunked_attention",
-    "linear_attention",  # used in minimax
-    "conv",  # used in LFMv2
-    "mamba",
-    "attention",
-    "sparse",
-    "dense",
-)
-
-
-def layer_type_validation(*args, **kwargs):
-    pass
