@@ -138,7 +138,7 @@ class FlaubertConfig(PreTrainedConfig):
     }
 
     pre_norm: bool = False
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     vocab_size: int = 30145
     emb_dim: int = 2048
     n_layers: int = 12

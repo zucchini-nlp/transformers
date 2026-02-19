@@ -84,13 +84,13 @@ class FastVlmConfig(PreTrainedConfig):
 
     vision_config: dict | PreTrainedConfig | None = None
     text_config: dict | PreTrainedConfig | None = None
+    image_token_index: int = 151646
     image_seq_length: int = 576
     projector_hidden_act: str = "gelu"
     vision_feature_select_strategy: str = "full"
     vision_feature_layer: int | list[int] = -1
     multimodal_projector_bias: bool = True
     tie_word_embeddings: bool = False
-    image_token_index: int = 151646
 
     def __post_init__(self, **kwargs):
         if isinstance(self.vision_config, dict):

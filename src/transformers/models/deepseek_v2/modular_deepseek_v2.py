@@ -168,7 +168,7 @@ class DeepseekV2Config(LlamaConfig):
     tie_word_embeddings: bool | None = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool | None = False
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     mlp_bias: bool | None = False
     first_k_dense_replace: int | None = 0
     kv_lora_rank: int | None = 512

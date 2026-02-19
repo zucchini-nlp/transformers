@@ -98,7 +98,7 @@ class VoxtralEncoderConfig(PreTrainedConfig):
     # to be able to use Whisper with modular (here actually from Qwen2-Audio and copied from).
     # After a future Whisper refactor, we should remove this.
     dropout: float | int = 0.0
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     activation_dropout: float | int = 0.0
 
 

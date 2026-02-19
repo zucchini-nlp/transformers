@@ -95,7 +95,7 @@ class AudioFlamingo3EncoderConfig(PreTrainedConfig):
     num_hidden_layers: int = 32
     num_attention_heads: int = 20
     intermediate_size: int = 5120
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     activation_function: str = "gelu"
     hidden_size: int = 1280
     dropout: float | int = 0.0

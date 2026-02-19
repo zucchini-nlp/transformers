@@ -101,7 +101,7 @@ class OPTConfig(PreTrainedConfig):
     attention_dropout: float | int = 0.0
     num_attention_heads: int = 12
     activation_function: str = "relu"
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     init_std: float = 0.02
     use_cache: bool = True
     pad_token_id: int | None = 1

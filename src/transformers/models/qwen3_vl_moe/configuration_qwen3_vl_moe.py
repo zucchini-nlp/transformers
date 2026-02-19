@@ -127,7 +127,6 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
-    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     vocab_size: int = 151936
     hidden_size: int = 2048
@@ -159,6 +158,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = None
     base_config_key = "text_config"
     default_theta = 500000.0
+    ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
     head_dim: int | None = None
 
     def __post_init__(self, **kwargs):

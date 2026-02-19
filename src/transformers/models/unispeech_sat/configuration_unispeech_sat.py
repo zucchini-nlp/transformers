@@ -204,7 +204,7 @@ class UniSpeechSatConfig(PreTrainedConfig):
     feat_proj_dropout: float | int = 0.0
     feat_quantizer_dropout: float | int = 0.0
     final_dropout: float | int = 0.1
-    layerdrop: float = 0.1
+    layerdrop: float | int = 0.1
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
     feat_extract_norm: str = "group"

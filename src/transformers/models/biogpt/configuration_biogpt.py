@@ -106,7 +106,7 @@ class BioGptConfig(PreTrainedConfig):
     layer_norm_eps: float = 1e-12
     scale_embedding: bool = True
     use_cache: bool = True
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     activation_dropout: float | int = 0.0
     pad_token_id: int | None = 1
     bos_token_id: int | None = 0

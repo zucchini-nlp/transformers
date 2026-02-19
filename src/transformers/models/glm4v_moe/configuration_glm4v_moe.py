@@ -166,6 +166,7 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
     eos_token_id: int | list[int] | None = None
     pad_token_id: int | None = None
     base_config_key = "text_config"
+    ignore_keys_at_rope_validation = {"mrope_section"}
     router_aux_loss_coef: float | None = 0.0001
 
     def __post_init__(self, **kwargs):

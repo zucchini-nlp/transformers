@@ -100,7 +100,7 @@ class XGLMConfig(PreTrainedConfig):
     dropout: float | int = 0.1
     attention_dropout: float | int = 0.1
     activation_dropout: float | int = 0.0
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     init_std: float = 0.02
     scale_embedding: bool = True
     use_cache: bool = True

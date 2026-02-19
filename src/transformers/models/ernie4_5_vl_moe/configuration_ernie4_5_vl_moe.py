@@ -207,6 +207,7 @@ class Ernie4_5_VL_MoeTextConfig(PreTrainedConfig):
     output_router_logits: bool | None = False
     router_aux_loss_coef: float | None = 0.001
     base_config_key = "text_config"
+    ignore_keys_at_rope_validation = {"mrope_section"}
 
     mlp_layer_types: list[str] | None = None
 

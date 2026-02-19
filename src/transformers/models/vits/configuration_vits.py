@@ -158,7 +158,7 @@ class VitsConfig(PreTrainedConfig):
     window_size: int = 4
     use_bias: bool = True
     ffn_dim: int = 768
-    layerdrop: float = 0.1
+    layerdrop: float | int = 0.1
     ffn_kernel_size: int = 3
     flow_size: int = 192
     spectrogram_bins: int = 513

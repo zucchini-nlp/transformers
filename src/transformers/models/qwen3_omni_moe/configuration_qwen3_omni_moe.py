@@ -391,7 +391,6 @@ class Qwen3OmniMoeTalkerCodePredictorConfig(PreTrainedConfig):
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
 
-
     Args:
         vocab_size (`int`, *optional*, defaults to 151936):
             Vocabulary size of the Qwen3OmniMoeTalkerCodePredictor model. Defines the number of different tokens that can be represented by the
@@ -530,7 +529,6 @@ class Qwen3OmniMoeTalkerTextConfig(PreTrainedConfig):
 
     Configuration objects inherit from [`PreTrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PreTrainedConfig`] for more information.
-
 
     Args:
         vocab_size (`int`, *optional*, defaults to 151936):

@@ -238,7 +238,7 @@ class Glm4vTextConfig(PreTrainedConfig):
     initializer_range: float | None = 0.02
     rms_norm_eps: float | None = 1e-05
     use_cache: bool | None = True
-    attention_dropout: float | None = 0.0
+    attention_dropout: float | int | None = 0.0
     rope_parameters: RopeParameters | dict | None = None
     pad_token_id: int | None = None
 

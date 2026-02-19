@@ -98,7 +98,7 @@ class Kosmos2TextConfig(PreTrainedConfig):
     dropout: float | int = 0.1
     attention_dropout: float | int = 0.1
     activation_dropout: float | int = 0.0
-    layerdrop: float = 0.0
+    layerdrop: float | int = 0.0
     layer_norm_eps: float = 1e-5
     init_std: float = 0.02
     scale_embedding: bool = True
