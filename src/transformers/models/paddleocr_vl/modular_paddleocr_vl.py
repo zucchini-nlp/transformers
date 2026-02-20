@@ -976,10 +976,11 @@ class PaddleOCRVisionEncoder(VideoLlama3VisionEncoder):
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
         """
+        hidden_states = inputs_embeds
         split_hids = []
         split_wids = []
         for t, h, w in image_grid_thw:
-            image_pids = torch.arange(t * h * w, device=inputs_embeds.device) % (h * w)
+            image_pids = torch.arange(t * h * w, device=hidden_states.device) % (h * w)
             sample_hids = image_pids // w
             sample_wids = image_pids % w
             split_hids.append(sample_hids)
@@ -996,7 +997,7 @@ class PaddleOCRVisionEncoder(VideoLlama3VisionEncoder):
 
         seq_lengths = cu_seqlens[1:] - cu_seqlens[:-1]
         packed_sequence = torch.repeat_interleave(
-            torch.arange(len(seq_lengths), device=inputs_embeds.device), seq_lengths
+            torch.arange(len(seq_lengths), device=hidden_states.device), seq_lengths
         ).unsqueeze(0)
 
         attention_mask = create_bidirectional_mask(
@@ -1008,7 +1009,7 @@ class PaddleOCRVisionEncoder(VideoLlama3VisionEncoder):
 
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
-                inputs_embeds,
+                hidden_states,
                 cu_seqlens=cu_seqlens,
                 position_embeddings=position_embeddings,
                 attention_mask=attention_mask,
