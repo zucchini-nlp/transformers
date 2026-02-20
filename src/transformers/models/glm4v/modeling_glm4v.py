@@ -1057,6 +1057,7 @@ class Glm4vModel(Glm4vPreTrainedModel):
                 input_type_group.append((key, start_index, end_index))
 
             current_pos = 0
+            video_group_index = 0
             llm_pos_ids_list = []
             for modality_type, start_idx, end_idx in input_type_group:
                 # text == 0
@@ -1068,9 +1069,21 @@ class Glm4vModel(Glm4vPreTrainedModel):
                     current_pos += text_len
                 # image == 1, video == 2
                 else:
-                    grid_thw = next(grid_iters[modality_type])
+                    # GLM4V splits video into segments per frame but there's only one `grid_thw`
+                    # per whole video. We can't exhaus the iterator and have to re-use the grid
+                    # while processing the same video!
+                    if modality_type == 2:
+                        if video_group_index == 0:
+                            grid_thw = next(grid_iters[modality_type])
+                        video_group_index += 1
+                        video_group_index = 0 if video_group_index >= grid_thw[0] else video_group_index
+                    else:
+                        grid_thw = next(grid_iters[modality_type])
+
+                    # Videos are processed per frame separately, each temporal grid is always `1`
+                    temp_merge_size = grid_thw[0]
                     vision_position_ids = self.get_vision_position_ids(
-                        current_pos, grid_thw, 1, spatial_merge_size, device=input_ids.device
+                        current_pos, grid_thw, temp_merge_size, spatial_merge_size, device=input_ids.device
                     )
                     llm_pos_ids_list.append(vision_position_ids)
                     current_pos += max(grid_thw[1], grid_thw[2]) // spatial_merge_size

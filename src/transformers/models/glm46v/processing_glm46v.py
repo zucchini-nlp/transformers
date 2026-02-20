@@ -169,7 +169,16 @@ class Glm46VProcessor(ProcessorMixin):
         if return_mm_token_type_ids:
             array_ids = np.array(text_inputs["input_ids"])
             mm_token_type_ids = np.zeros_like(text_inputs["input_ids"])
-            mm_token_type_ids[array_ids == self.image_token_id] = 1
+
+            # Replace 0 -> 2 only inside video segments because Glm46V
+            # uses the same special token to denote images and video
+            # Otherwise replace 0 -> 1 for image modality
+            starts = np.cumsum(array_ids == self.video_start_id)
+            ends = np.cumsum(array_ids == self.video_end_id)
+            is_video_modality = starts > ends
+
+            mm_token_type_ids[(array_ids == self.image_token_id) & is_video_modality] = 2
+            mm_token_type_ids[(array_ids == self.image_token_id) & (~is_video_modality)] = 1
             text_inputs["mm_token_type_ids"] = mm_token_type_ids.tolist()
         return BatchFeature(data={**text_inputs, **image_inputs, **videos_inputs}, tensor_type=return_tensors)
 
