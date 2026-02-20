@@ -58,6 +58,8 @@ class Glm4vProcessor(ProcessorMixin):
             else tokenizer.convert_tokens_to_ids(self.video_token)
         )
         super().__init__(image_processor, tokenizer, video_processor, chat_template=chat_template)
+        self.video_start_id = tokenizer.convert_tokens_to_ids("<|begin_of_video|>")
+        self.video_end_id = tokenizer.convert_tokens_to_ids("<|end_of_video|>")
 
     @auto_docstring
     def __call__(

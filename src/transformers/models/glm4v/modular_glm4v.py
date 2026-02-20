@@ -1430,6 +1430,8 @@ class Glm4vProcessor(Qwen2VLProcessor):
         super().__init__(image_processor, tokenizer, video_processor, chat_template=chat_template)
         self.image_token = "<|image|>" if not hasattr(tokenizer, "image_token") else tokenizer.image_token
         self.video_token = "<|video|>" if not hasattr(tokenizer, "video_token") else tokenizer.video_token
+        self.video_start_id = tokenizer.convert_tokens_to_ids("<|begin_of_video|>")
+        self.video_end_id = tokenizer.convert_tokens_to_ids("<|end_of_video|>")
 
     def __call__(
         self,
