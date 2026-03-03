@@ -805,7 +805,11 @@ class AltCLIPPreTrainedModel(PreTrainedModel):
             init.zeros_(module.token_type_ids)
 
 
-class AltCLIPVisionTransformer(nn.Module):
+class AltCLIPVisionModel(AltCLIPPreTrainedModel):
+    config: AltCLIPVisionConfig
+    main_input_name = "pixel_values"
+    input_modalities = ("image",)
+
     def __init__(self, config: AltCLIPVisionConfig):
         super().__init__()
         self.config = config
@@ -815,6 +819,7 @@ class AltCLIPVisionTransformer(nn.Module):
         self.pre_layrnorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.encoder = AltCLIPEncoder(config)
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
+        self.post_init()
 
     @can_return_tuple
     @auto_docstring
@@ -826,6 +831,26 @@ class AltCLIPVisionTransformer(nn.Module):
         return_dict: bool | None = None,
         interpolate_pos_encoding: bool | None = False,
     ) -> tuple | BaseModelOutputWithPooling:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, AltCLIPVisionModel
+
+        >>> model = AltCLIPVisionModel.from_pretrained("BAAI/AltCLIP")
+        >>> processor = AutoProcessor.from_pretrained("BAAI/AltCLIP")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -854,63 +879,6 @@ class AltCLIPVisionTransformer(nn.Module):
             pooler_output=pooled_output,
             hidden_states=encoder_outputs.hidden_states,
             attentions=encoder_outputs.attentions,
-        )
-
-
-class AltCLIPVisionModel(AltCLIPPreTrainedModel):
-    config: AltCLIPVisionConfig
-    main_input_name = "pixel_values"
-    input_modalities = ("image",)
-
-    def __init__(self, config: AltCLIPVisionConfig):
-        super().__init__(config)
-        self.vision_model = AltCLIPVisionTransformer(config)
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.vision_model.embeddings.patch_embedding
-
-    @auto_docstring
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        interpolate_pos_encoding: bool = False,
-        return_dict: bool | None = None,
-        **kwargs: Unpack[TransformersKwargs],
-    ) -> tuple | BaseModelOutputWithPooling:
-        r"""
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import httpx
-        >>> from io import BytesIO
-        >>> from transformers import AutoProcessor, AltCLIPVisionModel
-
-        >>> model = AltCLIPVisionModel.from_pretrained("BAAI/AltCLIP")
-        >>> processor = AutoProcessor.from_pretrained("BAAI/AltCLIP")
-
-        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-        >>> with httpx.stream("GET", url) as response:
-        ...     image = Image.open(BytesIO(response.read()))
-
-        >>> inputs = processor(images=image, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled CLS states
-        ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-
-        return self.vision_model(
-            pixel_values=pixel_values,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            interpolate_pos_encoding=interpolate_pos_encoding,
-            return_dict=return_dict,
         )
 
 
@@ -1130,8 +1098,8 @@ class AltCLIPModel(AltCLIPPreTrainedModel):
         self.text_embed_dim = text_config.project_dim
         self.vision_embed_dim = vision_config.hidden_size
 
-        self.text_model = AltCLIPTextModel(text_config)
-        self.vision_model = AltCLIPVisionTransformer(vision_config)
+        self.text_model = AltCLIPTextModel._from_config(text_config)
+        self.vision_model = AltCLIPVisionModel._from_config(vision_config)
 
         self.visual_projection = nn.Linear(self.vision_embed_dim, self.projection_dim, bias=False)
         self.text_projection = nn.Linear(self.text_embed_dim, self.projection_dim, bias=False)

@@ -500,7 +500,16 @@ class Siglip2Encoder(nn.Module):
         return BaseModelOutput(last_hidden_state=hidden_states)
 
 
-class Siglip2VisionTransformer(Siglip2PreTrainedModel):
+@auto_docstring(
+    custom_intro="""
+    The vision model from Siglip2 without any head or projection on top.
+    """
+)
+class Siglip2VisionModel(Siglip2PreTrainedModel):
+    config: Siglip2VisionConfig
+    main_input_name = "pixel_values"
+    input_modalities = ("image",)
+    base_model_prefix = "vision_model"
     _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: Siglip2VisionConfig):
@@ -514,6 +523,7 @@ class Siglip2VisionTransformer(Siglip2PreTrainedModel):
         self.use_head = True if not hasattr(config, "vision_use_head") else config.vision_use_head
         if self.use_head:
             self.head = Siglip2MultiheadAttentionPoolingHead(config)
+        self.post_init()
 
         self.post_init()
 
@@ -530,6 +540,26 @@ class Siglip2VisionTransformer(Siglip2PreTrainedModel):
         r"""
         spatial_shapes (`torch.LongTensor` of shape `(batch_size, 2)`):
             Tensor containing the spatial dimensions (height, width) of the input images.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Siglip2VisionModel
+
+        >>> model = Siglip2VisionModel.from_pretrained("google/siglip2-base-patch16-224")
+        >>> processor = AutoProcessor.from_pretrained("google/siglip2-base-patch16-224")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled features
+        ```
         """
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -567,6 +597,17 @@ class Siglip2VisionTransformer(Siglip2PreTrainedModel):
 class Siglip2TextTransformer(Siglip2PreTrainedModel):
     _input_embed_layer = "token_embedding"
 
+
+@auto_docstring(
+    custom_intro="""
+    The text model from Siglip2 without any head or projection on top.
+    """
+)
+class Siglip2TextModel(Siglip2PreTrainedModel):
+    config: Siglip2TextConfig
+    input_modalities = ("text",)
+    base_model_prefix = "text_model"
+
     def __init__(self, config: Siglip2TextConfig):
         super().__init__(config)
         self.config = config
@@ -578,7 +619,7 @@ class Siglip2TextTransformer(Siglip2PreTrainedModel):
         self.head = nn.Linear(embed_dim, config.projection_size)
         self.post_init()
 
-    @can_return_tuple
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -587,6 +628,22 @@ class Siglip2TextTransformer(Siglip2PreTrainedModel):
         position_ids: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPooling:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, Siglip2TextModel
+
+        >>> model = Siglip2TextModel.from_pretrained("google/siglip2-base-patch16-224")
+        >>> tokenizer = AutoTokenizer.from_pretrained("google/siglip2-base-patch16-224")
+
+        >>> # important: make sure to set padding="max_length" as that's how the model was trained
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding="max_length", return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
         if input_ids is None:
             raise ValueError("You have to specify input_ids")
 
@@ -618,62 +675,6 @@ class Siglip2TextTransformer(Siglip2PreTrainedModel):
         return BaseModelOutputWithPooling(
             last_hidden_state=last_hidden_state,
             pooler_output=pooled_output,
-        )
-
-
-@auto_docstring(
-    custom_intro="""
-    The text model from Siglip2 without any head or projection on top.
-    """
-)
-class Siglip2TextModel(Siglip2PreTrainedModel):
-    config: Siglip2TextConfig
-    input_modalities = ("text",)
-
-    def __init__(self, config: Siglip2TextConfig):
-        super().__init__(config)
-        self.text_model = Siglip2TextTransformer(config)
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.text_model.embeddings.token_embedding
-
-    def set_input_embeddings(self, value):
-        self.text_model.embeddings.token_embedding = value
-
-    @merge_with_config_defaults
-    @capture_outputs(tie_last_hidden_states=False)
-    @auto_docstring
-    def forward(
-        self,
-        input_ids: torch.Tensor | None = None,
-        attention_mask: torch.Tensor | None = None,
-        position_ids: torch.Tensor | None = None,
-        **kwargs: Unpack[TransformersKwargs],
-    ) -> BaseModelOutputWithPooling:
-        r"""
-        Examples:
-
-        ```python
-        >>> from transformers import AutoTokenizer, Siglip2TextModel
-
-        >>> model = Siglip2TextModel.from_pretrained("google/siglip2-base-patch16-224")
-        >>> tokenizer = AutoTokenizer.from_pretrained("google/siglip2-base-patch16-224")
-
-        >>> # important: make sure to set padding="max_length" as that's how the model was trained
-        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding="max_length", return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
-        ```"""
-
-        return self.text_model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            **kwargs,
         )
 
 
@@ -724,72 +725,6 @@ class Siglip2MultiheadAttentionPoolingHead(nn.Module):
         return hidden_state[:, 0]
 
 
-@auto_docstring(
-    custom_intro="""
-    The vision model from Siglip2 without any head or projection on top.
-    """
-)
-class Siglip2VisionModel(Siglip2PreTrainedModel):
-    config: Siglip2VisionConfig
-    main_input_name = "pixel_values"
-    input_modalities = ("image",)
-
-    def __init__(self, config: Siglip2VisionConfig):
-        super().__init__(config)
-
-        self.vision_model = Siglip2VisionTransformer(config)
-
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.vision_model.embeddings.patch_embedding
-
-    @merge_with_config_defaults
-    @capture_outputs(tie_last_hidden_states=False)
-    @auto_docstring
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor,
-        pixel_attention_mask: torch.Tensor,
-        spatial_shapes: torch.LongTensor,
-        **kwargs: Unpack[TransformersKwargs],
-    ) -> BaseModelOutputWithPooling:
-        r"""
-        pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
-            Mask to avoid performing attention on padding pixel indices.
-        spatial_shapes (`torch.LongTensor` of shape `(batch_size, 2)`):
-            Tensor containing the spatial dimensions (height, width) of the input images.
-
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import httpx
-        >>> from io import BytesIO
-        >>> from transformers import AutoProcessor, Siglip2VisionModel
-
-        >>> model = Siglip2VisionModel.from_pretrained("google/siglip2-base-patch16-224")
-        >>> processor = AutoProcessor.from_pretrained("google/siglip2-base-patch16-224")
-
-        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-        >>> with httpx.stream("GET", url) as response:
-        ...     image = Image.open(BytesIO(response.read()))
-
-        >>> inputs = processor(images=image, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled features
-        ```"""
-        return self.vision_model(
-            pixel_values=pixel_values,
-            attention_mask=pixel_attention_mask,
-            spatial_shapes=spatial_shapes,
-            **kwargs,
-        )
-
-
 @auto_docstring
 class Siglip2Model(Siglip2PreTrainedModel):
     config: Siglip2Config
@@ -813,12 +748,8 @@ class Siglip2Model(Siglip2PreTrainedModel):
         vision_config = config.vision_config
 
         # First, initialize the text and vision models with proper attention implementation
-        text_model = Siglip2TextModel._from_config(text_config)
-        vision_model = Siglip2VisionModel._from_config(vision_config)
-
-        # Second, get the text and vision submodules (for backward compatibility)
-        self.text_model = text_model.text_model
-        self.vision_model = vision_model.vision_model
+        self.text_model = Siglip2TextModel._from_config(text_config)
+        self.vision_model = Siglip2VisionModel._from_config(vision_config)
 
         self.logit_scale = nn.Parameter(torch.randn(1))
         self.logit_bias = nn.Parameter(torch.randn(1))

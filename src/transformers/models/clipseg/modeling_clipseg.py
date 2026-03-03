@@ -545,7 +545,12 @@ class CLIPSegEncoder(nn.Module):
         )
 
 
-class CLIPSegTextTransformer(CLIPSegPreTrainedModel):
+class CLIPSegTextModel(CLIPSegPreTrainedModel):
+    config: CLIPSegTextConfig
+    input_modalities = ("text",)
+
+    _no_split_modules = ["CLIPSegTextEmbeddings", "CLIPSegEncoderLayer"]
+
     def __init__(self, config: CLIPSegTextConfig):
         super().__init__(config)
 
@@ -556,6 +561,7 @@ class CLIPSegTextTransformer(CLIPSegPreTrainedModel):
 
         # For `pooled_output` computation
         self.eos_token_id = config.eos_token_id
+        self.post_init()
 
         self.post_init()
 
@@ -570,6 +576,21 @@ class CLIPSegTextTransformer(CLIPSegPreTrainedModel):
         return_dict: bool | None = None,
         **kwargs,
     ) -> tuple | BaseModelOutputWithPooling:
+        r"""
+        Examples:
+
+        ```python
+        >>> from transformers import AutoTokenizer, CLIPSegTextModel
+
+        >>> tokenizer = AutoTokenizer.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegTextModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
+        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -639,61 +660,11 @@ class CLIPSegTextTransformer(CLIPSegPreTrainedModel):
         )
 
 
-class CLIPSegTextModel(CLIPSegPreTrainedModel):
-    config: CLIPSegTextConfig
-    input_modalities = ("text",)
+class CLIPSegVisionModel(CLIPSegPreTrainedModel):
+    config: CLIPSegVisionConfig
+    main_input_name = "pixel_values"
+    input_modalities = ("image",)
 
-    _no_split_modules = ["CLIPSegTextEmbeddings", "CLIPSegEncoderLayer"]
-
-    def __init__(self, config: CLIPSegTextConfig):
-        super().__init__(config)
-        self.text_model = CLIPSegTextTransformer(config)
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.text_model.embeddings.token_embedding
-
-    def set_input_embeddings(self, value):
-        self.text_model.embeddings.token_embedding = value
-
-    @auto_docstring
-    def forward(
-        self,
-        input_ids: torch.Tensor | None = None,
-        attention_mask: torch.Tensor | None = None,
-        position_ids: torch.Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> tuple | BaseModelOutputWithPooling:
-        r"""
-        Examples:
-
-        ```python
-        >>> from transformers import AutoTokenizer, CLIPSegTextModel
-
-        >>> tokenizer = AutoTokenizer.from_pretrained("CIDAS/clipseg-rd64-refined")
-        >>> model = CLIPSegTextModel.from_pretrained("CIDAS/clipseg-rd64-refined")
-
-        >>> inputs = tokenizer(["a photo of a cat", "a photo of a dog"], padding=True, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled (EOS token) states
-        ```"""
-        return self.text_model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            return_dict=return_dict,
-        )
-
-
-class CLIPSegVisionTransformer(nn.Module):
     # Copied from transformers.models.altclip.modeling_altclip.AltCLIPVisionTransformer.__init__ with AltCLIP->CLIPSeg
     def __init__(self, config: CLIPSegVisionConfig):
         super().__init__()
@@ -704,6 +675,7 @@ class CLIPSegVisionTransformer(nn.Module):
         self.pre_layrnorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.encoder = CLIPSegEncoder(config)
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
+        self.post_init()
 
     @auto_docstring
     def forward(
@@ -714,6 +686,26 @@ class CLIPSegVisionTransformer(nn.Module):
         return_dict: bool | None = None,
         interpolate_pos_encoding: bool | None = True,
     ) -> tuple | BaseModelOutputWithPooling:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, CLIPSegVisionModel
+
+        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
+        >>> model = CLIPSegVisionModel.from_pretrained("CIDAS/clipseg-rd64-refined")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -742,61 +734,6 @@ class CLIPSegVisionTransformer(nn.Module):
             pooler_output=pooled_output,
             hidden_states=encoder_outputs.hidden_states,
             attentions=encoder_outputs.attentions,
-        )
-
-
-class CLIPSegVisionModel(CLIPSegPreTrainedModel):
-    config: CLIPSegVisionConfig
-    main_input_name = "pixel_values"
-    input_modalities = ("image",)
-
-    def __init__(self, config: CLIPSegVisionConfig):
-        super().__init__(config)
-        self.vision_model = CLIPSegVisionTransformer(config)
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.vision_model.embeddings.patch_embedding
-
-    @auto_docstring
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        interpolate_pos_encoding: bool | None = True,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> tuple | BaseModelOutputWithPooling:
-        r"""
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import httpx
-        >>> from io import BytesIO
-        >>> from transformers import AutoProcessor, CLIPSegVisionModel
-
-        >>> processor = AutoProcessor.from_pretrained("CIDAS/clipseg-rd64-refined")
-        >>> model = CLIPSegVisionModel.from_pretrained("CIDAS/clipseg-rd64-refined")
-
-        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-        >>> with httpx.stream("GET", url) as response:
-        ...     image = Image.open(BytesIO(response.read()))
-
-        >>> inputs = processor(images=image, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled CLS states
-        ```"""
-        return self.vision_model(
-            pixel_values=pixel_values,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            interpolate_pos_encoding=interpolate_pos_encoding,
-            return_dict=return_dict,
         )
 
 
@@ -830,8 +767,8 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
         self.text_embed_dim = text_config.hidden_size
         self.vision_embed_dim = vision_config.hidden_size
 
-        self.text_model = CLIPSegTextTransformer(text_config)
-        self.vision_model = CLIPSegVisionTransformer(vision_config)
+        self.text_model = CLIPSegTextModel._from_config(text_config)
+        self.vision_model = CLIPSegVisionModel._from_config(vision_config)
 
         self.visual_projection = nn.Linear(self.vision_embed_dim, self.projection_dim, bias=False)
         self.text_projection = nn.Linear(self.text_embed_dim, self.projection_dim, bias=False)

@@ -32,7 +32,6 @@ from transformers.models.siglip.modeling_siglip import (
     SiglipTextModelOutput,
     SiglipVisionModel,
     SiglipVisionModelOutput,
-    SiglipVisionTransformer,
 )
 
 from ...masking_utils import create_bidirectional_mask
@@ -43,8 +42,6 @@ from ...utils import (
     can_return_tuple,
     torch_compilable_check,
 )
-from ...utils.generic import merge_with_config_defaults
-from ...utils.output_capturing import capture_outputs
 
 
 class Siglip2Tokenizer(GemmaTokenizer):
@@ -286,11 +283,11 @@ class Siglip2PreTrainedModel(SiglipPreTrainedModel):
     _supports_flash_attn = False
 
 
-class Siglip2VisionTransformer(SiglipVisionTransformer):
+class Siglip2VisionModel(SiglipVisionModel):
     def __init__(self, config: Siglip2VisionConfig):
         super().__init__(config)
 
-    # Update: add `spatial_shapes` and `attention_mask`
+    # Update: add `spatial_shapes`
     def forward(
         self,
         pixel_values: torch.FloatTensor,
@@ -303,6 +300,26 @@ class Siglip2VisionTransformer(SiglipVisionTransformer):
         r"""
         spatial_shapes (`torch.LongTensor` of shape `(batch_size, 2)`):
             Tensor containing the spatial dimensions (height, width) of the input images.
+
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import AutoProcessor, Siglip2VisionModel
+
+        >>> model = Siglip2VisionModel.from_pretrained("google/siglip2-base-patch16-224")
+        >>> processor = AutoProcessor.from_pretrained("google/siglip2-base-patch16-224")
+
+        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled features
+        ```
         """
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
@@ -379,53 +396,6 @@ class Siglip2MultiheadAttentionPoolingHead(SiglipMultiheadAttentionPoolingHead):
         hidden_state = residual + self.mlp(hidden_state)
 
         return hidden_state[:, 0]
-
-
-class Siglip2VisionModel(SiglipVisionModel):
-    # Update: add `spatial_shapes` and `pixel_attention_mask`
-    @merge_with_config_defaults
-    @capture_outputs(tie_last_hidden_states=False)
-    @auto_docstring
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor,
-        pixel_attention_mask: torch.Tensor,
-        spatial_shapes: torch.LongTensor,
-        **kwargs: Unpack[TransformersKwargs],
-    ) -> BaseModelOutputWithPooling:
-        r"""
-        pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
-            Mask to avoid performing attention on padding pixel indices.
-        spatial_shapes (`torch.LongTensor` of shape `(batch_size, 2)`):
-            Tensor containing the spatial dimensions (height, width) of the input images.
-
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import httpx
-        >>> from io import BytesIO
-        >>> from transformers import AutoProcessor, Siglip2VisionModel
-
-        >>> model = Siglip2VisionModel.from_pretrained("google/siglip2-base-patch16-224")
-        >>> processor = AutoProcessor.from_pretrained("google/siglip2-base-patch16-224")
-
-        >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-        >>> with httpx.stream("GET", url) as response:
-        ...     image = Image.open(BytesIO(response.read()))
-
-        >>> inputs = processor(images=image, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled features
-        ```"""
-        return self.vision_model(
-            pixel_values=pixel_values,
-            attention_mask=pixel_attention_mask,
-            spatial_shapes=spatial_shapes,
-            **kwargs,
-        )
 
 
 class Siglip2Model(SiglipModel):

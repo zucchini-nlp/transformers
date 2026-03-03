@@ -729,7 +729,17 @@ class ChineseCLIPVisionEncoder(nn.Module):
         )
 
 
-class ChineseCLIPVisionTransformer(nn.Module):
+@auto_docstring(
+    custom_intro="""
+    The vision model from CHINESE_CLIP without any head or projection on top.
+    """
+)
+class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
+    config: ChineseCLIPVisionConfig
+    main_input_name = "pixel_values"
+    input_modalities = ("image",)
+    _no_split_modules = ["ChineseCLIPVisionEmbeddings", "ChineseCLIPVisionAttention"]
+
     def __init__(self, config: ChineseCLIPVisionConfig):
         super().__init__()
         self.config = config
@@ -739,6 +749,7 @@ class ChineseCLIPVisionTransformer(nn.Module):
         self.pre_layrnorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.encoder = ChineseCLIPVisionEncoder(config)
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
+        self.post_init()
 
     @can_return_tuple
     @auto_docstring
@@ -750,6 +761,26 @@ class ChineseCLIPVisionTransformer(nn.Module):
         interpolate_pos_encoding: bool = False,
         return_dict: bool | None = None,
     ) -> tuple | BaseModelOutputWithPooling:
+        r"""
+        Examples:
+
+        ```python
+        >>> from PIL import Image
+        >>> import requests
+        >>> from transformers import CLIPProcessor, ChineseCLIPVisionModel
+
+        >>> model = ChineseCLIPVisionModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+        >>> processor = CLIPProcessor.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
+
+        >>> url = "https://clip-cn-beijing.oss-cn-beijing.aliyuncs.com/pokemon.jpeg"
+        >>> image = Image.open(requests.get(url, stream=True).raw)
+
+        >>> inputs = processor(images=image, return_tensors="pt")
+
+        >>> outputs = model(**inputs)
+        >>> last_hidden_state = outputs.last_hidden_state
+        >>> pooled_output = outputs.pooler_output  # pooled CLS states
+        ```"""
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -901,69 +932,6 @@ class ChineseCLIPTextModel(ChineseCLIPPreTrainedModel):
         )
 
 
-@auto_docstring(
-    custom_intro="""
-    The vision model from CHINESE_CLIP without any head or projection on top.
-    """
-)
-class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
-    config: ChineseCLIPVisionConfig
-    main_input_name = "pixel_values"
-    input_modalities = ("image",)
-    _no_split_modules = ["ChineseCLIPVisionEmbeddings", "ChineseCLIPVisionAttention"]
-
-    def __init__(self, config: ChineseCLIPVisionConfig):
-        super().__init__(config)
-        self.vision_model = ChineseCLIPVisionTransformer(config)
-        # Initialize weights and apply final processing
-        self.post_init()
-
-    def get_input_embeddings(self) -> nn.Module:
-        return self.vision_model.embeddings.patch_embedding
-
-    @auto_docstring
-    def forward(
-        self,
-        pixel_values: torch.FloatTensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        interpolate_pos_encoding: bool = False,
-        return_dict: bool | None = None,
-        **kwargs,
-    ) -> tuple | BaseModelOutputWithPooling:
-        r"""
-        Examples:
-
-        ```python
-        >>> from PIL import Image
-        >>> import httpx
-        >>> from io import BytesIO
-        >>> from transformers import CLIPProcessor, ChineseCLIPVisionModel
-
-        >>> model = ChineseCLIPVisionModel.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
-        >>> processor = CLIPProcessor.from_pretrained("OFA-Sys/chinese-clip-vit-base-patch16")
-
-        >>> url = "https://clip-cn-beijing.oss-cn-beijing.aliyuncs.com/pokemon.jpeg"
-        >>> with httpx.stream("GET", url) as response:
-        ...     image = Image.open(BytesIO(response.read()))
-
-        >>> inputs = processor(images=image, return_tensors="pt")
-
-        >>> outputs = model(**inputs)
-        >>> last_hidden_state = outputs.last_hidden_state
-        >>> pooled_output = outputs.pooler_output  # pooled CLS states
-        ```"""
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-
-        return self.vision_model(
-            pixel_values=pixel_values,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
-            interpolate_pos_encoding=interpolate_pos_encoding,
-            return_dict=return_dict,
-        )
-
-
 @auto_docstring
 class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
     config: ChineseCLIPConfig
@@ -992,8 +960,8 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
         self.text_embed_dim = text_config.hidden_size
         self.vision_embed_dim = vision_config.hidden_size
 
-        self.text_model = ChineseCLIPTextModel(text_config, add_pooling_layer=False)
-        self.vision_model = ChineseCLIPVisionTransformer(vision_config)
+        self.text_model = ChineseCLIPTextModel._from_config(text_config, add_pooling_layer=False)
+        self.vision_model = ChineseCLIPVisionModel._from_config(vision_config)
 
         self.visual_projection = nn.Linear(self.vision_embed_dim, self.projection_dim, bias=False)
         self.text_projection = nn.Linear(self.text_embed_dim, self.projection_dim, bias=False)
