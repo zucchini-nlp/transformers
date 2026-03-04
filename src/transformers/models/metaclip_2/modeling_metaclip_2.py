@@ -441,7 +441,7 @@ class MetaClip2TextModel(MetaClip2PreTrainedModel):
     _no_split_modules = ["MetaClip2TextEmbeddings", "MetaClip2EncoderLayer"]
 
     def __init__(self, config: MetaClip2TextConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
         self.embeddings = MetaClip2TextEmbeddings(config)
@@ -964,7 +964,7 @@ class MetaClip2VisionModel(MetaClip2PreTrainedModel):
     _no_split_modules = ["MetaClip2EncoderLayer"]
 
     def __init__(self, config: MetaClip2VisionConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
 
@@ -1088,9 +1088,7 @@ class MetaClip2VisionModelWithProjection(MetaClip2PreTrainedModel):
     def __init__(self, config: MetaClip2VisionConfig):
         super().__init__(config)
 
-        vision_model = MetaClip2VisionModel._from_config(config)
-        self.vision_model = vision_model.vision_model
-
+        self.vision_model = MetaClip2VisionModel._from_config(config)
         self.visual_projection = nn.Linear(config.hidden_size, config.projection_dim, bias=False)
 
         # Initialize weights and apply final processing
@@ -1159,8 +1157,7 @@ class MetaClip2ForImageClassification(MetaClip2PreTrainedModel):
         super().__init__(config)
 
         self.num_labels = config.num_labels
-        vision_model = MetaClip2VisionModel._from_config(config.vision_config)
-        self.vision_model = vision_model.vision_model
+        self.vision_model = MetaClip2VisionModel._from_config(config.vision_config)
 
         # Classifier head
         self.classifier = (

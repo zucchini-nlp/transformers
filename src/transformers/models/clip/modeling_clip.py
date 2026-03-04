@@ -959,9 +959,7 @@ class CLIPVisionModelWithProjection(CLIPPreTrainedModel):
     def __init__(self, config: CLIPVisionConfig):
         super().__init__(config)
 
-        vision_model = CLIPVisionModel._from_config(config)
-        self.vision_model = vision_model.vision_model
-
+        self.vision_model = CLIPVisionModel._from_config(config)
         self.visual_projection = nn.Linear(config.hidden_size, config.projection_dim, bias=False)
 
         # Initialize weights and apply final processing
@@ -1029,8 +1027,7 @@ class CLIPForImageClassification(CLIPPreTrainedModel):
         super().__init__(config)
 
         self.num_labels = config.num_labels
-        vision_model = CLIPVisionModel._from_config(config.vision_config)
-        self.vision_model = vision_model.vision_model
+        self.vision_model = CLIPVisionModel._from_config(config.vision_config)
 
         # Classifier head
         self.classifier = (

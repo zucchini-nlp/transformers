@@ -858,11 +858,7 @@ class SiglipForImageClassification(SiglipPreTrainedModel):
         super().__init__(config)
 
         self.num_labels = config.num_labels
-
-        # Create the vision model with proper attention
-        # and take only vision_model submodule (for backward compatibility)
-        vision_model = SiglipVisionModel._from_config(config.vision_config)
-        self.vision_model = vision_model.vision_model
+        self.vision_model = SiglipVisionModel._from_config(config.vision_config)
 
         # Classifier head
         self.classifier = (

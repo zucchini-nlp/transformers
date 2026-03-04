@@ -291,13 +291,15 @@ class Siglip2VisionModel(SiglipVisionModel):
     def forward(
         self,
         pixel_values: torch.FloatTensor,
-        attention_mask: torch.Tensor,
+        pixel_attention_mask: torch.Tensor,
         spatial_shapes: torch.LongTensor,
         output_attentions: bool | None = None,
         output_hidden_states: bool | None = None,
         **kwargs,
     ) -> BaseModelOutputWithPooling:
         r"""
+        pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
+            Mask to avoid performing attention on padding pixel indices.
         spatial_shapes (`torch.LongTensor` of shape `(batch_size, 2)`):
             Tensor containing the spatial dimensions (height, width) of the input images.
 
@@ -331,7 +333,7 @@ class Siglip2VisionModel(SiglipVisionModel):
         encoder_attention_mask = create_bidirectional_mask(
             config=self.config,
             inputs_embeds=hidden_states,
-            attention_mask=attention_mask,
+            attention_mask=pixel_attention_mask,
         )
 
         encoder_outputs: BaseModelOutput = self.encoder(
@@ -344,7 +346,7 @@ class Siglip2VisionModel(SiglipVisionModel):
         last_hidden_state = encoder_outputs.last_hidden_state
         last_hidden_state = self.post_layernorm(last_hidden_state)
 
-        pooler_output = self.head(last_hidden_state, attention_mask) if self.use_head else None
+        pooler_output = self.head(last_hidden_state, pixel_attention_mask) if self.use_head else None
 
         return BaseModelOutputWithPooling(
             last_hidden_state=last_hidden_state,
@@ -436,7 +438,7 @@ class Siglip2Model(SiglipModel):
         """
         return self.vision_model(
             pixel_values=pixel_values,
-            attention_mask=pixel_attention_mask,
+            pixel_attention_mask=pixel_attention_mask,
             spatial_shapes=spatial_shapes,
             **kwargs,
         )
@@ -500,7 +502,7 @@ class Siglip2Model(SiglipModel):
 
         vision_outputs: BaseModelOutputWithPooling = self.vision_model(
             pixel_values=pixel_values,
-            attention_mask=pixel_attention_mask,
+            pixel_attention_mask=pixel_attention_mask,
             spatial_shapes=spatial_shapes,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
@@ -606,7 +608,7 @@ class Siglip2ForImageClassification(SiglipForImageClassification):
 
         outputs: BaseModelOutputWithPooling = self.vision_model(
             pixel_values,
-            attention_mask=pixel_attention_mask,
+            pixel_attention_mask=pixel_attention_mask,
             spatial_shapes=spatial_shapes,
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,

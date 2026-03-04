@@ -741,7 +741,7 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
     _no_split_modules = ["ChineseCLIPVisionEmbeddings", "ChineseCLIPVisionAttention"]
 
     def __init__(self, config: ChineseCLIPVisionConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
 
@@ -960,8 +960,8 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
         self.text_embed_dim = text_config.hidden_size
         self.vision_embed_dim = vision_config.hidden_size
 
-        self.text_model = ChineseCLIPTextModel._from_config(text_config, add_pooling_layer=False)
-        self.vision_model = ChineseCLIPVisionModel._from_config(vision_config)
+        self.text_model = ChineseCLIPTextModel(text_config, add_pooling_layer=False)
+        self.vision_model = ChineseCLIPVisionModel(vision_config)
 
         self.visual_projection = nn.Linear(self.vision_embed_dim, self.projection_dim, bias=False)
         self.text_projection = nn.Linear(self.text_embed_dim, self.projection_dim, bias=False)

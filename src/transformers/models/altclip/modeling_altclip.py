@@ -811,7 +811,7 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
     input_modalities = ("image",)
 
     def __init__(self, config: AltCLIPVisionConfig):
-        super().__init__()
+        super().__init__(config)
         self.config = config
         embed_dim = config.hidden_size
 
