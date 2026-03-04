@@ -510,7 +510,6 @@ class Siglip2VisionModel(Siglip2PreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
     base_model_prefix = "vision_model"
-    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: Siglip2VisionConfig):
         super().__init__(config)
@@ -523,8 +522,8 @@ class Siglip2VisionModel(Siglip2PreTrainedModel):
         self.use_head = True if not hasattr(config, "vision_use_head") else config.vision_use_head
         if self.use_head:
             self.head = Siglip2MultiheadAttentionPoolingHead(config)
-        self.post_init()
 
+        self.post_init()
         self.post_init()
 
     @auto_docstring
@@ -596,10 +595,6 @@ class Siglip2VisionModel(Siglip2PreTrainedModel):
         )
 
 
-class Siglip2TextTransformer(Siglip2PreTrainedModel):
-    _input_embed_layer = "token_embedding"
-
-
 @auto_docstring(
     custom_intro="""
     The text model from Siglip2 without any head or projection on top.
@@ -609,6 +604,7 @@ class Siglip2TextModel(Siglip2PreTrainedModel):
     config: Siglip2TextConfig
     input_modalities = ("text",)
     base_model_prefix = "text_model"
+    _input_embed_layer = "embeddings"
 
     def __init__(self, config: Siglip2TextConfig):
         super().__init__(config)
