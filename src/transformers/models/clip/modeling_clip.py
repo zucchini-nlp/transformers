@@ -523,6 +523,7 @@ class CLIPEncoder(nn.Module):
 class CLIPTextModel(CLIPPreTrainedModel):
     config: CLIPTextConfig
     input_modalities = ("text",)
+    _input_embed_layer = "token_embedding"
 
     _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer"]
 
@@ -628,6 +629,7 @@ class CLIPVisionModel(CLIPPreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
     _no_split_modules = ["CLIPEncoderLayer"]
+    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: CLIPVisionConfig):
         super().__init__(config)

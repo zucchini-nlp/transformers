@@ -809,6 +809,7 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
     config: AltCLIPVisionConfig
     main_input_name = "pixel_values"
     input_modalities = ("image",)
+    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: AltCLIPVisionConfig):
         super().__init__(config)
@@ -830,6 +831,7 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
         interpolate_pos_encoding: bool | None = False,
+        **kwargs,
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
         Examples:
@@ -868,6 +870,7 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=True,
+            **kwargs,
         )
 
         last_hidden_state = encoder_outputs[0]
@@ -992,6 +995,7 @@ class AltRobertaModel(AltCLIPPreTrainedModel):
 class AltCLIPTextModel(AltCLIPPreTrainedModel):
     config: AltCLIPTextConfig
     input_modalities = ("text",)
+    _input_embed_layer = "token_embedding"
 
     def __init__(self, config):
         super().__init__(config)

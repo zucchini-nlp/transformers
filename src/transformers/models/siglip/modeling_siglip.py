@@ -482,7 +482,7 @@ class SiglipTextModel(SiglipPreTrainedModel):
     config: SiglipTextConfig
     input_modalities = ("text",)
     base_model_prefix = "text_model"
-    _input_embed_layer = "embeddings"
+    _input_embed_layer = "token_embedding"
 
     def __init__(self, config: SiglipTextConfig):
         super().__init__(config)
@@ -564,6 +564,7 @@ class SiglipVisionModel(SiglipPreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
     base_model_prefix = "vision_model"
+    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: SiglipVisionConfig):
         super().__init__(config)
@@ -578,8 +579,8 @@ class SiglipVisionModel(SiglipPreTrainedModel):
             self.head = SiglipMultiheadAttentionPoolingHead(config)
         self.post_init()
 
-        self.post_init()
-
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -874,8 +875,7 @@ class SiglipForImageClassification(SiglipPreTrainedModel):
     def set_input_embeddings(self, value: nn.Module):
         self.vision_model.embeddings.patch_embedding = value
 
-    @merge_with_config_defaults
-    @capture_outputs
+    @can_return_tuple
     @auto_docstring
     def forward(
         self,
@@ -937,6 +937,8 @@ class SiglipForImageClassification(SiglipPreTrainedModel):
         return ImageClassifierOutput(
             loss=loss,
             logits=logits,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
         )
 
 

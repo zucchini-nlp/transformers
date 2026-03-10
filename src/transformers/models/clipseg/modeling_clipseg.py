@@ -548,6 +548,7 @@ class CLIPSegEncoder(nn.Module):
 class CLIPSegTextModel(CLIPSegPreTrainedModel):
     config: CLIPSegTextConfig
     input_modalities = ("text",)
+    _input_embed_layer = "token_embedding"
 
     _no_split_modules = ["CLIPSegTextEmbeddings", "CLIPSegEncoderLayer"]
 
@@ -664,6 +665,7 @@ class CLIPSegVisionModel(CLIPSegPreTrainedModel):
     config: CLIPSegVisionConfig
     main_input_name = "pixel_values"
     input_modalities = ("image",)
+    _input_embed_layer = "patch_embedding"
 
     # Copied from transformers.models.altclip.modeling_altclip.AltCLIPVisionTransformer.__init__ with AltCLIP->CLIPSeg
     def __init__(self, config: CLIPSegVisionConfig):
@@ -685,6 +687,7 @@ class CLIPSegVisionModel(CLIPSegPreTrainedModel):
         output_hidden_states: bool | None = None,
         return_dict: bool | None = None,
         interpolate_pos_encoding: bool | None = True,
+        **kwargs,
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
         Examples:
@@ -720,6 +723,7 @@ class CLIPSegVisionModel(CLIPSegPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
+            **kwargs,
         )
 
         last_hidden_state = encoder_outputs[0]

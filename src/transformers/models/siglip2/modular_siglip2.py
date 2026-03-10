@@ -265,9 +265,7 @@ class Siglip2VisionModel(SiglipVisionModel):
         pixel_values: torch.FloatTensor,
         pixel_attention_mask: torch.Tensor,
         spatial_shapes: torch.LongTensor,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        **kwargs,
+        **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutputWithPooling:
         r"""
         pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
@@ -295,10 +293,6 @@ class Siglip2VisionModel(SiglipVisionModel):
         >>> pooled_output = outputs.pooler_output  # pooled features
         ```
         """
-        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
-        output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
 
         hidden_states = self.embeddings(pixel_values, spatial_shapes)
 
@@ -311,8 +305,7 @@ class Siglip2VisionModel(SiglipVisionModel):
         encoder_outputs: BaseModelOutput = self.encoder(
             inputs_embeds=hidden_states,
             attention_mask=encoder_attention_mask,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            **kwargs,
         )
 
         last_hidden_state = encoder_outputs.last_hidden_state
@@ -323,8 +316,6 @@ class Siglip2VisionModel(SiglipVisionModel):
         return BaseModelOutputWithPooling(
             last_hidden_state=last_hidden_state,
             pooler_output=pooler_output,
-            hidden_states=encoder_outputs.hidden_states,
-            attentions=encoder_outputs.attentions,
         )
 
 
@@ -531,9 +522,7 @@ class Siglip2ForImageClassification(SiglipForImageClassification):
         pixel_attention_mask: torch.Tensor | None = None,
         spatial_shapes: torch.LongTensor | None = None,
         labels: torch.Tensor | None = None,
-        output_attentions: bool | None = None,
-        output_hidden_states: bool | None = None,
-        **kwargs,
+        **kwargs: Unpack[TransformersKwargs],
     ) -> ImageClassifierOutput:
         r"""
         pixel_attention_mask (`torch.Tensor` of shape `(batch_size, image_size, image_size)`, *optional*):
@@ -573,17 +562,11 @@ class Siglip2ForImageClassification(SiglipForImageClassification):
         Predicted class: LABEL_1
         ```
         """
-        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
-        output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
-        )
-
         outputs: BaseModelOutputWithPooling = self.vision_model(
             pixel_values,
             pixel_attention_mask=pixel_attention_mask,
             spatial_shapes=spatial_shapes,
-            output_attentions=output_attentions,
-            output_hidden_states=output_hidden_states,
+            **kwargs,
         )
 
         sequence_output = outputs.last_hidden_state

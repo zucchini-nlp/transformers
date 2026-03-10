@@ -739,6 +739,7 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
     _no_split_modules = ["ChineseCLIPVisionEmbeddings", "ChineseCLIPVisionAttention"]
+    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: ChineseCLIPVisionConfig):
         super().__init__(config)
@@ -760,6 +761,7 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
         output_hidden_states: bool | None = None,
         interpolate_pos_encoding: bool = False,
         return_dict: bool | None = None,
+        **kwargs,
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
         Examples:
@@ -798,6 +800,7 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
             output_attentions=output_attentions,
             output_hidden_states=output_hidden_states,
             return_dict=True,
+            **kwargs,
         )
 
         last_hidden_state = encoder_outputs[0]
@@ -833,6 +836,7 @@ class ChineseCLIPTextModel(ChineseCLIPPreTrainedModel):
     config: ChineseCLIPTextConfig
     input_modalities = ("text",)
     _no_split_modules = ["ChineseCLIPTextEmbeddings"]
+    _input_embed_layer = "token_embedding"
 
     def __init__(self, config, add_pooling_layer=True):
         r"""

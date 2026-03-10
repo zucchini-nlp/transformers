@@ -19,6 +19,8 @@ from ...modeling_outputs import BaseModelOutput, BaseModelOutputWithPooling, Ima
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
 from ...processing_utils import Unpack
 from ...utils import ModelOutput, TransformersKwargs, auto_docstring, can_return_tuple, torch_int
+from ...utils.generic import merge_with_config_defaults
+from ...utils.output_capturing import capture_outputs
 from .configuration_metaclip_2 import MetaClip2Config, MetaClip2TextConfig, MetaClip2VisionConfig
 
 
@@ -437,6 +439,7 @@ class MetaClip2TextModel(MetaClip2PreTrainedModel):
 
     config: MetaClip2TextConfig
     input_modalities = ("text",)
+    _input_embed_layer = "token_embedding"
 
     _no_split_modules = ["MetaClip2TextEmbeddings", "MetaClip2EncoderLayer"]
 
@@ -452,6 +455,8 @@ class MetaClip2TextModel(MetaClip2PreTrainedModel):
         self.eos_token_id = config.eos_token_id
         self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -962,6 +967,7 @@ class MetaClip2VisionModel(MetaClip2PreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
     _no_split_modules = ["MetaClip2EncoderLayer"]
+    _input_embed_layer = "patch_embedding"
 
     def __init__(self, config: MetaClip2VisionConfig):
         super().__init__(config)
@@ -974,6 +980,8 @@ class MetaClip2VisionModel(MetaClip2PreTrainedModel):
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
