@@ -847,8 +847,7 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
         # Initialize weights and apply final processing
         self.post_init()
 
-    @merge_with_config_defaults
-    @capture_outputs
+    @can_return_tuple
     @auto_docstring
     def get_text_features(
         self,
@@ -882,8 +881,7 @@ class CLIPSegModel(CLIPSegPreTrainedModel):
 
         return text_outputs
 
-    @merge_with_config_defaults
-    @capture_outputs(tie_last_hidden_states=False)
+    @can_return_tuple
     @auto_docstring
     def get_image_features(
         self,

@@ -515,7 +515,7 @@ class Kosmos2VisionEncoder(nn.Module):
         )
 
 
-# Similar to `transformers.models.clip.modeling_clip.CLIPVisionTransformer` but without docstring for `forward`
+# Similar to `transformers.models.clip.modeling_clip.CLIPVisionModel` but without docstring for `forward`
 class Kosmos2VisionTransformer(Kosmos2PreTrainedModel):
     _can_record_outputs = {
         "hidden_states": Kosmos2VisionEncoderLayer,
@@ -1102,14 +1102,12 @@ class Kosmos2VisionModel(Kosmos2PreTrainedModel):
     main_input_name = "pixel_values"
     input_modalities = ("image",)
 
-    # Copied from transformers.models.clip.modeling_clip.CLIPVisionModel.__init__ with CLIP_VISION->KOSMOS2_VISION,CLIP->Kosmos2,self.vision_model->self.model
     def __init__(self, config: Kosmos2VisionConfig):
         super().__init__(config)
         self.model = Kosmos2VisionTransformer(config)
         # Initialize weights and apply final processing
         self.post_init()
 
-    # Copied from transformers.models.clip.modeling_clip.CLIPVisionModel.get_input_embeddings with CLIP_VISION->KOSMOS2_VISION,CLIP->Kosmos2,self.vision_model->self.model
     def get_input_embeddings(self) -> nn.Module:
         return self.model.embeddings.patch_embedding
 
