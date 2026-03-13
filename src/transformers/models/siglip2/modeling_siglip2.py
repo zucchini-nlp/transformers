@@ -558,7 +558,6 @@ class Siglip2VisionModel(Siglip2PreTrainedModel):
         >>> pooled_output = outputs.pooler_output  # pooled features
         ```
         """
-
         hidden_states = self.embeddings(pixel_values, spatial_shapes)
 
         encoder_attention_mask = create_bidirectional_mask(
