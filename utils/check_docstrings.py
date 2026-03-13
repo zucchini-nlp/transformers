@@ -53,6 +53,7 @@ from transformers.utils import direct_transformers_import
 from transformers.utils.auto_docstring import (
     ImageProcessorArgs,
     ModelArgs,
+    ConfigArgs,
     ModelOutputArgs,
     ProcessorArgs,
     get_args_doc_from_source,
@@ -82,6 +83,7 @@ class DecoratedItem:
     init_def_line: int | None = None  # 1-based line number of __init__ def (if has_init)
     is_model_output: bool = False  # Whether the class inherits from ModelOutput
     is_processor: bool = False  # Whether the class inherits from ProcessorMixin
+    is_config: bool = False  # Whether the class inherits from PreTrainedConfig
 
 
 PATH_TO_REPO = Path(__file__).parent.parent.resolve()
@@ -810,10 +812,72 @@ def _is_auto_docstring_decorator(dec):
     return isinstance(target, ast.Name) and target.id == "auto_docstring"
 
 
-def _extract_function_args(func_node: ast.FunctionDef | ast.AsyncFunctionDef) -> list[str]:
-    """Extract argument names from a function node, excluding 'self', *args, **kwargs."""
-    all_args = (func_node.args.posonlyargs or []) + func_node.args.args + func_node.args.kwonlyargs
-    return [a.arg for a in all_args if a.arg != "self"]
+def _extract_type_from_annotation(annotation: ast.arg.annotation) -> str:
+    # Handle A | B unions
+    if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+        left = _extract_type_from_annotation(annotation.left)
+        right = _extract_type_from_annotation(annotation.right)
+
+        if left == "None":
+            return right
+        if right == "None":
+            return left
+
+        return f"{left} | {right}"
+
+    # Handle Optional[T] or Union[T, None]
+    if isinstance(annotation, ast.Subscript):
+        base = ast.unparse(annotation.value)
+
+        if base in {"Optional", "typing.Optional"}:
+            return _extract_type_from_annotation(annotation.slice)
+
+        if base in {"Union", "typing.Union"}:
+            # Union[T, None] → take first non-None
+            if isinstance(annotation.slice, ast.Tuple):
+                for elt in annotation.slice.elts:
+                    t = _extract_type_from_annotation(elt)
+                    if t != "None":
+                        return t
+            else:
+                return _extract_type_from_annotation(annotation.slice)
+
+    # Handle None
+    if isinstance(annotation, ast.Constant) and annotation.value is None:
+        return "None"
+
+    if isinstance(annotation, ast.Name):
+        return annotation.id
+
+    return ast.unparse(annotation)
+
+def _extract_function_args(func_node: ast.FunctionDef | ast.AsyncFunctionDef) -> dict[str, list]:
+    arguments = (func_node.args.posonlyargs or []) + func_node.args.args + func_node.args.kwonlyargs
+    defaults = func_node.args.defaults
+    offset = len(arguments) - len(defaults)
+    optional_regex = r"""(?:^[\w\."']+\s*(\|\s*None)|^(None\s*\|)[\w\."']+|Optional\[.*?\])"""
+
+    args_with_annotations = {}
+    for i, arg in enumerate(arguments):
+        if arg.arg != "self":
+            name = arg.arg
+
+            default_value = None
+            if i >= offset:
+                default_value = defaults[i - offset].value
+                if not isinstance(default_value, (int, float)):
+                    default_value = f"`{default_value}`"
+
+            ann_type = None
+            optional = False
+            if arg.annotation is not None:
+                additional_info = f", defaults to {default_value}"
+                ann_type = _extract_type_from_annotation(arg.annotation)
+                if re.search(optional_regex, ast.unparse(arg.annotation)):
+                    optional = True
+                    additional_info = f", *optional*{additional_info}"
+            args_with_annotations[name] = {"type": f"`{ann_type}`", "optional" : optional, "default": default_value, "additional_info": additional_info}
+    return args_with_annotations
 
 
 def find_matching_model_files(check_all: bool = False):
@@ -890,7 +954,7 @@ def generate_new_docstring_for_signature(
     arg_indent="    ",
     output_docstring_indent=8,
     custom_args_dict={},
-    source_args_doc=[ModelArgs, ImageProcessorArgs],
+    source_args_doc=[ModelArgs, ImageProcessorArgs, ConfigArgs],
     is_model_output=False,
 ):
     """
@@ -981,6 +1045,8 @@ def generate_new_docstring_for_signature(
                 "default": None,
                 "additional_info": None,
             }
+        elif arg in get_args_doc_from_source(source_args_doc) and arg not in args_docstring_dict:
+            args_docstring_dict[arg] = {**get_args_doc_from_source(source_args_doc)[arg], **args_in_signature[arg]}
 
     # Handle docstring of inherited args (for dataclasses like ModelOutput)
     # For regular methods, this will be empty since we removed args not in signature above
@@ -996,8 +1062,8 @@ def generate_new_docstring_for_signature(
     if len(ordered_args_docstring_dict) > 0 or remaining_docstring:
         new_docstring += 'r"""\n'
         for arg in ordered_args_docstring_dict:
-            additional_info = ordered_args_docstring_dict[arg]["additional_info"] or ""
-            custom_arg_description = ordered_args_docstring_dict[arg]["description"]
+            additional_info = ordered_args_docstring_dict[arg].get("additional_info") or ""
+            custom_arg_description = ordered_args_docstring_dict[arg]["description"].rstrip()
             if "<fill_docstring>" in custom_arg_description and arg not in missing_docstring_args:
                 fill_docstring_args.append(arg)
             if custom_arg_description.endswith('"""'):
@@ -1041,7 +1107,7 @@ def generate_new_docstring_for_function(
     if item.is_processor:
         source_args_doc = [ModelArgs, ImageProcessorArgs, ProcessorArgs]
     else:
-        source_args_doc = [ModelArgs, ImageProcessorArgs]
+        source_args_doc = [ModelArgs, ImageProcessorArgs, ConfigArgs]
 
     return generate_new_docstring_for_signature(
         lines,
@@ -1067,15 +1133,20 @@ def generate_new_docstring_for_class(
     """
     # Use pre-extracted information from DecoratedItem (no need to search or re-parse!)
     if item.has_init:
-        # Class has an __init__ method - use its args and body start
-        sig_end_line = item.body_start_line - 1  # Convert from body start to sig end (0-based)
+        # Class has an __init__ method - use its args and body start. Note that config
+        # stores the docstring in class body, not `__init__` 
+        if item.is_config:
+            sig_end_line = item.def_line
+        else:
+            # Convert from body start to sig end (0-based)
+            sig_end_line = item.body_start_line - 1
         args_in_signature = item.args
-        output_docstring_indent = 8
+        output_docstring_indent = 8 if not item.is_config else 4
         # Add ProcessorArgs for Processor classes
         if item.is_processor:
             source_args_doc = [ModelArgs, ImageProcessorArgs, ProcessorArgs]
         else:
-            source_args_doc = [ModelArgs, ImageProcessorArgs]
+            source_args_doc = [ModelArgs, ImageProcessorArgs, ConfigArgs]
     elif item.is_model_output:
         # ModelOutput class - extract args from dataclass attributes
         current_line_end = item.def_line - 1  # Convert to 0-based
@@ -1088,6 +1159,7 @@ def generate_new_docstring_for_class(
         ):
             model_output_class_end += 1
         dataclass_content = lines[model_output_class_start : model_output_class_end - 1]
+        # FIXME:
         args_in_signature = get_args_in_dataclass(lines, dataclass_content)
         output_docstring_indent = 4
         source_args_doc = [ModelOutputArgs]
@@ -1173,6 +1245,7 @@ def _build_ast_indexes(source: str) -> list[DecoratedItem]:
         init_def_line = None
         is_model_output = False
         is_processor = False
+        is_config = False
 
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             # For functions/methods, extract args directly
@@ -1189,6 +1262,8 @@ def _build_ast_indexes(source: str) -> list[DecoratedItem]:
                         is_model_output = True
                     elif "ProcessorMixin" in base.id or "Processor" in base.id:
                         is_processor = True
+                    elif "PreTrainedConfig" in base.id or "Config" in base.id:
+                        is_config = True
             # Look for __init__ method in the class body
             for class_item in node.body:
                 if isinstance(class_item, ast.FunctionDef) and class_item.name == "__init__":
@@ -1211,6 +1286,7 @@ def _build_ast_indexes(source: str) -> list[DecoratedItem]:
                 init_def_line=init_def_line,
                 is_model_output=is_model_output,
                 is_processor=is_processor,
+                is_config=is_config,
             )
         )
 
@@ -1266,7 +1342,7 @@ def _find_typed_dict_classes(source: str) -> list[dict]:
     # Get standard args that are already documented in source classes
     standard_args = set()
     try:
-        standard_args.update(get_args_doc_from_source([ModelArgs, ImageProcessorArgs, ProcessorArgs]).keys())
+        standard_args.update(get_args_doc_from_source([ModelArgs, ImageProcessorArgs, ProcessorArgs, ConfigArgs]).keys())
     except Exception as e:
         logger.debug(f"Could not get standard args from source: {e}")
 
@@ -1379,7 +1455,7 @@ def _process_typed_dict_docstrings(
         return [], [], []
 
     # Get source args for comparison
-    source_args_doc = get_args_doc_from_source([ModelArgs, ImageProcessorArgs, ProcessorArgs])
+    source_args_doc = get_args_doc_from_source([ModelArgs, ImageProcessorArgs, ProcessorArgs, ConfigArgs])
 
     missing_warnings = []
     fill_warnings = []
@@ -1667,6 +1743,8 @@ def check_auto_docstrings(overwrite: bool = False, check_all: bool = False):
 
     # Collect all errors before raising
     has_errors = False
+    # tree.body[-2].body[0].value.value
+    auto_docstrings_files = ("/home/raushan/llavas/src/transformers/models/gemma2/configuration_gemma2.py",)
 
     # 3. For each file, update docstrings for all candidates
     for candidate_file in auto_docstrings_files:
