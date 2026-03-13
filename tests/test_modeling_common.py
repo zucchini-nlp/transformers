@@ -1743,7 +1743,10 @@ class ModelTesterMixin:
         """Helper function to recursively set a config attr to a given value"""
         for k in config.sub_configs:
             if (
-                self._is_composite and attribute_name == "output_attentions" and k == "vision_config"
+                self._is_composite
+                and attribute_name == "output_attentions"
+                and k == "vision_config"
+                and "Timm" in getattr(config, k).__class__.__name__
             ):  # skip because it's not needed and causes errors e.g with Timm
                 continue
             if getattr(config, k) is not None:
