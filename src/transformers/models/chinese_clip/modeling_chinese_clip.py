@@ -674,6 +674,11 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
     _no_split_modules = ["ChineseCLIPVisionEmbeddings", "ChineseCLIPVisionAttention"]
     _input_embed_layer = "patch_embedding"
 
+    _can_record_outputs = {
+        "hidden_states": ChineseCLIPVisionLayer,
+        "attentions": ChineseCLIPVisionAttention,
+    }
+
     def __init__(self, config: ChineseCLIPVisionConfig):
         super().__init__(config)
         self.config = config
@@ -685,6 +690,8 @@ class ChineseCLIPVisionModel(ChineseCLIPPreTrainedModel):
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -847,10 +854,6 @@ class ChineseCLIPTextModel(ChineseCLIPPreTrainedModel):
 @auto_docstring
 class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
     config: ChineseCLIPConfig
-    _can_record_outputs = {
-        "hidden_states": ChineseCLIPVisionLayer,
-        "attentions": ChineseCLIPVisionAttention,
-    }
 
     def __init__(self, config: ChineseCLIPConfig):
         super().__init__(config)
@@ -923,7 +926,7 @@ class ChineseCLIPModel(ChineseCLIPPreTrainedModel):
 
         return text_outputs
 
-    @capture_outputs(tie_last_hidden_states=False)
+    @can_return_tuple
     @auto_docstring
     def get_image_features(
         self,

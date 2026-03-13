@@ -731,6 +731,11 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
     input_modalities = ("image",)
     _input_embed_layer = "patch_embedding"
 
+    _can_record_outputs = {
+        "hidden_states": AltCLIPEncoderLayer,
+        "attentions": AltCLIPAttention,
+    }
+
     def __init__(self, config: AltCLIPVisionConfig):
         super().__init__(config)
         self.config = config
@@ -742,6 +747,8 @@ class AltCLIPVisionModel(AltCLIPPreTrainedModel):
         self.post_layernorm = nn.LayerNorm(embed_dim, eps=config.layer_norm_eps)
         self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,
@@ -961,10 +968,6 @@ class AltCLIPTextModel(AltCLIPPreTrainedModel):
 
 class AltCLIPModel(AltCLIPPreTrainedModel):
     config: AltCLIPConfig
-    _can_record_outputs = {
-        "hidden_states": AltCLIPEncoderLayer,
-        "attentions": AltCLIPAttention,
-    }
 
     def __init__(self, config: AltCLIPConfig):
         super().__init__(config)

@@ -647,6 +647,8 @@ class CLIPSegTextModel(CLIPSegPreTrainedModel):
 
         self.post_init()
 
+    @merge_with_config_defaults
+    @capture_outputs
     @auto_docstring
     def forward(
         self,
@@ -761,7 +763,7 @@ class CLIPSegVisionModel(CLIPSegPreTrainedModel):
         self.post_init()
 
     @merge_with_config_defaults
-    @capture_outputs
+    @capture_outputs(tie_last_hidden_states=False)
     @auto_docstring
     def forward(
         self,

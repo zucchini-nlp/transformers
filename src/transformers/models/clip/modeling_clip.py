@@ -537,7 +537,7 @@ class CLIPTextModel(CLIPPreTrainedModel):
         self.post_init()
 
     @merge_with_config_defaults
-    @capture_outputs(tie_last_hidden_states=False)
+    @capture_outputs
     @auto_docstring
     def forward(
         self,
