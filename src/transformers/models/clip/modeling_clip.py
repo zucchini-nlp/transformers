@@ -394,6 +394,8 @@ class CLIPPreTrainedModel(PreTrainedModel):
     config: CLIPConfig
     base_model_prefix = "clip"
     input_modalities = ("image", "text")
+    _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer", "CLIPVisionEmbeddings"]
+
     supports_gradient_checkpointing = True
     _supports_sdpa = True
     _supports_flash_attn = True
@@ -485,20 +487,6 @@ class CLIPEncoder(nn.Module):
         attention_mask: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutput:
-        r"""
-        Args:
-            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
-                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
-                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
-                than the model's internal embedding lookup matrix.
-            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
-                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
-
-                - 1 for tokens that are **not masked**,
-                - 0 for tokens that are **masked**.
-
-                [What are attention masks?](../glossary#attention-mask)
-        """
         hidden_states = inputs_embeds
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
@@ -522,11 +510,8 @@ class CLIPTextModel(CLIPPreTrainedModel):
     input_modalities = ("text",)
     _input_embed_layer = "token_embedding"
 
-    _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer"]
-
     def __init__(self, config: CLIPTextConfig):
         super().__init__(config)
-        self.config = config
         embed_dim = config.hidden_size
         self.embeddings = CLIPTextEmbeddings(config)
         self.encoder = CLIPEncoder(config)
@@ -569,6 +554,7 @@ class CLIPTextModel(CLIPPreTrainedModel):
 
         hidden_states = self.embeddings(input_ids=input_ids, position_ids=position_ids)
 
+        # Why causal mask in CLIP?
         attention_mask = create_causal_mask(
             config=self.config,
             inputs_embeds=hidden_states,
@@ -629,7 +615,6 @@ class CLIPVisionModel(CLIPPreTrainedModel):
 
     def __init__(self, config: CLIPVisionConfig):
         super().__init__(config)
-        self.config = config
         embed_dim = config.hidden_size
 
         self.embeddings = CLIPVisionEmbeddings(config)
@@ -669,9 +654,6 @@ class CLIPVisionModel(CLIPPreTrainedModel):
         >>> last_hidden_state = outputs.last_hidden_state
         >>> pooled_output = outputs.pooler_output  # pooled CLS states
         ```"""
-        if pixel_values is None:
-            raise ValueError("You have to specify pixel_values")
-
         hidden_states = self.embeddings(pixel_values, interpolate_pos_encoding=interpolate_pos_encoding)
         hidden_states = self.pre_layrnorm(hidden_states)
 
@@ -693,7 +675,6 @@ class CLIPVisionModel(CLIPPreTrainedModel):
 @auto_docstring
 class CLIPModel(CLIPPreTrainedModel):
     config: CLIPConfig
-    _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer", "CLIPVisionEmbeddings"]
 
     def __init__(self, config: CLIPConfig):
         super().__init__(config)
@@ -887,8 +868,6 @@ class CLIPModel(CLIPPreTrainedModel):
 class CLIPTextModelWithProjection(CLIPPreTrainedModel):
     config: CLIPTextConfig
     input_modalities = ("text",)
-
-    _no_split_modules = ["CLIPTextEmbeddings", "CLIPEncoderLayer"]
 
     def __init__(self, config: CLIPTextConfig):
         super().__init__(config)
