@@ -19,35 +19,15 @@
 # limitations under the License.
 from ...image_processing_utils import BatchFeature
 from ...image_utils import ImageInput
-from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
+from ...processing_utils import MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_python import PreTokenizedInput, TextInput
 from ...utils import TensorType, auto_docstring
 from ..auto import AutoTokenizer
-
-
-class AriaImagesKwargs(ImagesKwargs, total=False):
-    """
-    split_image (`bool`, *optional*, defaults to `False`):
-        Whether to split large images into multiple crops. When enabled, images exceeding the maximum size are
-        divided into overlapping crops that are processed separately and then combined. This allows processing
-        of very high-resolution images that exceed the model's input size limits.
-    max_image_size (`int`, *optional*, defaults to `980`):
-        Maximum image size (in pixels) for a single image crop. Images larger than this will be split into
-        multiple crops when `split_image=True`, or resized if splitting is disabled. This parameter controls
-        the maximum resolution of individual image patches processed by the model.
-    min_image_size (`int`, *optional*):
-        Minimum image size (in pixels) for a single image crop. Images smaller than this will be upscaled to
-        meet the minimum requirement. If not specified, images are processed at their original size (subject
-        to the maximum size constraint).
-    """
-
-    split_image: bool
-    max_image_size: int
-    min_image_size: int
+from .image_processing_pil_aria import AriaImageProcessorKwargs
 
 
 class AriaProcessorKwargs(ProcessingKwargs, total=False):
-    images_kwargs: AriaImagesKwargs
+    images_kwargs: AriaImageProcessorKwargs
 
     _defaults = {
         "text_kwargs": {

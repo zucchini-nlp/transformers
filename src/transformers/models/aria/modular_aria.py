@@ -33,7 +33,7 @@ from ...image_utils import (
 from ...modeling_flash_attention_utils import FlashAttentionKwargs
 from ...modeling_outputs import BaseModelOutputWithPooling
 from ...modeling_utils import PreTrainedModel
-from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
+from ...processing_utils import MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...tokenization_python import PreTokenizedInput, TextInput
 from ...utils import (
     TensorType,
@@ -59,6 +59,7 @@ from ..llava.modeling_llava import (
     LlavaModel,
     LlavaModelOutputWithPast,
 )
+from .image_processing_pil_aria import AriaImageProcessorKwargs
 
 
 logger = logging.get_logger(__name__)
@@ -322,24 +323,6 @@ class AriaProjector(nn.Module):
         return out
 
 
-class AriaImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    max_image_size (`int`, *optional*, defaults to `self.max_image_size`):
-        Maximum image size. Must be either 490 or 980.
-    min_image_size (`int`, *optional*, defaults to `self.min_image_size`):
-        Minimum image size. Images smaller than this in any dimension will be scaled up.
-    split_resolutions (`list[list[int]]`, *optional*, defaults to `self.split_resolutions`):
-        A list of possible resolutions as (height, width) pairs for splitting high-resolution images into patches.
-    split_image (`bool`, *optional*, defaults to `self.split_image`):
-        Whether to split the image into patches using the best matching resolution from `split_resolutions`.
-    """
-
-    max_image_size: int
-    min_image_size: int
-    split_resolutions: list[list[int]]
-    split_image: bool
-
-
 @auto_docstring
 class AriaImageProcessor(TorchvisionBackend):
     model_input_names = ["pixel_values", "pixel_mask", "num_crops"]
@@ -517,29 +500,8 @@ class AriaImageProcessor(TorchvisionBackend):
         return num_patches
 
 
-class AriaImagesKwargs(ImagesKwargs, total=False):
-    """
-    split_image (`bool`, *optional*, defaults to `False`):
-        Whether to split large images into multiple crops. When enabled, images exceeding the maximum size are
-        divided into overlapping crops that are processed separately and then combined. This allows processing
-        of very high-resolution images that exceed the model's input size limits.
-    max_image_size (`int`, *optional*, defaults to `980`):
-        Maximum image size (in pixels) for a single image crop. Images larger than this will be split into
-        multiple crops when `split_image=True`, or resized if splitting is disabled. This parameter controls
-        the maximum resolution of individual image patches processed by the model.
-    min_image_size (`int`, *optional*):
-        Minimum image size (in pixels) for a single image crop. Images smaller than this will be upscaled to
-        meet the minimum requirement. If not specified, images are processed at their original size (subject
-        to the maximum size constraint).
-    """
-
-    split_image: bool
-    max_image_size: int
-    min_image_size: int
-
-
 class AriaProcessorKwargs(ProcessingKwargs, total=False):
-    images_kwargs: AriaImagesKwargs
+    images_kwargs: AriaImageProcessorKwargs
 
     _defaults = {
         "text_kwargs": {
