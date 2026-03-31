@@ -24,26 +24,9 @@ from ...image_processing_backends import TorchvisionBackend
 from ...image_processing_utils import BatchFeature, get_patch_output_size, select_best_resolution
 from ...image_transforms import divide_to_patches
 from ...image_utils import ChannelDimension, PILImageResampling, SizeDict, get_image_size
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
-
-
-class AriaImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    max_image_size (`int`, *optional*, defaults to `self.max_image_size`):
-        Maximum image size. Must be either 490 or 980.
-    min_image_size (`int`, *optional*, defaults to `self.min_image_size`):
-        Minimum image size. Images smaller than this in any dimension will be scaled up.
-    split_resolutions (`list[list[int]]`, *optional*, defaults to `self.split_resolutions`):
-        A list of possible resolutions as (height, width) pairs for splitting high-resolution images into patches.
-    split_image (`bool`, *optional*, defaults to `self.split_image`):
-        Whether to split the image into patches using the best matching resolution from `split_resolutions`.
-    """
-
-    max_image_size: int
-    min_image_size: int
-    split_resolutions: list[list[int]]
-    split_image: bool
+from .image_processing_pil_aria import AriaImageProcessorKwargs
 
 
 @auto_docstring

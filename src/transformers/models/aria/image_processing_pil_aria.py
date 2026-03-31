@@ -28,7 +28,6 @@ from ...processing_utils import ImagesKwargs, Unpack
 from ...utils import TensorType, auto_docstring
 
 
-# Adapted from transformers.models.aria.image_processing_aria.AriaImageProcessorKwargs
 class AriaImageProcessorKwargs(ImagesKwargs, total=False):
     r"""
     max_image_size (`int`, *optional*, defaults to `self.max_image_size`):
