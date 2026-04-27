@@ -816,30 +816,30 @@ class GenerationMixin(ContinuousMixin):
         # Prepare image/video hidden states if the model support the given modality so we don't re-compute it
         keys_to_remove = set()
         if "image" in self.input_modalities and model_kwargs.get("image_outputs") is None:
+            image_signature = inspect.signature(self.model.get_image_features).parameters
             required_args = [
-                name
-                for name, param in inspect.signature(self.model.get_image_features).parameters.items()
-                if param.default is inspect.Parameter.empty
+                name for name, param in image_signature.items() if param.default is inspect.Parameter.empty
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
-                encoder_signature = set(inspect.signature(self.model.get_image_features).parameters)
-                keys_to_remove = keys_to_remove | encoder_signature
-                image_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
+                keys_to_remove = keys_to_remove | set(image_signature)
+                image_encoder_kwargs = {
+                    argument: model_kwargs.get(argument, None) for argument in set(image_signature)
+                }
                 image_encoder_kwargs["return_dict"] = True
                 model_kwargs["image_outputs"]: torch.FloatTensor = self.model.get_image_features(
                     **image_encoder_kwargs
                 )
 
         if "video" in self.input_modalities and model_kwargs.get("video_outputs") is None:
+            video_signature = inspect.signature(self.model.get_video_features).parameters
             required_args = [
-                name
-                for name, param in inspect.signature(self.model.get_video_features).parameters.items()
-                if param.default is inspect.Parameter.empty
+                name for name, param in video_signature.items() if param.default is inspect.Parameter.empty
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
-                encoder_signature = set(inspect.signature(self.model.get_video_features).parameters)
-                keys_to_remove = keys_to_remove | encoder_signature
-                video_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
+                keys_to_remove = keys_to_remove | set(video_signature)
+                video_encoder_kwargs = {
+                    argument: model_kwargs.get(argument, None) for argument in set(video_signature)
+                }
                 video_encoder_kwargs["return_dict"] = True
                 model_kwargs["video_outputs"]: torch.FloatTensor = self.model.get_video_features(
                     **video_encoder_kwargs
