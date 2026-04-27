@@ -498,8 +498,8 @@ class GenerationMixin(ContinuousMixin):
         past_key_values: Cache | None = None,
         attention_mask: torch.LongTensor | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
-        image_outputs=None,
-        video_outputs=None,
+        image_outputs: dict | None = None,
+        video_outputs: dict | None = None,
         is_first_iteration: bool | None = False,
         **kwargs,
     ):
@@ -818,7 +818,9 @@ class GenerationMixin(ContinuousMixin):
         if "image" in self.input_modalities and model_kwargs.get("image_outputs") is None:
             image_signature = inspect.signature(self.model.get_image_features).parameters
             required_args = [
-                name for name, param in image_signature.items() if param.default is inspect.Parameter.empty
+                name
+                for name, param in image_signature.items()
+                if param.default is inspect.Parameter.empty and name != "kwargs"
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
                 keys_to_remove = keys_to_remove | set(image_signature)
@@ -833,7 +835,9 @@ class GenerationMixin(ContinuousMixin):
         if "video" in self.input_modalities and model_kwargs.get("video_outputs") is None:
             video_signature = inspect.signature(self.model.get_video_features).parameters
             required_args = [
-                name for name, param in video_signature.items() if param.default is inspect.Parameter.empty
+                name
+                for name, param in video_signature.items()
+                if param.default is inspect.Parameter.empty and name != "kwargs"
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
                 keys_to_remove = keys_to_remove | set(video_signature)
@@ -925,8 +929,11 @@ class GenerationMixin(ContinuousMixin):
 
         def _expand_dict_for_generation(dict_to_expand):
             for key in dict_to_expand:
-                if dict_to_expand[key] is not None and isinstance(dict_to_expand[key], torch.Tensor):
-                    dict_to_expand[key] = dict_to_expand[key].repeat_interleave(expand_size, dim=0)
+                if dict_to_expand[key] is not None:
+                    if isinstance(dict_to_expand[key], torch.Tensor):
+                        dict_to_expand[key] = dict_to_expand[key].repeat_interleave(expand_size, dim=0)
+                    elif isinstance(dict_to_expand[key], list):
+                        dict_to_expand[key] = [item for item in dict_to_expand[key] for _ in range(expand_size)]
             return dict_to_expand
 
         if input_ids is not None:
@@ -938,6 +945,12 @@ class GenerationMixin(ContinuousMixin):
             if model_kwargs.get("encoder_outputs") is None:
                 raise ValueError("If `is_encoder_decoder` is True, make sure that `encoder_outputs` is defined.")
             model_kwargs["encoder_outputs"] = _expand_dict_for_generation(model_kwargs["encoder_outputs"])
+
+        if model_kwargs.get("image_outputs"):
+            model_kwargs["image_outputs"] = _expand_dict_for_generation(model_kwargs["image_outputs"])
+
+        if model_kwargs.get("video_outputs"):
+            model_kwargs["video_outputs"] = _expand_dict_for_generation(model_kwargs["video_outputs"])
 
         return input_ids, model_kwargs
 
