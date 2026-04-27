@@ -815,7 +815,11 @@ class GenerationMixin(ContinuousMixin):
     ) -> torch.FloatTensor:
         # Prepare image/video hidden states if the model support the given modality so we don't re-compute it
         keys_to_remove = set()
-        if "image" in self.input_modalities and model_kwargs.get("image_outputs") is None:
+        if (
+            "image" in self.input_modalities
+            and model_kwargs.get("image_outputs") is None
+            and hasattr(self.model, "get_image_features")
+        ):
             image_signature = inspect.signature(self.model.get_image_features).parameters
             required_args = [
                 name
@@ -832,7 +836,11 @@ class GenerationMixin(ContinuousMixin):
                     **image_encoder_kwargs
                 )
 
-        if "video" in self.input_modalities and model_kwargs.get("video_outputs") is None:
+        if (
+            "video" in self.input_modalities
+            and model_kwargs.get("video_outputs") is None
+            and hasattr(self.model, "get_video_features")
+        ):
             video_signature = inspect.signature(self.model.get_video_features).parameters
             required_args = [
                 name
@@ -932,6 +940,7 @@ class GenerationMixin(ContinuousMixin):
                 if dict_to_expand[key] is not None:
                     if isinstance(dict_to_expand[key], torch.Tensor):
                         dict_to_expand[key] = dict_to_expand[key].repeat_interleave(expand_size, dim=0)
+                    # Don't update `tuple` which is usually reserved for intermediate outputs (attentions/hidden_states)
                     elif isinstance(dict_to_expand[key], list):
                         dict_to_expand[key] = [item for item in dict_to_expand[key] for _ in range(expand_size)]
             return dict_to_expand
@@ -2499,13 +2508,13 @@ class GenerationMixin(ContinuousMixin):
         if not kwargs_has_position_ids and accepts_position_ids and not self.config.is_encoder_decoder:
             model_kwargs["position_ids"] = self._prepare_position_ids_for_generation(inputs_tensor, model_kwargs)
 
+        model_kwargs = self._prepare_multimodal_encoder_kwargs_for_generation(model_kwargs)
+
         if self.config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created and added to `model_kwargs`
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation(
                 inputs_tensor, model_kwargs, model_input_name, generation_config
             )
-
-        model_kwargs = self._prepare_multimodal_encoder_kwargs_for_generation(model_kwargs)
 
         # 5. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:

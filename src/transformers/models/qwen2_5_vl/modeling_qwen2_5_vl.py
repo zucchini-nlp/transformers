@@ -1179,7 +1179,7 @@ class Qwen2_5_VLModel(Qwen2_5_VLPreTrainedModel):
         vision_outputs = self.visual(pixel_values, grid_thw=image_grid_thw, **kwargs)
         split_sizes = (image_grid_thw.prod(-1) // self.visual.spatial_merge_size**2).tolist()
         image_embeds = torch.split(vision_outputs.pooler_output, split_sizes)
-        vision_outputs.pooler_output = image_embeds
+        vision_outputs.pooler_output = list(image_embeds)
 
         return vision_outputs
 
