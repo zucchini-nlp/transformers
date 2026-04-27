@@ -803,6 +803,36 @@ class GenerationMixin(ContinuousMixin):
 
         return model_kwargs
 
+    def _prepare_multimodal_encoder_kwargs_for_generation(
+        self: "GenerativePreTrainedModel",
+        model_kwargs,
+    ) -> torch.FloatTensor:
+        # Prepare image/video hidden states if the model support the given modality so we don't re-compute it
+        keys_to_remove = set()
+        if "image" in self.input_modalities and model_kwargs.get("image_hidden_states") is None:
+            encoder_signature = set(inspect.signature(self.model.get_image_features).parameters)
+            keys_to_remove = keys_to_remove | encoder_signature
+            image_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
+            image_encoder_kwargs["return_dict"] = True
+            model_kwargs["image_hidden_states"]: torch.FloatTensor = self.model.get_image_features(
+                **image_encoder_kwargs
+            ).pooler_output
+
+        if "video" in self.input_modalities and model_kwargs.get("video_hidden_states") is None:
+            encoder_signature = set(inspect.signature(self.model.get_video_features).parameters)
+            keys_to_remove = keys_to_remove | encoder_signature
+            video_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
+            video_encoder_kwargs["return_dict"] = True
+            model_kwargs["video_hidden_states"]: torch.FloatTensor = self.model.get_video_features(
+                **video_encoder_kwargs
+            ).pooler_output
+
+        # Image and video might share same kwargs, we can't pop keys before processing all inputs
+        for key in keys_to_remove:
+            model_kwargs.pop(key, None)
+
+        return model_kwargs
+
     def _prepare_decoder_input_ids_for_generation(
         self: "GenerativePreTrainedModel",
         batch_size: int,
@@ -2417,7 +2447,8 @@ class GenerationMixin(ContinuousMixin):
                         "generation results, please set `padding_side='left'` when initializing the tokenizer."
                     )
 
-        # 4. Define other model kwargs
+        # 4. Define other model kwargs (encoder-decoder kwargs / multimodal kwargs / kwargs for consistency)
+
         # decoder-only models with inputs_embeds forwarding must use caching (otherwise we can't detect whether we are
         # generating the first new token or not, and we only want to use the embeddings for the first new token)
         if not self.config.is_encoder_decoder and model_input_name == "inputs_embeds":
@@ -2442,6 +2473,8 @@ class GenerationMixin(ContinuousMixin):
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation(
                 inputs_tensor, model_kwargs, model_input_name, generation_config
             )
+
+        model_kwargs = self._prepare_multimodal_encoder_kwargs_for_generation(model_kwargs)
 
         # 5. Prepare `input_ids` which will be used for auto-regressive generation
         if self.config.is_encoder_decoder:
