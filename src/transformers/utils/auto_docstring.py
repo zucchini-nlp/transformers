@@ -2113,10 +2113,9 @@ class ModelArgs:
         "shape": "of shape `(batch_size, num_channels, image_size, image_size)`",
     }
 
-    image_hidden_states = {
+    image_outputs = {
         "description": """
-    The encoded image features that can be concatenated with text embeddings. Image features can be obtained using
-    [`model.get_image_features()`].
+    The output dict corresponding to an encoded image. It can be obtained using [`model.get_image_features()`].
     """,
         "shape": "of shape `(batch_size, image_seq_length, projected_hidden_dim)`",
     }
@@ -2130,10 +2129,9 @@ class ModelArgs:
         "shape": "of shape `(batch_size, num_frames, num_channels, frame_size, frame_size)`",
     }
 
-    video_hidden_states = {
+    video_outputs = {
         "description": """
-    The encoded video features that can be concatenated with text embeddings. Video features can be obtained using
-    [`model.get_video_features()`].
+    The output dict corresponding to an encoded video. It can be obtained using [`model.get_video_features()`].
     """,
         "shape": "of shape `(batch_size, video_seq_length, projected_hidden_dim)`",
     }

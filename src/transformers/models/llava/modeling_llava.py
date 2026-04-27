@@ -230,33 +230,34 @@ class LlavaModel(LlavaPreTrainedModel):
         vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
         image_sizes: torch.Tensor | None = None,
-        image_hidden_states: torch.FloatTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | LlavaModelOutputWithPast:
         if (input_ids is None) ^ (inputs_embeds is not None):
             raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
-        if pixel_values is not None and image_hidden_states is not None:
-            raise ValueError("You mush pass only one: `pixel_values` or `image_hidden_states`")
+        if pixel_values is not None and image_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values` or `image_outputs`")
 
         if inputs_embeds is None:
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
         if pixel_values is not None:
-            image_hidden_states = self.get_image_features(
+            image_outputs = self.get_image_features(
                 pixel_values=pixel_values,
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
                 image_sizes=image_sizes,
                 return_dict=True,
-            ).pooler_output
-
-        if image_hidden_states is not None:
-            image_hidden_states = torch.cat(image_hidden_states, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
-            special_image_mask = self.get_placeholder_mask(
-                input_ids, inputs_embeds=inputs_embeds, image_features=image_hidden_states
             )
-            inputs_embeds = inputs_embeds.masked_scatter(special_image_mask, image_hidden_states)
+
+        if image_outputs is not None:
+            image_features = image_outputs.pooler_output
+            image_features = torch.cat(image_features, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+            special_image_mask = self.get_placeholder_mask(
+                input_ids, inputs_embeds=inputs_embeds, image_features=image_features
+            )
+            inputs_embeds = inputs_embeds.masked_scatter(special_image_mask, image_features)
 
         outputs = self.language_model(
             attention_mask=attention_mask,
@@ -271,7 +272,7 @@ class LlavaModel(LlavaPreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_hidden_states if image_hidden_states is not None else None,
+            image_hidden_states=image_features if image_outputs is not None else None,
         )
 
 
@@ -328,7 +329,7 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
         labels: torch.LongTensor | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         image_sizes: torch.Tensor | None = None,
-        image_hidden_states: torch.FloatTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | LlavaCausalLMOutputWithPast:
         r"""
@@ -370,7 +371,7 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
             vision_feature_layer=vision_feature_layer,
             vision_feature_select_strategy=vision_feature_select_strategy,
             image_sizes=image_sizes,
-            image_hidden_states=image_hidden_states,
+            image_outputs=image_outputs,
             **kwargs,
         )
 
@@ -400,7 +401,7 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
         past_key_values=None,
         inputs_embeds=None,
         pixel_values=None,
-        image_hidden_states=None,
+        image_outputs=None,
         attention_mask=None,
         logits_to_keep=None,
         is_first_iteration=False,
@@ -424,7 +425,7 @@ class LlavaForConditionalGeneration(LlavaPreTrainedModel, GenerationMixin):
             # NOTE: first iteration doesn't have to be prefill, it can be the first
             # iteration with a question and cached system prompt (continue generate from cache)
             model_inputs["pixel_values"] = pixel_values
-            model_inputs["image_hidden_states"] = image_hidden_states
+            model_inputs["image_outputs"] = image_outputs
 
         return model_inputs
 

@@ -498,6 +498,8 @@ class GenerationMixin(ContinuousMixin):
         past_key_values: Cache | None = None,
         attention_mask: torch.LongTensor | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
+        image_outputs = None,
+        video_outputs = None,
         is_first_iteration: bool | None = False,
         **kwargs,
     ):
@@ -596,6 +598,10 @@ class GenerationMixin(ContinuousMixin):
             past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
             cache_position = torch.arange(sequence_length, device=input_ids.device) + past_seen_tokens
             model_inputs["cache_position"] = cache_position
+
+        if is_first_iteration or not kwargs.get("use_cache", True):
+            model_inputs["image_outputs"] = image_outputs
+            model_inputs["video_outputs"] = video_outputs
 
         return model_inputs
 
@@ -809,23 +815,19 @@ class GenerationMixin(ContinuousMixin):
     ) -> torch.FloatTensor:
         # Prepare image/video hidden states if the model support the given modality so we don't re-compute it
         keys_to_remove = set()
-        if "image" in self.input_modalities and model_kwargs.get("image_hidden_states") is None:
+        if "image" in self.input_modalities and model_kwargs.get("image_outputs") is None:
             encoder_signature = set(inspect.signature(self.model.get_image_features).parameters)
             keys_to_remove = keys_to_remove | encoder_signature
             image_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
             image_encoder_kwargs["return_dict"] = True
-            model_kwargs["image_hidden_states"]: torch.FloatTensor = self.model.get_image_features(
-                **image_encoder_kwargs
-            ).pooler_output
+            model_kwargs["image_outputs"]: torch.FloatTensor = self.model.get_image_features(**image_encoder_kwargs)
 
-        if "video" in self.input_modalities and model_kwargs.get("video_hidden_states") is None:
+        if "video" in self.input_modalities and model_kwargs.get("video_outputs") is None:
             encoder_signature = set(inspect.signature(self.model.get_video_features).parameters)
             keys_to_remove = keys_to_remove | encoder_signature
             video_encoder_kwargs = {argument: model_kwargs.get(argument, None) for argument in encoder_signature}
             video_encoder_kwargs["return_dict"] = True
-            model_kwargs["video_hidden_states"]: torch.FloatTensor = self.model.get_video_features(
-                **video_encoder_kwargs
-            ).pooler_output
+            model_kwargs["video_outputs"]: torch.FloatTensor = self.model.get_video_features(**video_encoder_kwargs)
 
         # Image and video might share same kwargs, we can't pop keys before processing all inputs
         for key in keys_to_remove:
