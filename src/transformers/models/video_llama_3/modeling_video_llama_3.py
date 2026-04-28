@@ -599,7 +599,7 @@ class VideoLlama3Model(VideoLlama3PreTrainedModel):
 
         split_sizes = image_grid_thw.prod(dim=1) // (image_merge_sizes**2)
         image_embeds = torch.split(image_embeds, split_sizes.tolist())
-        vision_outputs.pooler_output = image_embeds
+        vision_outputs.pooler_output = list(image_embeds)
 
         return vision_outputs
 
@@ -660,6 +660,8 @@ class VideoLlama3Model(VideoLlama3PreTrainedModel):
         video_grid_thw: torch.LongTensor | None = None,
         video_merge_sizes: torch.LongTensor | None = None,
         video_compression_mask: torch.BoolTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | VideoLlama3ModelOutputWithPast:
         r"""
@@ -675,14 +677,26 @@ class VideoLlama3Model(VideoLlama3PreTrainedModel):
             The mask to indicate which video features are kept after token compression.
         """
 
+        if pixel_values is not None and image_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values` or `image_outputs`")
+
+        if pixel_values_videos is not None and video_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values_videos` or `video_outputs`")
+
         if inputs_embeds is None:
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
-        image_embeds = None
         if pixel_values is not None:
-            image_embeds = self.get_image_features(
-                pixel_values, image_grid_thw, image_merge_sizes, return_dict=True
-            ).pooler_output
+            image_outputs = self.get_image_features(pixel_values, image_grid_thw, image_merge_sizes, return_dict=True)
+
+        if pixel_values_videos is not None:
+            video_outputs = self.get_video_features(
+                pixel_values_videos, video_grid_thw, video_merge_sizes, return_dict=True
+            )
+
+        image_embeds = None
+        if image_outputs is not None:
+            image_embeds = image_outputs.pooler_output
             image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             image_mask, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds
@@ -690,10 +704,8 @@ class VideoLlama3Model(VideoLlama3PreTrainedModel):
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
         video_embeds = None
-        if pixel_values_videos is not None:
-            video_embeds = self.get_video_features(
-                pixel_values_videos, video_grid_thw, video_merge_sizes, return_dict=True
-            ).pooler_output
+        if video_outputs is not None:
+            video_embeds = video_outputs.pooler_output
             video_embeds = torch.cat(video_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             if video_compression_mask is not None:
                 video_embeds = video_embeds[video_compression_mask.to(video_embeds.device)]
@@ -824,6 +836,8 @@ class VideoLlama3ForConditionalGeneration(VideoLlama3PreTrainedModel, Generation
         video_grid_thw: torch.LongTensor | None = None,
         video_merge_sizes: torch.LongTensor | None = None,
         video_compression_mask: torch.BoolTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | VideoLlama3CausalLMOutputWithPast:
         r"""
@@ -857,6 +871,8 @@ class VideoLlama3ForConditionalGeneration(VideoLlama3PreTrainedModel, Generation
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
             use_cache=use_cache,
+            image_outputs=image_outputs,
+            video_outputs=video_outputs,
             return_dict=True,
             **kwargs,
         )
@@ -924,89 +940,6 @@ class VideoLlama3ForConditionalGeneration(VideoLlama3PreTrainedModel, Generation
 
         return model_inputs
 
-    def _get_image_nums_and_video_nums(
-        self,
-        input_ids: torch.LongTensor | None,
-        inputs_embeds: torch.Tensor | None = None,
-        image_grid_thw: torch.LongTensor | None = None,
-        image_merge_sizes: torch.LongTensor | None = None,
-        video_grid_thw: torch.LongTensor | None = None,
-        video_merge_sizes: torch.LongTensor | None = None,
-        video_compression_mask: torch.BoolTensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Get the number of images and videos for each sample to calculate the separation length of the sample tensor.
-        These parameters are not passed through the processor to avoid unpredictable impacts from interface modifications.
-
-        Args:
-            input_ids (`torch.LongTensor` of shape `(batch_size, sequence_length)`):
-                Indices of input sequence tokens in the vocabulary.
-
-        Returns:
-            image_nums (`torch.LongTensor` of shape `(batch_size, num_images_sample)`)
-            video_nums (`torch.LongTensor` of shape `(batch_size, num_videos_sample)`)
-        """
-        image_token_id = self.config.image_token_id
-        video_token_id = self.config.video_token_id
-
-        if inputs_embeds is not None:
-            image_mask = (
-                inputs_embeds
-                == self.get_input_embeddings()(
-                    torch.tensor(image_token_id, dtype=torch.long, device=inputs_embeds.device)
-                )
-            )[..., 0]
-            video_mask = (
-                inputs_embeds
-                == self.get_input_embeddings()(
-                    torch.tensor(video_token_id, dtype=torch.long, device=inputs_embeds.device)
-                )
-            )[..., 0]
-        else:
-            image_mask = input_ids == image_token_id
-            video_mask = input_ids == video_token_id
-
-        if image_grid_thw is not None:
-            num_image_features = image_grid_thw.prod(dim=1) // (image_merge_sizes**2)
-        else:
-            num_image_features = []
-
-        if video_grid_thw is not None:
-            num_video_features = video_grid_thw.prod(dim=1) // (video_merge_sizes**2)
-            if video_compression_mask is not None:
-                num_video_features = video_compression_mask.split(num_video_features.tolist())
-                num_video_features = [mask.sum() for mask in num_video_features]
-        else:
-            num_video_features = []
-
-        image_nums, video_nums = [], []
-        start_image_idx, start_video_idx = 0, 0
-
-        for num_image_tokens, num_video_tokens in zip(image_mask.sum(dim=1), video_mask.sum(dim=1)):
-            cu_num_features = 0
-            image_idx = start_image_idx
-            while image_idx < len(num_image_features) and cu_num_features < num_image_tokens:
-                cu_num_features += num_image_features[image_idx]
-                image_idx += 1
-            assert cu_num_features == num_image_tokens, (
-                "The number of image tokens does not match the number of image features."
-            )
-            image_nums.append(image_idx - start_image_idx)
-            start_image_idx = image_idx
-
-            cu_num_features = 0
-            video_idx = start_video_idx
-            while video_idx < len(num_video_features) and cu_num_features < num_video_tokens:
-                cu_num_features += num_video_features[video_idx]
-                video_idx += 1
-            assert cu_num_features == num_video_tokens, (
-                "The number of video tokens does not match the number of video features."
-            )
-            video_nums.append(video_idx - start_video_idx)
-            start_video_idx = video_idx
-
-        return image_nums, video_nums
-
     def _expand_inputs_for_generation(
         self,
         expand_size: int = 1,
@@ -1014,115 +947,20 @@ class VideoLlama3ForConditionalGeneration(VideoLlama3PreTrainedModel, Generation
         input_ids: torch.LongTensor | None = None,
         **model_kwargs,
     ) -> tuple[torch.LongTensor, dict[str, Any]]:
-        # Overwritten -- Support for expanding tensors without a batch size dimension
-        # e.g., pixel_values, image_grid_thw, pixel_values_videos, video_grid_thw, second_per_grid_t
-        # pixel_values.shape[0] is sum(seqlen_images for samples)
-        # image_grid_thw.shape[0] is sum(num_images for samples)
+        # Overwritten -- VideoLlama3 uses 3D position ids that has to be expanded on dim=1
 
-        if expand_size == 1:
-            return input_ids, model_kwargs
+        position_ids = model_kwargs.pop("position_ids", None)
+        input_ids, model_kwargs = super()._expand_inputs_for_generation(
+            expand_size=expand_size,
+            is_encoder_decoder=is_encoder_decoder,
+            input_ids=input_ids,
+            **model_kwargs,
+        )
 
-        visual_keys = [
-            "pixel_values",
-            "image_grid_thw",
-            "image_merge_sizes",
-            "pixel_values_videos",
-            "video_grid_thw",
-            "video_merge_sizes",
-            "video_compression_mask",
-        ]
-
-        def _repeat_interleave_samples(x, lengths, repeat_times):
-            samples = torch.split(x, lengths)
-            repeat_args = [repeat_times] + [1] * (x.dim() - 1)
-            result = torch.cat([sample.repeat(*repeat_args) for sample in samples], dim=0)
-            return result
-
-        def _expand_dict_for_generation_visual(dict_to_expand):
-            image_grid_thw = model_kwargs.get("image_grid_thw", None)
-            video_grid_thw = model_kwargs.get("video_grid_thw", None)
-            video_merge_sizes = model_kwargs.get("video_merge_sizes", None)
-            video_compression_mask = model_kwargs.get("video_compression_mask", None)
-
-            image_nums, video_nums = self._get_image_nums_and_video_nums(
-                input_ids,
-                inputs_embeds=model_kwargs.get("inputs_embeds", None),
-                image_grid_thw=image_grid_thw,
-                image_merge_sizes=model_kwargs.get("image_merge_sizes", None),
-                video_grid_thw=video_grid_thw,
-                video_merge_sizes=video_merge_sizes,
-                video_compression_mask=video_compression_mask,
-            )
-            for key in dict_to_expand:
-                if key == "pixel_values":
-                    # split images into samples
-                    samples = torch.split(image_grid_thw, list(image_nums))
-                    # compute the sequence length of images for each sample
-                    lengths = [torch.prod(sample, dim=1).sum() for sample in samples]
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "image_grid_thw":
-                    # get the num of images for each sample
-                    lengths = list(image_nums)
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "image_merge_sizes":
-                    lengths = list(image_nums)
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "pixel_values_videos":
-                    samples = torch.split(video_grid_thw, list(video_nums))
-                    lengths = [torch.prod(sample, dim=1).sum() for sample in samples]
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "video_compression_mask":
-                    samples = torch.split(video_grid_thw, list(video_nums))
-                    merge_sizes = torch.split(video_merge_sizes, list(video_nums))
-                    lengths = [
-                        (torch.prod(sample, dim=1) // merge_size**2).sum()
-                        for sample, merge_size in zip(samples, merge_sizes)
-                    ]
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "video_grid_thw":
-                    lengths = list(video_nums)
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-                elif key == "video_merge_sizes":
-                    lengths = list(video_nums)
-                    dict_to_expand[key] = _repeat_interleave_samples(
-                        dict_to_expand[key], lengths=lengths, repeat_times=expand_size
-                    )
-
-            return dict_to_expand
-
-        def _expand_dict_for_generation(dict_to_expand):
-            for key in dict_to_expand:
-                if (
-                    dict_to_expand[key] is not None
-                    and isinstance(dict_to_expand[key], torch.Tensor)
-                    and key not in visual_keys
-                ):
-                    dict_to_expand[key] = dict_to_expand[key].repeat_interleave(expand_size, dim=0)
-            return dict_to_expand
-
-        model_kwargs = _expand_dict_for_generation_visual(model_kwargs)
-
-        if input_ids is not None:
-            input_ids = input_ids.repeat_interleave(expand_size, dim=0)
-
-        model_kwargs = _expand_dict_for_generation(model_kwargs)
-
-        if is_encoder_decoder:
-            if model_kwargs.get("encoder_outputs") is None:
-                raise ValueError("If `is_encoder_decoder` is True, make sure that `encoder_outputs` is defined.")
-            model_kwargs["encoder_outputs"] = _expand_dict_for_generation(model_kwargs["encoder_outputs"])
+        if position_ids is not None:
+            if expand_size != 1:
+                position_ids = position_ids.repeat_interleave(expand_size, dim=1)
+            model_kwargs["position_ids"] = position_ids
 
         return input_ids, model_kwargs
 

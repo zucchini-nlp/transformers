@@ -1106,14 +1106,16 @@ class Qwen3VLForConditionalGeneration(Qwen2_5_VLForConditionalGeneration):
             **model_kwargs,
         )
 
-        if expand_size != 1:
-            if image_outputs := model_kwargs.get("image_outputs"):
-                image_outputs["deepstack_features"] = [
-                    item.repeat_interleave(expand_size, dim=0) for item in image_outputs["deepstack_features"]
-                ]
+        if position_ids is not None:
+            if expand_size != 1:
+                position_ids = position_ids.repeat_interleave(expand_size, dim=1)
+            model_kwargs["position_ids"] = position_ids
 
-            if position_ids is not None:
-                model_kwargs["position_ids"] = position_ids.repeat_interleave(expand_size, dim=1)
+        if expand_size != 1 and (image_outputs := model_kwargs.get("image_outputs")):
+            image_outputs["deepstack_features"] = [
+                item.repeat_interleave(expand_size, dim=0) for item in image_outputs["deepstack_features"]
+            ]
+
         return input_ids, model_kwargs
 
 

@@ -1645,10 +1645,10 @@ class Qwen3_5Model(Qwen3_5PreTrainedModel):
             raise ValueError("You mush pass only one: `pixel_values_videos` or `video_outputs`")
 
         if pixel_values is not None:
-            image_outputs = self.get_image_features(pixel_values, image_grid_thw)
+            image_outputs = self.get_image_features(pixel_values, image_grid_thw, return_dict=True)
 
         if pixel_values_videos is not None:
-            video_outputs = self.get_video_features(pixel_values_videos, video_grid_thw)
+            video_outputs = self.get_video_features(pixel_values_videos, video_grid_thw, return_dict=True)
 
         if image_outputs is not None:
             image_embeds = torch.cat(image_outputs.pooler_output, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)

@@ -978,7 +978,7 @@ class Ernie4_5_VLMoeModel(Qwen2VLModel):
             // self.resampler_model.temporal_merge_size
         ).tolist()
         video_embeds = torch.split(video_embeds, split_sizes)
-        video_outputs.pooler_output = video_embeds
+        video_outputs.pooler_output = list(video_embeds)
         return video_outputs
 
     @can_return_tuple
@@ -993,7 +993,7 @@ class Ernie4_5_VLMoeModel(Qwen2VLModel):
         image_embeds = self.resampler_model(image_outputs.last_hidden_state, image_grid_thw)
         split_sizes = (image_grid_thw.prod(-1) // self.vision_tower.spatial_merge_size**2).tolist()
         image_embeds = torch.split(image_embeds, split_sizes)
-        image_outputs.pooler_output = image_embeds
+        image_outputs.pooler_output = list(image_embeds)
         return image_outputs
 
     @auto_docstring
@@ -1013,6 +1013,8 @@ class Ernie4_5_VLMoeModel(Qwen2VLModel):
         image_grid_thw: torch.LongTensor | None = None,
         video_grid_thw: torch.LongTensor | None = None,
         rope_deltas: torch.LongTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | MoeModelOutputWithPast:
         r"""
@@ -1027,19 +1029,31 @@ class Ernie4_5_VLMoeModel(Qwen2VLModel):
         rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
             The rope index difference between sequence length and multimodal rope.
         """
+        if pixel_values is not None and image_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values` or `image_outputs`")
+
+        if pixel_values_videos is not None and video_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values_videos` or `video_outputs`")
+
         if inputs_embeds is None:
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
         if pixel_values is not None:
-            image_embeds = self.get_image_features(pixel_values, image_grid_thw, return_dict=True).pooler_output
+            image_outputs = self.get_image_features(pixel_values, image_grid_thw)
+
+        if pixel_values_videos is not None:
+            video_outputs = self.get_video_features(pixel_values_videos, video_grid_thw)
+
+        if image_outputs is not None:
+            image_embeds = image_outputs.pooler_output
             image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             image_mask, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds
             )
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
-        if pixel_values_videos is not None:
-            video_embeds = self.get_video_features(pixel_values_videos, video_grid_thw, return_dict=True).pooler_output
+        if video_outputs is not None:
+            video_embeds = video_outputs.pooler_output
             video_embeds = torch.cat(video_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             _, video_mask = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, video_features=video_embeds
@@ -1147,6 +1161,8 @@ class Ernie4_5_VLMoeForConditionalGeneration(Glm4vForConditionalGeneration, Gene
         image_grid_thw: torch.LongTensor | None = None,
         video_grid_thw: torch.LongTensor | None = None,
         rope_deltas: torch.LongTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | MoeCausalLMOutputWithPast:
@@ -1185,6 +1201,8 @@ class Ernie4_5_VLMoeForConditionalGeneration(Glm4vForConditionalGeneration, Gene
             pixel_values_videos=pixel_values_videos,
             image_grid_thw=image_grid_thw,
             video_grid_thw=video_grid_thw,
+            image_outputs=image_outputs,
+            video_outputs=video_outputs,
             rope_deltas=rope_deltas,
             **kwargs,
         )

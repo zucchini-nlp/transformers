@@ -156,9 +156,9 @@ class LlavaModel(LlavaPreTrainedModel):
     ) -> tuple | BaseModelOutputWithPooling:
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         # this is not memory efficient at all (output_hidden_states=True) will save all the hidden states.
+        kwargs["output_hidden_states"] = True  # Ignore arg on purpose
         image_outputs = self.vision_tower(
             pixel_values,
-            output_hidden_states=True,  # Ignore arg on purpose
             return_dict=True,
             **kwargs,
         )
