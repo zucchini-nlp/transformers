@@ -1563,9 +1563,11 @@ class Qwen2VLForConditionalGeneration(Qwen2VLPreTrainedModel, GenerationMixin):
             **model_kwargs,
         )
 
-        if expand_size != 1:
-            if position_ids is not None:
-                model_kwargs["position_ids"] = position_ids.repeat_interleave(expand_size, dim=1)
+        if position_ids is not None:
+            if expand_size != 1:
+                position_ids = position_ids.repeat_interleave(expand_size, dim=1)
+            model_kwargs["position_ids"] = position_ids
+
         return input_ids, model_kwargs
 
 

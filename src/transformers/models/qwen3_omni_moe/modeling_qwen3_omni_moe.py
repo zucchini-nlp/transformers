@@ -2062,6 +2062,8 @@ class Qwen3OmniMoeThinkerForConditionalGeneration(
         output_router_logits: bool | None = None,
         use_audio_in_video=None,
         video_second_per_grid=None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs,
     ) -> tuple | Qwen3OmniMoeThinkerCausalLMOutputWithPast:
         r"""
@@ -2146,6 +2148,13 @@ class Qwen3OmniMoeThinkerForConditionalGeneration(
             image_outputs: BaseModelOutputWithDeepstackFeatures = self.get_image_features(
                 pixel_values, image_grid_thw, return_dict=True
             )
+
+        if pixel_values_videos is not None:
+            video_outputs: BaseModelOutputWithDeepstackFeatures = self.get_video_features(
+                pixel_values_videos, video_grid_thw, return_dict=True
+            )
+
+        if image_outputs is not None:
             image_embeds = image_outputs.pooler_output
             image_embeds_multiscale = image_outputs.deepstack_features
             image_embeds = image_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
@@ -2154,10 +2163,7 @@ class Qwen3OmniMoeThinkerForConditionalGeneration(
             )
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
-        if pixel_values_videos is not None:
-            video_outputs: BaseModelOutputWithDeepstackFeatures = self.get_video_features(
-                pixel_values_videos, video_grid_thw, return_dict=True
-            )
+        if video_outputs is not None:
             video_embeds = video_outputs.pooler_output
             video_embeds_multiscale = video_outputs.deepstack_features
             video_embeds = video_embeds.to(inputs_embeds.device, inputs_embeds.dtype)

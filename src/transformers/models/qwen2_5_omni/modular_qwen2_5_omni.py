@@ -1794,6 +1794,8 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
         use_cache: bool | None = None,
         use_audio_in_video: bool | None = None,
         video_second_per_grid: torch.LongTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | Qwen2_5OmniThinkerCausalLMOutputWithPast:
         r"""
@@ -1852,6 +1854,12 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
         >>> response = processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         ```"""
 
+        if pixel_values is not None and image_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values` or `image_outputs`")
+
+        if pixel_values_videos is not None and video_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values_videos` or `video_outputs`")
+
         if inputs_embeds is None:
             # 1. Extract the input embeddings
             inputs_embeds = self.get_input_embeddings()(input_ids)
@@ -1869,15 +1877,25 @@ class Qwen2_5OmniThinkerForConditionalGeneration(Qwen2_5OmniPreTrainedModelForCo
             inputs_embeds = inputs_embeds.masked_scatter(audio_mask, audio_features)
 
         if pixel_values is not None:
-            image_embeds = self.get_image_features(pixel_values, image_grid_thw, return_dict=True).pooler_output
+            image_outputs: BaseModelOutputWithPooling = self.get_image_features(
+                pixel_values, image_grid_thw, return_dict=True
+            )
+
+        if pixel_values_videos is not None:
+            video_outputs: BaseModelOutputWithPooling = self.get_video_features(
+                pixel_values_videos, video_grid_thw, return_dict=True
+            )
+
+        if image_outputs is not None:
+            image_embeds = image_outputs.pooler_output
             image_embeds = image_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
             image_mask, _, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds
             )
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
-        if pixel_values_videos is not None:
-            video_embeds = self.get_video_features(pixel_values_videos, video_grid_thw, return_dict=True).pooler_output
+        if video_outputs is not None:
+            video_embeds = video_outputs.pooler_output
             video_embeds = video_embeds.to(inputs_embeds.device, inputs_embeds.dtype)
             _, video_mask, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, video_features=video_embeds

@@ -1434,7 +1434,6 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
     base_model_prefix = "model"
     # Reference: fix gemma3 grad acc #37208
     accepts_loss_kwargs = False
-    config: Qwen3_5MoeConfig
     _no_split_modules = ["Qwen3_5MoeDecoderLayer", "Qwen3_5MoeVisionBlock"]
 
     def __init__(self, config):
@@ -1635,15 +1634,12 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
             The temporal, height and width of feature shape of each image in LLM.
         """
         pixel_values = pixel_values.type(self.visual.dtype)
-        vision_output: BaseModelOutputWithPooling = self.visual(
-            pixel_values, grid_thw=image_grid_thw, return_dict=True, **kwargs
-        )
-        image_embeds = vision_output.pooler_output
+        vision_outputs = self.visual(pixel_values, grid_thw=image_grid_thw, **kwargs)
         split_sizes = (image_grid_thw.prod(-1) // self.visual.spatial_merge_size**2).tolist()
-        image_embeds = torch.split(image_embeds, split_sizes)
-        vision_output.pooler_output = image_embeds
+        image_embeds = torch.split(vision_outputs.pooler_output, split_sizes)
+        vision_outputs.pooler_output = list(image_embeds)
 
-        return vision_output
+        return vision_outputs
 
     def get_placeholder_mask(
         self,
@@ -1735,20 +1731,24 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
             position_ids = None
         return position_ids
 
-    @auto_docstring
     @can_return_tuple
+    @auto_docstring
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
+        input_ids: torch.LongTensor | None = None,
         attention_mask: torch.Tensor | None = None,
         position_ids: torch.LongTensor | None = None,
         past_key_values: Cache | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
+        use_cache: bool | None = None,
         pixel_values: torch.Tensor | None = None,
         pixel_values_videos: torch.FloatTensor | None = None,
         image_grid_thw: torch.LongTensor | None = None,
         video_grid_thw: torch.LongTensor | None = None,
+        rope_deltas: torch.LongTensor | None = None,
         mm_token_type_ids: torch.IntTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | Qwen3_5MoeModelOutputWithPast:
         r"""
@@ -1756,30 +1756,34 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
             The temporal, height and width of feature shape of each image in LLM.
         video_grid_thw (`torch.LongTensor` of shape `(num_videos, 3)`, *optional*):
             The temporal, height and width of feature shape of each video in LLM.
+        rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
+            The rope index difference between sequence length and multimodal rope.
         """
-        if (input_ids is None) ^ (inputs_embeds is not None):
-            raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
         if inputs_embeds is None:
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
+        if pixel_values is not None and image_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values` or `image_outputs`")
+
+        if pixel_values_videos is not None and video_outputs is not None:
+            raise ValueError("You mush pass only one: `pixel_values_videos` or `video_outputs`")
+
         if pixel_values is not None:
-            image_outputs: BaseModelOutputWithPooling = self.get_image_features(
-                pixel_values, image_grid_thw, return_dict=True
-            )
-            image_embeds = image_outputs.pooler_output
-            image_embeds = torch.cat(image_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+            image_outputs = self.get_image_features(pixel_values, image_grid_thw)
+
+        if pixel_values_videos is not None:
+            video_outputs = self.get_video_features(pixel_values_videos, video_grid_thw)
+
+        if image_outputs is not None:
+            image_embeds = torch.cat(image_outputs.pooler_output, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             image_mask, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_embeds
             )
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_embeds)
 
-        if pixel_values_videos is not None:
-            video_outputs: BaseModelOutputWithPooling = self.get_video_features(
-                pixel_values_videos, video_grid_thw, return_dict=True
-            )
-            video_embeds = video_outputs.pooler_output
-            video_embeds = torch.cat(video_embeds, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
+        if video_outputs is not None:
+            video_embeds = torch.cat(video_outputs.pooler_output, dim=0).to(inputs_embeds.device, inputs_embeds.dtype)
             _, video_mask = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, video_features=video_embeds
             )
@@ -1802,11 +1806,14 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
             attention_mask=attention_mask,
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
+            use_cache=use_cache,
             **kwargs,
         )
-
         return Qwen3_5MoeModelOutputWithPast(
-            **outputs,
+            last_hidden_state=outputs.last_hidden_state,
+            past_key_values=outputs.past_key_values,
+            hidden_states=outputs.hidden_states,
+            attentions=outputs.attentions,
             rope_deltas=self.rope_deltas,
         )
 
