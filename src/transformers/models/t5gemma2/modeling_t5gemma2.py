@@ -929,6 +929,7 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
         position_ids: torch.LongTensor | None = None,
         inputs_embeds: torch.FloatTensor | None = None,
         pixel_values: torch.FloatTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         # Unused for processor compatibility kept in signature.
         token_type_ids: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
@@ -940,13 +941,13 @@ class T5Gemma2Encoder(T5Gemma2PreTrainedModel):
             inputs_embeds = self.text_model.embed_tokens(input_ids)
 
         if pixel_values is not None:
-            image_features = self.get_image_features(pixel_values, return_dict=True).pooler_output
-            image_features = image_features.to(inputs_embeds.device, inputs_embeds.dtype)
+            image_outputs = self.get_image_features(pixel_values, return_dict=True)
 
+        if image_outputs is not None:
+            image_features = image_outputs.pooler_output.to(inputs_embeds.device, inputs_embeds.dtype)
             image_mask = self.get_image_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_features
             )
-
             inputs_embeds = inputs_embeds.masked_scatter(image_mask, image_features)
 
         outputs = self.text_model(
@@ -1133,6 +1134,7 @@ class T5Gemma2Model(T5Gemma2PreTrainedModel):
         past_key_values: EncoderDecoderCache | None = None,
         inputs_embeds: torch.Tensor | None = None,
         decoder_inputs_embeds: torch.Tensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         use_cache: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> Seq2SeqModelOutput:
@@ -1149,6 +1151,7 @@ class T5Gemma2Model(T5Gemma2PreTrainedModel):
                 position_ids=position_ids,
                 inputs_embeds=inputs_embeds,
                 pixel_values=pixel_values,
+                image_outputs=image_outputs,
                 return_dict=True,
                 **kwargs,
             )
@@ -1247,6 +1250,7 @@ class T5Gemma2ForConditionalGeneration(T5Gemma2PreTrainedModel, GenerationMixin)
         decoder_inputs_embeds: torch.FloatTensor | None = None,
         labels: torch.LongTensor | None = None,
         use_cache: bool | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple[torch.FloatTensor] | Seq2SeqLMOutput:
@@ -1276,6 +1280,7 @@ class T5Gemma2ForConditionalGeneration(T5Gemma2PreTrainedModel, GenerationMixin)
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
             decoder_inputs_embeds=decoder_inputs_embeds,
+            image_outputs=image_outputs,
             use_cache=use_cache,
             **kwargs,
         )
