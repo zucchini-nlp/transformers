@@ -491,6 +491,8 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
         vision_aspect_ratio: str | None = None,
         batch_num_images: torch.LongTensor | None = None,
         use_cache: bool | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[FlashAttentionKwargs],
     ) -> tuple | LlavaOnevisionModelOutputWithPast:
         r"""
@@ -509,15 +511,17 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
 
         image_features = None
         if pixel_values is not None:
-            image_features = self.get_image_features(
+            image_outputs = self.get_image_features(
                 pixel_values,
                 image_sizes,
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
                 batch_num_images=batch_num_images,
                 return_dict=True,
-            ).pooler_output
-            image_features = torch.cat(image_features, dim=0)
+            )
+
+        if image_outputs is not None:
+            image_features = torch.cat(image_outputs.pooler_output, dim=0)
             image_features = image_features.to(inputs_embeds.device, inputs_embeds.dtype)
             special_image_mask, _ = self.get_placeholder_mask(
                 input_ids, inputs_embeds=inputs_embeds, image_features=image_features
@@ -526,12 +530,15 @@ class LlavaOnevisionModel(LlavaOnevisionPreTrainedModel):
 
         video_features = None
         if pixel_values_videos is not None:
-            video_features = self.get_video_features(
+            video_outputs = self.get_video_features(
                 pixel_values_videos,
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
                 return_dict=True,
-            ).pooler_output
+            )
+
+        if video_outputs is not None:
+            video_features = video_outputs.pooler_output
             image_newline = (
                 self.image_newline[None, None, :].repeat(video_features.shape[0], 1, 1).to(video_features.device)
             )
@@ -708,6 +715,8 @@ class LlavaOnevisionForConditionalGeneration(LlavaOnevisionPreTrainedModel, Gene
         batch_num_images: torch.LongTensor | None = None,
         labels: torch.LongTensor | None = None,
         use_cache: bool | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
+        video_outputs: BaseModelOutputWithPooling | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | LlavaOnevisionCausalLMOutputWithPast:
@@ -771,6 +780,8 @@ class LlavaOnevisionForConditionalGeneration(LlavaOnevisionPreTrainedModel, Gene
             inputs_embeds=inputs_embeds,
             use_cache=use_cache,
             logits_to_keep=logits_to_keep,
+            image_outputs=image_outputs,
+            video_outputs=video_outputs,
             **kwargs,
         )
 
