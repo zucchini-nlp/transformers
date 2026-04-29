@@ -173,3 +173,37 @@ def deprecate_kwarg(
         return wrapped_func
 
     return wrapper
+
+
+def deprecate_attribute(name: str, version: str, additional_message: str = ""):
+    deprecated_version = packaging.version.parse(version)
+    current_version = packaging.version.parse(__version__)
+
+    version_message = (
+        f"and removed starting from version {version}"
+        if current_version >= deprecated_version
+        else f"and will be removed in version {version}"
+    )
+
+    def wrapper(cls):
+        warn_msg = f"`{cls.__name__}.{name}` is deprecated {version_message}.\n{additional_message}".strip()
+
+        class DeprecatedCls(cls):
+            def __getitem__(self, key):
+                value = super().__getitem__(key)
+                if key == name and value is not None:
+                    warnings.warn(warn_msg, FutureWarning, stacklevel=2)
+                return value
+
+            def __getattribute__(self, key):
+                value = super().__getattribute__(key)
+                if key == name and value is not None:
+                    warnings.warn(warn_msg, FutureWarning, stacklevel=2)
+                return value
+
+        DeprecatedCls.__name__ = cls.__name__
+        DeprecatedCls.__qualname__ = cls.__qualname__
+        DeprecatedCls.__doc__ = cls.__doc__
+        return DeprecatedCls
+
+    return wrapper
