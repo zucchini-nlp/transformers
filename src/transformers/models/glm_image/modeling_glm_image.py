@@ -1205,7 +1205,11 @@ class GlmImageModel(GlmImagePreTrainedModel):
         images_per_sample (<fill_type>):
             <fill_docstring>
         """
-        if images_per_sample is not None and image_grid_thw is not None:
+        if (
+            images_per_sample is not None
+            and image_grid_thw is not None
+            and sum(images_per_sample) == len(image_grid_thw)
+        ):
             image_grid_thw = self.get_image_grids_for_generation(images_per_sample, image_grid_thw)
 
         pixel_values = pixel_values.type(self.visual.dtype)
@@ -1314,10 +1318,8 @@ class GlmImageModel(GlmImagePreTrainedModel):
         if (input_ids is None) ^ (inputs_embeds is not None):
             raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
-        batch_size = input_ids.shape[0] if input_ids is not None else inputs_embeds.shape[0]
-
         if pixel_values is not None:
-            source_grids = self.get_image_grids_for_generation(images_per_sample, image_grid_thw, batch_size)
+            source_grids = self.get_image_grids_for_generation(images_per_sample, image_grid_thw)
             image_outputs = self.get_image_features(pixel_values, source_grids, return_dict=True)
 
         if image_outputs is not None:
@@ -1388,45 +1390,16 @@ class GlmImageModel(GlmImagePreTrainedModel):
             all_image_toks.append(vqmodel_outputs.image_tokens)
         return torch.cat(all_image_toks, dim=0)
 
-    # FIXME!
     def get_image_grids_for_generation(
         self,
         images_per_sample: torch.Tensor,
         image_grid_thw: torch.Tensor,
-        batch_size: int,
-        input_ids: torch.Tensor,
-        attention_mask: torch.Tensor,
     ) -> torch.Tensor:
         # Process source images (image-to-image mode)
         # Source images are identified by counting image_end_token_id in input_ids
-        # Note: We must exclude padding tokens since pad_token_id == image_end_token_id
         if images_per_sample is not None:
             grids_per_sample = torch.split(image_grid_thw, images_per_sample.tolist())
-            # Create mask for non-padding tokens (attention_mask=1 means non-padding)
-            # Handle 4D attention mask (from static cache) by extracting diagonal
-            if attention_mask is not None and attention_mask.ndim == 4:
-                non_pad_mask = torch.diagonal(attention_mask[:, 0], dim1=1, dim2=2)
-                if non_pad_mask.dtype.is_floating_point:
-                    non_pad_mask = non_pad_mask / torch.finfo(non_pad_mask.dtype).min
-                    non_pad_mask = (1.0 - non_pad_mask).int()
-                # Only keep columns matching input_ids length
-                non_pad_mask = non_pad_mask[:, -input_ids.shape[1] :]
-            else:
-                non_pad_mask = attention_mask if attention_mask is not None else torch.ones_like(input_ids)
-
-            source_grids_list = []
-            is_image_end = input_ids == self.config.image_end_token_id
-            is_non_pad = non_pad_mask == 1
-            num_source_per_sample = (is_image_end & is_non_pad).sum(dim=1).tolist()
-            for sample_idx in range(batch_size):
-                num_source = num_source_per_sample[sample_idx]
-                if num_source > 0:
-                    source_grids_list.append(grids_per_sample[sample_idx][:num_source])
-            if len(source_grids_list) == 0:
-                raise ValueError(
-                    "pixel_values provided but no source images found in input_ids. "
-                    "Ensure input_ids contains image_end_token_id for each source image."
-                )
+            source_grids_list = [grids[:-1] for grids in grids_per_sample]
             source_grids = torch.cat(source_grids_list, dim=0)
         else:
             # Fallback for batch_size=1: all but last grid are source images
@@ -1495,8 +1468,6 @@ class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin)
             The tensors corresponding to the input images.
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
-        images_per_sample (<fill_type>):
-            <fill_docstring>
         """
         return self.model.get_image_features(pixel_values, image_grid_thw, images_per_sample, **kwargs)
 
