@@ -449,6 +449,9 @@ class GlmImageModelOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     last_hidden_state: torch.FloatTensor | None = None
@@ -456,6 +459,7 @@ class GlmImageModelOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
 
 
 class GlmImageVQVAEVectorQuantizer(nn.Module):
@@ -1190,6 +1194,7 @@ class GlmImageModel(GlmImagePreTrainedModel):
         self,
         pixel_values: torch.FloatTensor,
         image_grid_thw: torch.LongTensor | None = None,
+        images_per_sample: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
@@ -1197,12 +1202,17 @@ class GlmImageModel(GlmImagePreTrainedModel):
             The tensors corresponding to the input images.
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
+        images_per_sample (<fill_type>):
+            <fill_docstring>
         """
+        if images_per_sample is not None and image_grid_thw is not None:
+            image_grid_thw = self.get_image_grids_for_generation(images_per_sample, image_grid_thw)
+
         pixel_values = pixel_values.type(self.visual.dtype)
         vision_outputs = self.visual(pixel_values, grid_thw=image_grid_thw, return_dict=True, **kwargs)
         split_sizes = (image_grid_thw.prod(-1) // self.visual.spatial_merge_size**2).tolist()
         image_embeds = torch.split(vision_outputs.last_hidden_state, split_sizes)
-        vision_outputs.pooler_output = image_embeds
+        vision_outputs.pooler_output = list(image_embeds)
 
         return vision_outputs
 
@@ -1289,6 +1299,7 @@ class GlmImageModel(GlmImagePreTrainedModel):
         image_grid_thw: torch.LongTensor | None = None,
         images_per_sample: torch.LongTensor | None = None,
         rope_deltas: torch.LongTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | GlmImageModelOutputWithPast:
         r"""
@@ -1306,43 +1317,11 @@ class GlmImageModel(GlmImagePreTrainedModel):
         batch_size = input_ids.shape[0] if input_ids is not None else inputs_embeds.shape[0]
 
         if pixel_values is not None:
-            # Process source images (image-to-image mode)
-            # Source images are identified by counting image_end_token_id in input_ids
-            # Note: We must exclude padding tokens since pad_token_id == image_end_token_id
-            if images_per_sample is not None:
-                grids_per_sample = torch.split(image_grid_thw, images_per_sample.tolist())
-                # Create mask for non-padding tokens (attention_mask=1 means non-padding)
-                # Handle 4D attention mask (from static cache) by extracting diagonal
-                if attention_mask is not None and attention_mask.ndim == 4:
-                    non_pad_mask = torch.diagonal(attention_mask[:, 0], dim1=1, dim2=2)
-                    if non_pad_mask.dtype.is_floating_point:
-                        non_pad_mask = non_pad_mask / torch.finfo(non_pad_mask.dtype).min
-                        non_pad_mask = (1.0 - non_pad_mask).int()
-                    # Only keep columns matching input_ids length
-                    non_pad_mask = non_pad_mask[:, -input_ids.shape[1] :]
-                else:
-                    non_pad_mask = attention_mask if attention_mask is not None else torch.ones_like(input_ids)
+            source_grids = self.get_image_grids_for_generation(images_per_sample, image_grid_thw, batch_size)
+            image_outputs = self.get_image_features(pixel_values, source_grids, return_dict=True)
 
-                source_grids_list = []
-                is_image_end = input_ids == self.config.image_end_token_id
-                is_non_pad = non_pad_mask == 1
-                num_source_per_sample = (is_image_end & is_non_pad).sum(dim=1).tolist()
-                for sample_idx in range(batch_size):
-                    num_source = num_source_per_sample[sample_idx]
-                    if num_source > 0:
-                        source_grids_list.append(grids_per_sample[sample_idx][:num_source])
-                if len(source_grids_list) == 0:
-                    raise ValueError(
-                        "pixel_values provided but no source images found in input_ids. "
-                        "Ensure input_ids contains image_end_token_id for each source image."
-                    )
-                source_grids = torch.cat(source_grids_list, dim=0)
-            else:
-                # Fallback for batch_size=1: all but last grid are source images
-                source_grids = image_grid_thw[:-1]
-
-            image_features = self.get_image_features(pixel_values, source_grids, return_dict=True)
-            image_embeds = torch.cat(image_features.pooler_output, dim=0)
+        if image_outputs is not None:
+            image_embeds = torch.cat(image_outputs.pooler_output, dim=0)
             image_ids = self.get_image_tokens(image_embeds, source_grids)
             image_ids = image_ids.view(-1).to(input_ids.device)
             special_image_mask = self.get_placeholder_mask(input_ids, image_ids)
@@ -1409,6 +1388,51 @@ class GlmImageModel(GlmImagePreTrainedModel):
             all_image_toks.append(vqmodel_outputs.image_tokens)
         return torch.cat(all_image_toks, dim=0)
 
+    # FIXME!
+    def get_image_grids_for_generation(
+        self,
+        images_per_sample: torch.Tensor,
+        image_grid_thw: torch.Tensor,
+        batch_size: int,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        # Process source images (image-to-image mode)
+        # Source images are identified by counting image_end_token_id in input_ids
+        # Note: We must exclude padding tokens since pad_token_id == image_end_token_id
+        if images_per_sample is not None:
+            grids_per_sample = torch.split(image_grid_thw, images_per_sample.tolist())
+            # Create mask for non-padding tokens (attention_mask=1 means non-padding)
+            # Handle 4D attention mask (from static cache) by extracting diagonal
+            if attention_mask is not None and attention_mask.ndim == 4:
+                non_pad_mask = torch.diagonal(attention_mask[:, 0], dim1=1, dim2=2)
+                if non_pad_mask.dtype.is_floating_point:
+                    non_pad_mask = non_pad_mask / torch.finfo(non_pad_mask.dtype).min
+                    non_pad_mask = (1.0 - non_pad_mask).int()
+                # Only keep columns matching input_ids length
+                non_pad_mask = non_pad_mask[:, -input_ids.shape[1] :]
+            else:
+                non_pad_mask = attention_mask if attention_mask is not None else torch.ones_like(input_ids)
+
+            source_grids_list = []
+            is_image_end = input_ids == self.config.image_end_token_id
+            is_non_pad = non_pad_mask == 1
+            num_source_per_sample = (is_image_end & is_non_pad).sum(dim=1).tolist()
+            for sample_idx in range(batch_size):
+                num_source = num_source_per_sample[sample_idx]
+                if num_source > 0:
+                    source_grids_list.append(grids_per_sample[sample_idx][:num_source])
+            if len(source_grids_list) == 0:
+                raise ValueError(
+                    "pixel_values provided but no source images found in input_ids. "
+                    "Ensure input_ids contains image_end_token_id for each source image."
+                )
+            source_grids = torch.cat(source_grids_list, dim=0)
+        else:
+            # Fallback for batch_size=1: all but last grid are source images
+            source_grids = image_grid_thw[:-1]
+        return source_grids
+
 
 @dataclass
 @auto_docstring(
@@ -1429,6 +1453,9 @@ class GlmImageCausalLMOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     loss: torch.FloatTensor | None = None
@@ -1437,6 +1464,7 @@ class GlmImageCausalLMOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
 
 
 class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin):
@@ -1459,6 +1487,7 @@ class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin)
         self,
         pixel_values: torch.FloatTensor,
         image_grid_thw: torch.LongTensor | None = None,
+        images_per_sample: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
@@ -1466,8 +1495,10 @@ class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin)
             The tensors corresponding to the input images.
         image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
             The temporal, height and width of feature shape of each image in LLM.
+        images_per_sample (<fill_type>):
+            <fill_docstring>
         """
-        return self.model.get_image_features(pixel_values, image_grid_thw, **kwargs)
+        return self.model.get_image_features(pixel_values, image_grid_thw, images_per_sample, **kwargs)
 
     def get_image_tokens(self, hidden_states: torch.FloatTensor, image_grid_thw: torch.LongTensor | None = None):
         return self.model.get_image_tokens(hidden_states, image_grid_thw)
@@ -1483,6 +1514,7 @@ class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin)
         pixel_values: torch.Tensor | None = None,
         image_grid_thw: torch.LongTensor | None = None,
         images_per_sample: torch.LongTensor | None = None,
+        image_outputs: BaseModelOutputWithPooling | None = None,
         logits_to_keep: int | torch.Tensor = 0,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | GlmImageCausalLMOutputWithPast:
@@ -1538,6 +1570,7 @@ class GlmImageForConditionalGeneration(GlmImagePreTrainedModel, GenerationMixin)
             attention_mask=attention_mask,
             past_key_values=past_key_values,
             inputs_embeds=inputs_embeds,
+            image_outputs=image_outputs,
             **kwargs,
         )
 

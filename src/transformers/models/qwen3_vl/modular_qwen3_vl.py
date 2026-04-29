@@ -928,8 +928,6 @@ class Qwen3VLModel(Qwen2VLModel):
 
         return Qwen3VLModelOutputWithPast(
             **outputs,
-            # image_hidden_states=image_embeds if image_outputs is not None else None,
-            # video_hidden_states=video_embeds if video_outputs is not None else None,
             rope_deltas=self.rope_deltas,
         )
 

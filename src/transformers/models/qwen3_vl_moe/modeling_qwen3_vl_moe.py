@@ -1037,6 +1037,9 @@ class Qwen3VLMoeModelOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     last_hidden_state: torch.FloatTensor | None = None
@@ -1044,6 +1047,7 @@ class Qwen3VLMoeModelOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
     router_logits: tuple[torch.FloatTensor] | None = None
 
 
@@ -1066,6 +1070,9 @@ class Qwen3VLMoeCausalLMOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     loss: torch.FloatTensor | None = None
@@ -1074,6 +1081,7 @@ class Qwen3VLMoeCausalLMOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
     router_logits: tuple[torch.FloatTensor] | None = None
     aux_loss: torch.FloatTensor | None = None
 
@@ -1499,8 +1507,6 @@ class Qwen3VLMoeModel(Qwen3VLMoePreTrainedModel):
 
         return Qwen3VLMoeModelOutputWithPast(
             **outputs,
-            # image_hidden_states=image_embeds if image_outputs is not None else None,
-            # video_hidden_states=video_embeds if video_outputs is not None else None,
             rope_deltas=self.rope_deltas,
         )
 

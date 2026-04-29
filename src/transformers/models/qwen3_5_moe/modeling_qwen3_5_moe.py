@@ -1290,6 +1290,9 @@ class Qwen3_5MoeModelOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     last_hidden_state: torch.FloatTensor | None = None
@@ -1297,6 +1300,7 @@ class Qwen3_5MoeModelOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
     router_logits: tuple[torch.FloatTensor] | None = None
 
 
@@ -1319,6 +1323,9 @@ class Qwen3_5MoeCausalLMOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     loss: torch.FloatTensor | None = None
@@ -1327,6 +1334,7 @@ class Qwen3_5MoeCausalLMOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
     router_logits: tuple[torch.FloatTensor] | None = None
     aux_loss: torch.FloatTensor | None = None
 
@@ -1815,6 +1823,7 @@ class Qwen3_5MoeModel(Qwen3_5MoePreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
             rope_deltas=self.rope_deltas,
+            image_hidden_states=image_embeds if image_outputs is not None else None,
         )
 
 

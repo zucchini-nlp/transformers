@@ -355,6 +355,9 @@ class GlmOcrModelOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     last_hidden_state: torch.FloatTensor | None = None
@@ -362,6 +365,7 @@ class GlmOcrModelOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
 
 
 def rotate_half(x):
@@ -1259,6 +1263,9 @@ class GlmOcrCausalLMOutputWithPast(ModelOutput):
         `past_key_values` input) to speed up sequential decoding.
     rope_deltas (`torch.LongTensor` of shape `(batch_size, )`, *optional*):
         The rope index difference between sequence length and multimodal rope.
+    image_hidden_states (`torch.FloatTensor`, *optional*):
+        A `torch.FloatTensor` of size `(batch_size, num_images, sequence_length, hidden_size)`.
+        image_hidden_states of the model produced by the vision encoder and after projecting the last hidden state.
     """
 
     loss: torch.FloatTensor | None = None
@@ -1267,6 +1274,7 @@ class GlmOcrCausalLMOutputWithPast(ModelOutput):
     hidden_states: tuple[torch.FloatTensor] | None = None
     attentions: tuple[torch.FloatTensor] | None = None
     rope_deltas: torch.LongTensor | None = None
+    image_hidden_states: torch.FloatTensor | None = None
 
 
 class GlmOcrForConditionalGeneration(GlmOcrPreTrainedModel, GenerationMixin):
