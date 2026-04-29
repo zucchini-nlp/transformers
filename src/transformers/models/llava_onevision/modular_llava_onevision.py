@@ -699,8 +699,8 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features,
-            video_hidden_states=video_features,
+            image_hidden_states=image_features if image_outputs is not None else None,
+            video_hidden_states=video_features if video_outputs is not None else None,
         )
 
 

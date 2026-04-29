@@ -729,8 +729,8 @@ class VideoLlama3Model(VideoLlama3PreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_embeds,
-            video_hidden_states=video_embeds,
+            image_hidden_states=image_embeds if image_outputs is not None else None,
+            video_hidden_states=video_embeds if video_outputs is not None else None,
         )
 
 

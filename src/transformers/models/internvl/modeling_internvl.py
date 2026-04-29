@@ -669,7 +669,7 @@ class InternVLModel(InternVLPreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features if pixel_values is not None else None,
+            image_hidden_states=image_features if image_outputs is not None else None,
         )
 
     def pixel_shuffle(self, vision_features: torch.Tensor, scale_factor: float = 0.5):

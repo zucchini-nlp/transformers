@@ -1973,7 +1973,7 @@ class Gemma4Model(Gemma3nModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features if pixel_values is not None else None,
+            image_hidden_states=image_features if image_outputs is not None else None,
             audio_hidden_states=audio_features if input_features is not None else None,
         )
 
