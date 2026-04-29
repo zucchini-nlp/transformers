@@ -689,7 +689,7 @@ class GlmImageModel(Glm4vModel):
     def get_image_tokens(
         self,
         hidden_states: torch.FloatTensor,
-        image_grid_thw: torch.LongTensor,
+        image_grid_thw: torch.LongTensor | None = None,
     ) -> torch.LongTensor:
         """
         Tokenizes image features into discrete tokens with VQVAE module.
@@ -704,15 +704,8 @@ class GlmImageModel(Glm4vModel):
             image_tokens (`torch.LongTensor` of shape `(total_patches,)`):
                 Discrete token indices from the VQVAE codebook.
         """
-        hidden_size = hidden_states.shape[-1]
-        split_sizes = (image_grid_thw.prod(dim=-1)).tolist()
-        hidden_states_list = torch.split(hidden_states, split_sizes, dim=0)
-
         all_image_toks = []
-        for i, hs in enumerate(hidden_states_list):
-            grid_t, grid_h, grid_w = image_grid_thw[i].tolist()
-            hs = hs.view(grid_t, grid_h, grid_w, hidden_size)
-            hs = hs.permute(0, 3, 1, 2).contiguous()
+        for hs in hidden_states:
             vqmodel_outputs: GlmImageVQVAEModelOutput = self.vqmodel.encode(hs)
             all_image_toks.append(vqmodel_outputs.image_tokens)
         return torch.cat(all_image_toks, dim=0)
@@ -746,9 +739,18 @@ class GlmImageModel(Glm4vModel):
 
         pixel_values = pixel_values.type(self.visual.dtype)
         vision_outputs = self.visual(pixel_values, grid_thw=image_grid_thw, return_dict=True, **kwargs)
-        split_sizes = (image_grid_thw.prod(-1) // self.visual.spatial_merge_size**2).tolist()
+        # split_sizes = (image_grid_thw.prod(-1) // self.visual.spatial_merge_size**2).tolist()
+        split_sizes = (image_grid_thw.prod(-1)).tolist()
         image_embeds = torch.split(vision_outputs.last_hidden_state, split_sizes)
-        vision_outputs.pooler_output = list(image_embeds)
+
+        reshaped_embeds = []
+        for i, embed in enumerate(image_embeds):
+            grid_t, grid_h, grid_w = image_grid_thw[i].tolist()
+            embed = embed.view(grid_t, grid_h, grid_w, -1)
+            embed = embed.permute(0, 3, 1, 2).contiguous()
+            reshaped_embeds.append(embed)
+
+        vision_outputs.pooler_output = reshaped_embeds
 
         return vision_outputs
 
@@ -869,8 +871,7 @@ class GlmImageModel(Glm4vModel):
             image_outputs = self.get_image_features(pixel_values, source_grids, return_dict=True)
 
         if image_outputs is not None:
-            image_embeds = torch.cat(image_outputs.pooler_output, dim=0)
-            image_ids = self.get_image_tokens(image_embeds, source_grids)
+            image_ids = self.get_image_tokens(image_outputs.pooler_output)
             image_ids = image_ids.view(-1).to(input_ids.device)
             special_image_mask = self.get_placeholder_mask(input_ids, image_ids)
             input_ids = input_ids.masked_scatter(special_image_mask, image_ids)

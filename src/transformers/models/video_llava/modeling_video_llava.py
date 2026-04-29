@@ -178,7 +178,6 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
         pixel_values_images: torch.FloatTensor,
         vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
-        output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
@@ -192,9 +191,9 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
             The feature selection strategy used to select the vision feature from the vision backbone.
             Can be one of `"default"` or `"full"`
         """
+        kwargs["output_hidden_states"] = True  # Ignore arg on purpose
         image_outputs = self.image_tower(
             pixel_values_images,
-            output_hidden_states=True,  # Ignore arg on purpose
             return_dict=True,
             **kwargs,
         )
@@ -226,7 +225,6 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
         self,
         pixel_values_videos: torch.FloatTensor,
         vision_feature_layer: int | list[int] | list[int] | None = None,
-        output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
@@ -240,9 +238,9 @@ class VideoLlavaModel(VideoLlavaPreTrainedModel):
         batch_size_vid, num_frames, channels, height, width = pixel_values_videos.shape
 
         pixel_values = pixel_values_videos.reshape(batch_size_vid * num_frames, channels, height, width)
+        kwargs["output_hidden_states"] = True  # Ignore arg on purpose
         video_outputs = self.video_tower(
             pixel_values,
-            output_hidden_states=True,  # Ignore arg on purpose
             return_dict=True,
             **kwargs,
         )

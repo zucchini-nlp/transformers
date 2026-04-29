@@ -820,11 +820,13 @@ class GenerationMixin(ContinuousMixin):
             and model_kwargs.get("image_outputs") is None
             and hasattr(self.base_model, "get_image_features")
         ):
-            image_signature = inspect.signature(self.base_model.get_image_features).parameters
+            image_signature = {
+                k: v
+                for k, v in inspect.signature(self.base_model.get_image_features).parameters.items()
+                if k != "kwargs"
+            }
             required_args = [
-                name
-                for name, param in image_signature.items()
-                if param.default is inspect.Parameter.empty and name != "kwargs"
+                name for name, param in image_signature.items() if param.default is inspect.Parameter.empty
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
                 keys_to_remove = keys_to_remove | set(image_signature)
@@ -841,11 +843,13 @@ class GenerationMixin(ContinuousMixin):
             and model_kwargs.get("video_outputs") is None
             and hasattr(self.base_model, "get_video_features")
         ):
-            video_signature = inspect.signature(self.base_model.get_video_features).parameters
+            video_signature = {
+                k: v
+                for k, v in inspect.signature(self.base_model.get_video_features).parameters.items()
+                if k != "kwargs"
+            }
             required_args = [
-                name
-                for name, param in video_signature.items()
-                if param.default is inspect.Parameter.empty and name != "kwargs"
+                name for name, param in video_signature.items() if param.default is inspect.Parameter.empty
             ]
             if all(model_kwargs.get(n) is not None for n in required_args):
                 keys_to_remove = keys_to_remove | set(video_signature)

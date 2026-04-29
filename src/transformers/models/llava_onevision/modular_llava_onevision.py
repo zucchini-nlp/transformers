@@ -493,7 +493,6 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
         vision_feature_select_strategy: str | None = None,
         vision_aspect_ratio: str | None = None,
         batch_num_images: torch.LongTensor | None = None,
-        output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
@@ -528,9 +527,9 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
             # otherwise has to be stacked from list of (num_patches, num_channels, height, width)
             raise ValueError(f"pixel_values of shape {pixel_values.shape}, expect to be of 4 or 5 dimensions")
 
+        kwargs["output_hidden_states"] = True  # Ignore arg on purpose
         image_outputs = self.vision_tower(
             pixel_values,
-            output_hidden_states=True,  # Ignore arg on purpose
             return_dict=True,
             **kwargs,
         )
@@ -564,14 +563,13 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
     )
     def get_video_features(
         self,
-        pixel_values: torch.FloatTensor,
+        pixel_values_videos: torch.FloatTensor,
         vision_feature_layer: int | list[int] | list[int] | None = None,
         vision_feature_select_strategy: str | None = None,
-        output_hidden_states: bool | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | BaseModelOutputWithPooling:
         r"""
-        pixel_values (`torch.FloatTensor]` of shape `(batch_size, num_frames, channels, height, width)`)
+        pixel_values_videos (`torch.FloatTensor]` of shape `(batch_size, num_frames, channels, height, width)`)
             The tensors corresponding to the input video.
         vision_feature_layer (`Union[int, list[int]], *optional*, defaults to -2`):
             The index of the layer to select the vision feature. If multiple indices are provided,
@@ -581,11 +579,12 @@ class LlavaOnevisionModel(LlavaNextVideoModel):
             The feature selection strategy used to select the vision feature from the vision backbone.
             Can be one of `"default"` or `"full"`
         """
-        batch_size, frames, channels, height, width = pixel_values.shape
-        pixel_values = pixel_values.view(batch_size * frames, channels, height, width)
+        batch_size, frames, channels, height, width = pixel_values_videos.shape
+        pixel_values_videos = pixel_values_videos.view(batch_size * frames, channels, height, width)
+
+        kwargs["output_hidden_states"] = True  # Ignore arg on purpose
         vision_outputs = self.vision_tower(
-            pixel_values,
-            output_hidden_states=True,  # Ignore arg on purpose
+            pixel_values_videos,
             return_dict=True,
             **kwargs,
         )
