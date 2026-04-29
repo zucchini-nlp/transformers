@@ -37,6 +37,7 @@ from ...utils import (
     can_return_tuple,
     torch_compilable_check,
 )
+from ...utils.deprecation import deprecate_attribute
 from ..auto import AutoModel
 from .configuration_glm46v import Glm46VConfig
 
@@ -57,6 +58,9 @@ class Glm46VPreTrainedModel(PreTrainedModel):
     _can_record_outputs = None
 
 
+@deprecate_attribute(
+    "rope_deltas", version="v5.20", additional_message="Please use `model.base_model.rope_deltas` instead."
+)
 @dataclass
 @auto_docstring(
     custom_intro="""
@@ -467,6 +471,9 @@ class Glm46VModel(Glm46VPreTrainedModel):
         )
 
 
+@deprecate_attribute(
+    "rope_deltas", version="v5.20", additional_message="Please use `model.base_model.rope_deltas` instead."
+)
 @dataclass
 @auto_docstring(
     custom_intro="""
