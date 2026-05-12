@@ -49,6 +49,8 @@ class DeepseekV3Config(PreTrainedConfig):
     model_type = "deepseek_v3"
     keys_to_ignore_at_inference = ["past_key_values"]
     base_model_tp_plan = {
+        "layers.*.mlp.experts.up_proj_scale": "colwise",
+        "layers.*.mlp.experts.down_proj_scale": "rowwise",
         "layers.*.mlp.experts.gate_up_proj": "packed_colwise",
         "layers.*.mlp.experts.down_proj": "rowwise",
         "layers.*.mlp.experts": "moe_tp_experts",

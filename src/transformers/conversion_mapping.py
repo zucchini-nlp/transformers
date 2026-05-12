@@ -611,6 +611,37 @@ def _build_checkpoint_conversion_mapping():
         ),
     ]
 
+    mapping["kimi_k25"] += [
+            WeightConverter(
+                source_patterns=[
+                    "mlp.experts.*.gate_proj.weight_packed",
+                    "mlp.experts.*.up_proj.weight_packed",
+                ],
+                target_patterns="mlp.experts.gate_up_proj",
+                operations=[MergeModulelist(dim=0), Concatenate(dim=1)],
+            ),
+            WeightConverter(
+                source_patterns="mlp.experts.*.down_proj.weight_packed",
+                target_patterns="mlp.experts.down_proj",
+                operations=[MergeModulelist(dim=0)],
+            ),
+
+            WeightConverter(
+                source_patterns=[
+                    "mlp.experts.*.gate_proj.weight_scale",
+                    "mlp.experts.*.up_proj.weight_scale",
+                ],
+                target_patterns="mlp.experts.up_proj_scale",
+                operations=[MergeModulelist(dim=0), Concatenate(dim=1)],
+            ),
+            WeightConverter(
+                source_patterns="mlp.experts.*.down_proj.weight_scale",
+                target_patterns="mlp.experts.down_proj_scale",
+                operations=[MergeModulelist(dim=0)],
+            ),
+
+        ]
+
     mapping["ernie4_5_moe"] = mapping["qwen2_moe"].copy()
     mapping["ernie4_5_moe"] += [
         WeightRenaming("mlp.moe_statics.e_score_correction_bias", "mlp.gate.moe_statics.e_score_correction_bias")

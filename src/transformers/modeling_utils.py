@@ -4212,6 +4212,72 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         model.eval()  # Set model in evaluation mode to deactivate Dropout modules by default
         model.set_use_kernels(use_kernels, kernel_config)
 
+        # Decompress after loading packed weights. Do we support this type of quant on MoE projections, there should be a better way
+        from compressed_tensors.compressors.nvfp4.helpers import unpack_fp4_from_uint8
+        from compressed_tensors.compressors.pack_quantized import PackedQuantizationCompressor
+        from compressed_tensors.compressors.pack_quantized.helpers import unpack_from_int32
+        from compressed_tensors.quantization.lifecycle.forward import dequantize
+        from compressed_tensors.quantization import QuantizationArgs, QuantizationScheme
+
+        def dequant(model, param_name, packed_parameter, scale):
+            packed_parameter = packed_parameter.to(torch.uint8)
+            num_experts, m, n = packed_parameter.shape
+            #unpacked = ([unpack_fp4_from_uint8(expert_param, m, n * 2) for expert_param in packed_parameter])
+            #unpacked = torch.stack(unpacked, dim=0)
+            #scale_float = scale.to(unpacked.dtype)
+
+            weight_args = QuantizationArgs(
+            num_bits=4,
+            type="int",
+            strategy="group",
+            group_size=32,
+            symmetric=True,
+            dynamic=False,
+        )   
+            scheme = QuantizationScheme(weights=weight_args, targets=["Linear"])
+            compressor = PackedQuantizationCompressor()
+
+            #unpacked = [unpack_from_int32(packed, weights.num_bits, original_shape) for packed in packed_parameter]
+            dequant_list = []
+            for param, scale_expert in zip(packed_parameter, scale):
+                #print(param_name, param.shape, scale_expert.shape)
+                original_shape = [4096, 7168] if "up" in param_name else [7168, 2048]
+                sd = {
+                    "weight_packed": param.to(torch.int32),
+                    "weight_scale": scale_expert,
+                    "weight_shape": torch.tensor(original_shape, device=param.device),
+                }
+                decompressed = compressor.decompress(sd, scheme)
+                dequant_list.append(decompressed["weight"])
+                del param
+                del scale_expert
+                del sd
+                torch.cuda.empty_cache()
+
+                #dequant_param = dequantize(
+                #x_q=unpack_expert,
+                #scale=scale_expert,
+                #args=weight_args,
+                #global_scale=None,
+                #dtype=unpacked.dtype,
+                #)
+                #dequant_list.append(dequant_param)
+            dequant_param = torch.stack(dequant_list, dim=0)
+            setattr(model, param_name, nn.Parameter(dequant_param))
+            del dequant_param
+            torch.cuda.empty_cache()
+
+        for name, module in model.named_modules():
+            if name.endswith('.mlp.experts') and os.environ.get("RANK", "0") == "0":
+                scale = getattr(module, "up_proj_scale")
+                gate_up_proj = getattr(module, "gate_up_proj")
+                dequant(module, "gate_up_proj", gate_up_proj, scale)
+
+                down_proj = getattr(module, "down_proj")
+                scale = getattr(module, "down_proj_scale")
+                dequant(module, "down_proj", down_proj, scale)
+
+
         # If it is a model with generation capabilities, attempt to load generation files (generation config,
         # custom generate function)
         if model.can_generate() and hasattr(model, "adjust_generation_fn") and not gguf_file:
@@ -4626,6 +4692,7 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         # The tied weight keys are in the "missing" usually, but they should not be moved (they will be tied anyway)
         # This is especially important because if they are moved, they will lose the `_is_hf_initialized` flag, and they
         # will be re-initialized for nothing (which can be quite long)
+        print("MISSING", missing_keys)
         for key in missing_keys - self.all_tied_weights_keys.keys():
             param = self.get_parameter_or_buffer(key)
             param_device = get_device(device_map, key, valid_torch_device=True)
