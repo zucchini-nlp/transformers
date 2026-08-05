@@ -39,9 +39,9 @@ from ...modeling_outputs import (
     ModelOutput,
 )
 from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
-from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
+from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, MultimodalGenerativeModelMixin, PreTrainedModel
 from ...processing_utils import Unpack
-from ...utils import TransformersKwargs, auto_docstring, can_return_tuple, torch_compilable_check
+from ...utils import TransformersKwargs, auto_docstring, can_return_tuple
 from ...utils.deprecation import deprecate_kwarg
 from ...utils.generic import maybe_autocast, merge_with_config_defaults
 from ...utils.output_capturing import capture_outputs
@@ -605,10 +605,6 @@ class AriaPreTrainedModel(PreTrainedModel):
     _supports_flex_attn = True
     _can_compile_fullgraph = False  # MoE models don't work with torch.compile (dynamic slicing)
     _supports_attention_backend = True
-    _can_record_outputs = {
-        "hidden_states": AriaTextDecoderLayer,
-        "attentions": AriaTextAttention,
-    }
 
     @torch.no_grad()
     def _init_weights(self, module):
@@ -880,7 +876,7 @@ class AriaModelOutputWithPast(BaseModelOutputWithPast):
     The Aria model which consists of a vision backbone and a language model, without a language modeling head.
     """
 )
-class AriaModel(AriaPreTrainedModel):
+class AriaModel(AriaPreTrainedModel, MultimodalGenerativeModelMixin):
     def __init__(self, config: AriaConfig):
         super().__init__(config)
         self.vision_tower = AutoModel.from_config(config.vision_config)
@@ -919,32 +915,7 @@ class AriaModel(AriaPreTrainedModel):
 
         return image_outputs
 
-    def get_placeholder_mask(
-        self, input_ids: torch.LongTensor, inputs_embeds: torch.FloatTensor, image_features: torch.FloatTensor
-    ):
-        """
-        Obtains multimodal placeholder mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
-        equal to the length of multimodal features. If the lengths are different, an error is raised.
-        """
-        if input_ids is None:
-            special_image_mask = inputs_embeds == self.get_input_embeddings()(
-                torch.full((), self.config.image_token_id, dtype=torch.long, device=inputs_embeds.device)
-            )
-            special_image_mask = special_image_mask.all(-1)
-        else:
-            special_image_mask = input_ids == self.config.image_token_id
-
-        n_image_tokens = special_image_mask.sum()
-        n_image_features = image_features.shape[0] * image_features.shape[1]
-        special_image_mask = special_image_mask.unsqueeze(-1).to(inputs_embeds.device)
-        torch_compilable_check(
-            n_image_tokens * inputs_embeds.shape[-1] == image_features.numel(),
-            f"Image features and image tokens do not match, tokens: {n_image_tokens}, features: {n_image_features}",
-        )
-        return special_image_mask
-
-    @can_return_tuple
-    @auto_docstring
+    @capture_outputs
     def forward(
         self,
         input_ids: torch.LongTensor | None = None,
@@ -961,18 +932,16 @@ class AriaModel(AriaPreTrainedModel):
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
         # 2. Merge text and images
-        if pixel_values is not None and inputs_embeds.shape[1] != 1:
-            image_features = self.get_image_features(
-                pixel_values=pixel_values,
-                pixel_mask=pixel_mask,
-                vision_feature_layer=self.config.vision_feature_layer,
-                return_dict=True,
-            ).pooler_output
-            image_features = image_features.to(inputs_embeds.device, inputs_embeds.dtype)
-            special_image_mask = self.get_placeholder_mask(
-                input_ids, inputs_embeds=inputs_embeds, image_features=image_features
-            )
-            inputs_embeds = inputs_embeds.masked_scatter(special_image_mask, image_features)
+        inputs_embeds = self._merge_multimodal_embeddings(
+            inputs_embeds,
+            input_ids=input_ids,
+            image_inputs={
+                "pixel_values": pixel_values,
+                "pixel_mask": pixel_mask,
+                "vision_feature_layer": self.config.vision_feature_layer,
+            },
+            mm_encoder_outputs=mm_encoder_outputs,
+        )
 
         outputs = self.language_model(
             attention_mask=attention_mask,
@@ -988,7 +957,7 @@ class AriaModel(AriaPreTrainedModel):
             past_key_values=outputs.past_key_values if use_cache else None,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features if pixel_values is not None else None,
+            image_hidden_states=mm_encoder_outputs.get("image") if mm_encoder_outputs is not None else None,
         )
 
     def _create_patch_attention_mask(self, pixel_mask):

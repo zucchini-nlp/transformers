@@ -93,6 +93,7 @@ from .modeling_flash_attention_utils import (
     lazy_import_flash_attention,
     lazy_import_paged_flash_attention,
 )
+from .modeling_outputs import ModelOutput
 from .modeling_rope_utils import ROPE_INIT_FUNCTIONS
 from .monkey_patching import apply_patches, patch_output_recorders
 from .pytorch_utils import id_tensor_storage
@@ -122,6 +123,7 @@ from .utils import (
     is_torch_npu_available,
     is_torch_xpu_available,
     logging,
+    torch_compilable_check,
 )
 from .utils.generic import GeneralInterface, is_flash_attention_requested, split_attention_implementation
 from .utils.hub import DownloadKwargs, create_and_tag_model_card, get_checkpoint_shard_files, hf_api
@@ -1067,6 +1069,86 @@ class ModuleUtilsMixin:
                     total_params += param.numel()
 
         return total_params
+
+
+class MultimodalGenerativeModelMixin:
+    """
+    Base utilities used in multimodal generative models.
+    """
+
+    def get_placeholder_mask(
+        self,
+        input_ids: torch.LongTensor,
+        inputs_embeds: torch.FloatTensor,
+        modality: str,
+        features: torch.FloatTensor | None = None,
+    ):
+        """
+        Obtains multimodal placeholder mask from `input_ids` or `inputs_embeds`, and checks that the placeholder token count is
+        equal to the length of multimodal features. If the lengths are different, an error is raised.
+        """
+        special_token_id = getattr(self.config, f"{modality}_token_id")
+        if input_ids is None:
+            placeholder_mask = inputs_embeds == self.get_input_embeddings()(
+                torch.full((), special_token_id, dtype=torch.long, device=inputs_embeds.device)
+            )
+            placeholder_mask = placeholder_mask.all(-1)
+        else:
+            placeholder_mask = input_ids == special_token_id
+
+        n_tokens_in_text = placeholder_mask.sum()
+        placeholder_mask = placeholder_mask.unsqueeze(-1).to(inputs_embeds.device)
+        if features is not None:
+            n_tokens_in_vision = features.shape[0] if features.ndim == 2 else features.shape[0] * features.shape[1]
+            torch_compilable_check(
+                n_tokens_in_text * inputs_embeds.shape[-1] == features.numel(),
+                f"Number of {modality} features and placeholder tokens do not match. "
+                f"Got {n_tokens_in_text} tokens in text and {n_tokens_in_vision} encoded features.",
+            )
+
+        return placeholder_mask
+
+    def _maybe_encode_mm_input(
+        self,
+        inputs: dict,
+        modality: str,
+    ) -> ModelOutput | None:
+        encoder_fn = getattr(self.base_model, f"get_{modality}_features")
+        fn_signature = {k: v for k, v in inspect.signature(encoder_fn).parameters.items() if k != "kwargs"}
+        required_args = [name for name, param in fn_signature.items() if param.default is inspect.Parameter.empty]
+        if all(inputs.get(n) is not None for n in required_args):
+            encoder_kwargs = {argument: inputs.get(argument) for argument in set(fn_signature)}
+            encoder_kwargs["return_dict"] = True
+            return encoder_fn(**encoder_kwargs)
+        return None
+
+    def _merge_multimodal_embeddings(
+        self,
+        inputs_embeds: torch.Tensor,
+        input_ids: torch.Tensor,
+        image_inputs: dict | None = None,
+        video_inputs: dict | None = None,
+        mm_encoder_outputs: dict[str, ModelOutput] | None = None,
+    ):
+        mm_encoder_outputs = mm_encoder_outputs if mm_encoder_outputs else {}
+        for modality, inputs in zip(["image", "video"], [image_inputs, video_inputs]):
+            if mm_encoder_outputs.get(modality) is None and inputs is not None:
+                if (encoded_outputs := self._maybe_encode_mm_input(inputs, modality=modality)) is not None:
+                    mm_encoder_outputs[modality] = encoded_outputs
+
+            if mm_encoder_outputs.get(modality) is not None:
+                features = mm_encoder_outputs[modality].pooler_output
+                if isinstance(features, (list, tuple)):
+                    features = torch.cat(features, dim=0)
+                features = features.to(inputs_embeds.device, inputs_embeds.dtype)
+                mask = self.get_placeholder_mask(
+                    input_ids,
+                    inputs_embeds=inputs_embeds,
+                    features=features,
+                    modality=modality,
+                )
+                inputs_embeds = inputs_embeds.masked_scatter(mask, features)
+        return inputs_embeds
 
 
 class EmbeddingAccessMixin:

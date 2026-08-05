@@ -33,7 +33,7 @@ from ...image_utils import (
 )
 from ...modeling_flash_attention_utils import FlashAttentionKwargs
 from ...modeling_outputs import BaseModelOutputWithPooling
-from ...modeling_utils import PreTrainedModel
+from ...modeling_utils import MultimodalGenerativeModelMixin, PreTrainedModel
 from ...processing_utils import ImagesKwargs, MultiModalData, ProcessingKwargs, ProcessorMixin, Unpack
 from ...utils import (
     TensorType,
@@ -836,7 +836,7 @@ class AriaModelOutputWithPast(LlavaModelOutputWithPast):
     pass
 
 
-class AriaModel(LlavaModel):
+class AriaModel(LlavaModel, MultimodalGenerativeModelMixin):
     def __init__(self, config: AriaConfig):
         super().__init__(config)
         self.multi_modal_projector = AriaProjector(config)
@@ -899,18 +899,16 @@ class AriaModel(LlavaModel):
             inputs_embeds = self.get_input_embeddings()(input_ids)
 
         # 2. Merge text and images
-        if pixel_values is not None and inputs_embeds.shape[1] != 1:
-            image_features = self.get_image_features(
-                pixel_values=pixel_values,
-                pixel_mask=pixel_mask,
-                vision_feature_layer=self.config.vision_feature_layer,
-                return_dict=True,
-            ).pooler_output
-            image_features = image_features.to(inputs_embeds.device, inputs_embeds.dtype)
-            special_image_mask = self.get_placeholder_mask(
-                input_ids, inputs_embeds=inputs_embeds, image_features=image_features
-            )
-            inputs_embeds = inputs_embeds.masked_scatter(special_image_mask, image_features)
+        inputs_embeds = self._merge_multimodal_embeddings(
+            inputs_embeds,
+            input_ids=input_ids,
+            image_inputs={
+                "pixel_values": pixel_values,
+                "pixel_mask": pixel_mask,
+                "vision_feature_layer": self.config.vision_feature_layer,
+            },
+            mm_encoder_outputs=mm_encoder_outputs,
+        )
 
         outputs = self.language_model(
             attention_mask=attention_mask,
@@ -926,7 +924,9 @@ class AriaModel(LlavaModel):
             past_key_values=outputs.past_key_values if use_cache else None,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features if pixel_values is not None else None,
+            image_hidden_states=mm_encoder_outputs.get(
+                "image"
+            ),  # modified in-place in `_merge_multimodal_embeddings``
         )
 
 
