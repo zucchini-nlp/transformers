@@ -48,6 +48,9 @@ class RopeTest(unittest.TestCase):
         if is_nested:
             config = Gemma3TextConfig()
             config.layer_types = ["full_attention", "sliding_attention"]
+            # RoPE grouping is resolved per real layer index (see `get_rope_group_for_layer`), so `layer_types`
+            # must stay in sync with `num_hidden_layers` exactly like on any real model config.
+            config.num_hidden_layers = len(config.layer_types)
             config.rope_parameters = {
                 "full_attention": rope_params,
                 "sliding_attention": {"rope_type": "default", "rope_theta": 10000.0}

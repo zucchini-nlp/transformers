@@ -190,37 +190,14 @@ class DeepseekV4Config(PreTrainedConfig):
     mlp_bias: bool = False
     attention_dropout: float = 0.0
 
-    # V4's `rope_parameters` is keyed by *rope-type* labels (`main` / `compress`) — not
-    # by `layer_types`. The base `validate_rope` checks `keys ⊆ layer_types` and falls
-    # back to wrapping the whole dict as a single set of params when the subset check
-    # fails, which then warns about `main` / `compress` as unrecognized keys. Override
-    # to iterate the rope-type-keyed sub-dicts directly.
-    _rope_type_labels = ("main", "compress")
-
-    def validate_rope(self):
-        rope_parameters_dict = getattr(self, "rope_parameters", None) or {}
-        ignore_keys = self.ignore_keys_at_rope_validation
-        # The yarn / longrope / llama3 validators in
-        # :class:`RotaryEmbeddingConfigMixin` read `self.rope_parameters[<key>]`
-        # directly (e.g. `original_max_position_embeddings`). With V4's
-        # rope-type-keyed nesting, the top-level dict only has `main` / `compress`,
-        # so those reads fail. Temporarily point `self.rope_parameters` at the
-        # rope-type-specific sub-dict for the duration of the validation call,
-        # then restore it.
-        for rope_type_label in self._rope_type_labels:
-            rope_parameters = rope_parameters_dict.get(rope_type_label)
-            if not isinstance(rope_parameters, dict):
-                continue
-            rope_type = rope_parameters.get("rope_type", rope_parameters.get("type", "default"))
-            rope_parameters["rope_type"] = rope_type
-            validation_fn = getattr(self, f"_validate_{rope_type}_rope_parameters", None)
-            if validation_fn is None:
-                continue
-            self.rope_parameters = rope_parameters
-            try:
-                validation_fn(rope_parameters, ignore_keys=ignore_keys)
-            finally:
-                self.rope_parameters = rope_parameters_dict
+    # V4's `rope_parameters` is keyed by *rope-type* labels (`main` / `compress`) — not by `layer_types`:
+    # sliding-window layers use plain RoPE (`main`), while CSA and HCA layers share one yarn-scaled RoPE
+    # profile (`compress`). Overriding this hook tells the shared RoPE machinery (standardization and
+    # validation) to key `rope_parameters` by these two labels instead of the three `layer_types`. Which
+    # label each individual layer actually uses is assigned in `__post_init__` via `per_layer_config`'s
+    # `rope_group` — see `get_rope_group_for_layer` in `RotaryEmbeddingConfigMixin`.
+    def get_rope_group_labels(self):
+        return ("main", "compress")
 
     def validate_layer_type(self):
         """V4 narrows the global `ALLOWED_LAYER_TYPES` to the three attention-block
@@ -319,6 +296,16 @@ class DeepseekV4Config(PreTrainedConfig):
             if compress["rope_type"] == "yarn":
                 compress.setdefault("attention_factor", 1.0)
             self.rope_parameters = {"main": main, "compress": compress}
+
+        # Assign each layer's RoPE profile via `per_layer_config`, exactly like any other per-layer attribute
+        # (e.g. `head_dim`) — genuinely per layer index, not derived from a static `layer_types` mapping. Every
+        # layer needs an explicit `rope_group` here (unlike Gemma3/Gemma4) because V4's profile labels (`main` /
+        # `compress`) never coincide with its `layer_types` names, so the identity fallback in
+        # `get_rope_group_for_layer` doesn't apply.
+        self.per_layer_config = {
+            i: {"rope_group": "main" if layer_type == "sliding_attention" else "compress"}
+            for i, layer_type in enumerate(self.layer_types)
+        }
 
 
 __all__ = ["DeepseekV4Config"]

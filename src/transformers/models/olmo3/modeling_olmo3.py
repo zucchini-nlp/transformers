@@ -275,7 +275,11 @@ class Olmo3RotaryEmbedding(nn.Module):
         self.max_seq_len_cached = config.max_position_embeddings
         self.original_max_seq_len = config.max_position_embeddings
         self.config = config
-        self.layer_types = list(set(config.layer_types))
+        # Resolved per real layer index via `get_rope_group_for_layer` (backed by `per_layer_config`), not a
+        # static `layer_types` mapping — see that method's docstring. `layer_types` here means "the distinct
+        # RoPE-group labels actually in use", so buffers aren't duplicated across layers sharing one profile.
+        self.layer_idx_to_group = [config.get_rope_group_for_layer(i) for i in range(config.num_hidden_layers)]
+        self.layer_types = list(dict.fromkeys(self.layer_idx_to_group))
         self.rope_type = {}
         for layer_type in self.layer_types:
             rope_params = self.config.rope_parameters[layer_type]
@@ -327,9 +331,17 @@ class Olmo3RotaryEmbedding(nn.Module):
         )
         return inv_freq, attention_factor
 
+    def forward(self, x, position_ids, layer_idx=None, layer_type=None):
+        # Real decoder layers pass `layer_idx`, resolved to a RoPE group via `layer_idx_to_group` (backed by
+        # `per_layer_config`, arbitrary per real layer index). `layer_type` is also accepted directly as a
+        # RoPE-group label, for callers that already know which group they want.
+        if layer_type is None:
+            layer_type = self.layer_idx_to_group[layer_idx] if layer_idx is not None else None
+        return self._compute_cos_sin(x, position_ids, layer_type=layer_type)
+
     @torch.no_grad()
     @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
-    def forward(self, x, position_ids, layer_type=None):
+    def _compute_cos_sin(self, x, position_ids, layer_type=None):
         # diff -> returns cos/sin in fp32 without casting to `x.dtype`
         inv_freq = getattr(self, f"{layer_type}_inv_freq")
         attention_scaling = getattr(self, f"{layer_type}_attention_scaling")
@@ -439,9 +451,14 @@ class Olmo3Model(Olmo3PreTrainedModel):
             }
 
         hidden_states = inputs_embeds
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         for i, decoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
             hidden_states = decoder_layer(
@@ -449,7 +466,7 @@ class Olmo3Model(Olmo3PreTrainedModel):
                 attention_mask=causal_mask_mapping[self.config.layer_types[i]],
                 position_ids=position_ids,
                 past_key_values=past_key_values,
-                position_embeddings=position_embeddings[self.config.layer_types[i]],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 **kwargs,
             )
 

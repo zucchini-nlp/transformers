@@ -1542,7 +1542,11 @@ class Gemma3nRotaryEmbedding(nn.Module):
         self.max_seq_len_cached = config.max_position_embeddings
         self.original_max_seq_len = config.max_position_embeddings
         self.config = config
-        self.layer_types = list(set(config.layer_types))
+        # Resolved per real layer index via `get_rope_group_for_layer` (backed by `per_layer_config`), not a
+        # static `layer_types` mapping — see that method's docstring. `layer_types` here means "the distinct
+        # RoPE-group labels actually in use", so buffers aren't duplicated across layers sharing one profile.
+        self.layer_idx_to_group = [config.get_rope_group_for_layer(i) for i in range(config.num_hidden_layers)]
+        self.layer_types = list(dict.fromkeys(self.layer_idx_to_group))
         self.rope_type = {}
         for layer_type in self.layer_types:
             rope_params = self.config.rope_parameters[layer_type]
@@ -1594,9 +1598,17 @@ class Gemma3nRotaryEmbedding(nn.Module):
         )
         return inv_freq, attention_factor
 
+    def forward(self, x, position_ids, layer_idx=None, layer_type=None):
+        # Real decoder layers pass `layer_idx`, resolved to a RoPE group via `layer_idx_to_group` (backed by
+        # `per_layer_config`, arbitrary per real layer index). `layer_type` is also accepted directly as a
+        # RoPE-group label, for callers that already know which group they want.
+        if layer_type is None:
+            layer_type = self.layer_idx_to_group[layer_idx] if layer_idx is not None else None
+        return self._compute_cos_sin(x, position_ids, layer_type=layer_type)
+
     @torch.no_grad()
     @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
-    def forward(self, x, position_ids, layer_type=None):
+    def _compute_cos_sin(self, x, position_ids, layer_type=None):
         inv_freq = getattr(self, f"{layer_type}_inv_freq")
         attention_scaling = getattr(self, f"{layer_type}_attention_scaling")
 
@@ -1744,9 +1756,14 @@ class Gemma3nTextModel(Gemma3nPreTrainedModel):
             temp_hidden_states.append(current_hidden_state)
 
         hidden_states = torch.stack(temp_hidden_states, dim=0)  # [num_altup_inputs, batch, seq_len, hidden_size]
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # Initialize as empty dict - it will be filled in the right layers. We use a UserDict instead of built-in dict (it behaves
         # the same) for fsdp2 support (otherwise, `_apply_to_tensors` rebuilds every dict it recurses into, and `shared_kv_states`
@@ -1759,7 +1776,7 @@ class Gemma3nTextModel(Gemma3nPreTrainedModel):
 
             hidden_states = decoder_layer(
                 hidden_states,
-                position_embeddings[self.config.layer_types[i]],
+                position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 per_layer_input,
                 shared_kv_states=shared_kv_states,
                 attention_mask=causal_mask,

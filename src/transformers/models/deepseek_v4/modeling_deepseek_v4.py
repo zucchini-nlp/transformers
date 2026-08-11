@@ -83,9 +83,12 @@ class DeepseekV4RotaryEmbedding(nn.Module):
     (`sliding_attention` / `compressed_sparse_attention` /
     `heavily_compressed_attention`) from its rope-type labels (`main` /
     `compress`) — the latter live as keys in `config.rope_parameters` and
-    only differ in their `rope_theta` base. So this override replaces
-    Laguna's `set(config.layer_types)` iteration with `rope_parameters.keys()`
-    when building the per-type inv_freq buffers.
+    only differ in their `rope_theta` base. `DeepseekV4Config` assigns each
+    real layer index its RoPE-group label via `per_layer_config`'s
+    `rope_group` (see `get_rope_group_for_layer`), not a static mapping from
+    `layer_types` — so this override replaces Laguna's `set(config.layer_types)`
+    iteration with the distinct groups actually assigned across layers, when
+    building the per-group inv_freq buffers.
     """
 
     inv_freq: torch.Tensor  # fix linting for `register_buffer`
@@ -95,10 +98,8 @@ class DeepseekV4RotaryEmbedding(nn.Module):
         self.max_seq_len_cached = config.max_position_embeddings
         self.original_max_seq_len = config.max_position_embeddings
         self.config = config
-        # Only the nested per-rope-type sub-dicts are real layer types — the top-level
-        # `rope_type` key that ``convert_rope_params_to_dict`` may leave on
-        # ``config.rope_parameters`` is a flat-shape leftover, not a layer.
-        self.layer_types = [k for k, v in config.rope_parameters.items() if isinstance(v, dict)]
+        self.layer_idx_to_group = [config.get_rope_group_for_layer(i) for i in range(config.num_hidden_layers)]
+        self.layer_types = list(dict.fromkeys(self.layer_idx_to_group))
         self.rope_type = {}
         for layer_type in self.layer_types:
             rope_params = config.rope_parameters[layer_type]
@@ -148,9 +149,36 @@ class DeepseekV4RotaryEmbedding(nn.Module):
         )
         return inv_freq, attention_factor
 
+    def forward(self, x, position_ids, layer_idx=None, layer_type=None):
+        # Callers that are themselves one of `config.num_hidden_layers` decoder layers pass `layer_idx`, resolved
+        # to a RoPE group via `layer_idx_to_group` (backed by `per_layer_config`, arbitrary per real layer index,
+        # not tied to `layer_types`). The compressor / indexer sub-modules below aren't decoder layers themselves
+        # and always use the "compress" profile, so they pass the RoPE-group label directly via `layer_type`.
+        if layer_type is None:
+            layer_type = self.layer_idx_to_group[layer_idx] if layer_idx is not None else None
+        return self._v4_compute_cos_sin(x, position_ids, layer_type=layer_type)
+
     @torch.no_grad()
     @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
-    def forward(self, x, position_ids, layer_type=None):
+    def _compute_cos_sin(self, x, position_ids, layer_type=None):
+        inv_freq = getattr(self, f"{layer_type}_inv_freq")
+        attention_scaling = getattr(self, f"{layer_type}_attention_scaling")
+
+        inv_freq_expanded = inv_freq[None, :, None].float().expand(position_ids.shape[0], -1, 1).to(x.device)
+        position_ids_expanded = position_ids[:, None, :].float()
+
+        device_type = x.device.type if isinstance(x.device.type, str) and x.device.type != "mps" else "cpu"
+        with maybe_autocast(device_type=device_type, enabled=False):  # Force float32
+            freqs = (inv_freq_expanded.float() @ position_ids_expanded.float()).transpose(1, 2)
+            emb = torch.cat((freqs, freqs), dim=-1)
+            cos = emb.cos() * attention_scaling
+            sin = emb.sin() * attention_scaling
+
+        return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
+
+    @torch.no_grad()
+    @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
+    def _v4_compute_cos_sin(self, x, position_ids, layer_type=None):
         # Key difference vs Laguna's forward: no `torch.cat([freqs, freqs], dim=-1)`
         # duplication. V4's interleaved RoPE pairs consecutive channels, so we only need
         # `rope_head_dim // 2` unique θ entries — the `apply_rotary_pos_emb` helper does
@@ -772,9 +800,10 @@ class DeepseekV4Attention(nn.Module):
         self.config = config
         self.layer_idx = layer_idx
         self.layer_type = config.layer_types[layer_idx]
-        # Sliding-only layers use the "main" (plain θ=10000) rope; CSA/HCA layers
-        # share the same yarn-scaled "compress" rope as their compressor.
-        self.rope_layer_type = "main" if self.layer_type == "sliding_attention" else "compress"
+        # Sliding-only layers use the "main" (plain θ=10000) rope; CSA/HCA layers share the same yarn-scaled
+        # "compress" rope as their compressor. Resolved per real layer index via `per_layer_config`'s
+        # `rope_group` (arbitrary, not a static mapping from `layer_type`) — see `get_rope_group_for_layer`.
+        self.rope_layer_type = config.get_rope_group_for_layer(layer_idx)
         self.num_heads = config.num_attention_heads
         self.num_key_value_groups = config.num_attention_heads  # single KV head, broadcast to all
         self.head_dim = config.head_dim
@@ -1317,10 +1346,15 @@ class DeepseekV4Model(DeepseekV4PreTrainedModel):
                 position_ids=position_ids,
             )
         hidden_states = inputs_embeds.unsqueeze(2).expand(-1, -1, self.config.hc_mult, -1).contiguous()
-        position_embeddings = {
-            "main": self.rotary_emb(inputs_embeds, position_ids=position_ids, layer_type="main"),
-            "compress": self.rotary_emb(inputs_embeds, position_ids=position_ids, layer_type="compress"),
-        }
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
+        position_embeddings = {}
+        for layer_idx, group in enumerate(self.rotary_emb.layer_idx_to_group):
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(
+                    inputs_embeds, position_ids=position_ids, layer_idx=layer_idx
+                )
 
         for layer in self.layers:
             hidden_states = layer(

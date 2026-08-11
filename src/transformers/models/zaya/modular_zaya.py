@@ -604,10 +604,14 @@ class ZayaModel(LagunaModel):
 
         hidden_states = inputs_embeds
 
-        position_embeddings = {
-            layer_type: self.rotary_emb(hidden_states, position_ids, layer_type)
-            for layer_type in set(self.config.layer_types)
-        }
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
+        position_embeddings = {}
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # Keep the residual stream in fp32 to match the original ZAYA `residual_in_fp32` path.
         hidden_states = ((hidden_states + self.input_hidden_states_bias) * self.input_hidden_states_scale).to(
@@ -628,7 +632,7 @@ class ZayaModel(LagunaModel):
                     "conv": causal_mask_mapping.get("conv"),
                 },
                 past_key_values=past_key_values,
-                position_embeddings=position_embeddings[layer_type],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[idx]],
                 **kwargs,
             )
 

@@ -70,11 +70,20 @@ class DiffusionGemmaTextRotaryEmbedding(nn.Module):
         self.original_max_seq_len = config.max_position_embeddings
 
         self.config = config
-        self.layer_types = set(config.layer_types)
+        # Resolved per real layer index via `get_rope_group_for_layer` (backed by `per_layer_config`), not a
+        # static `layer_types` mapping — see that method's docstring. `layer_types` here means "the distinct
+        # RoPE-group labels actually in use", so buffers aren't duplicated across layers sharing one profile.
+        self.layer_idx_to_group = [config.get_rope_group_for_layer(i) for i in range(config.num_hidden_layers)]
+        self.layer_types = set(self.layer_idx_to_group)
         self.rope_init_fns: dict[str, Callable[..., tuple[torch.Tensor, float]]] = {}
         self.rope_type: dict[str, str] = {}
 
-        for layer_type in self.layer_types:
+        seen_groups = set()
+        for layer_idx, layer_type in enumerate(self.layer_idx_to_group):
+            if layer_type in seen_groups:
+                continue
+            seen_groups.add(layer_type)
+
             rope_params = self.config.rope_parameters[layer_type]
             if rope_params is None:
                 continue
@@ -87,9 +96,9 @@ class DiffusionGemmaTextRotaryEmbedding(nn.Module):
             self.rope_init_fns[layer_type] = rope_init_fn
             self.rope_type[layer_type] = rope_type
 
-            # `inv_freq` depends on the head dim, which varies by layer type, so initialise
-            # from a config resolved for this layer type rather than the global one.
-            rope_config = config.per_layer_config[layer_type]
+            # `inv_freq` depends on the head dim, which can vary per layer, so initialise from this group's
+            # representative layer's resolved config (`per_layer_config[layer_idx]`) rather than the global one.
+            rope_config = config.per_layer_config[layer_idx]
             curr_inv_freq, curr_attention_scaling = rope_init_fn(rope_config, device=device, layer_type=layer_type)
             self.register_buffer(f"{layer_type}_inv_freq", curr_inv_freq, persistent=False)
             self.register_buffer(f"{layer_type}_original_inv_freq", curr_inv_freq.clone(), persistent=False)
@@ -133,9 +142,17 @@ class DiffusionGemmaTextRotaryEmbedding(nn.Module):
         )
         return inv_freq, attention_factor
 
+    def forward(self, x, position_ids, layer_idx=None, layer_type=None):
+        # Real decoder layers pass `layer_idx`, resolved to a RoPE group via `layer_idx_to_group` (backed by
+        # `per_layer_config`, arbitrary per real layer index). `layer_type` is also accepted directly as a
+        # RoPE-group label, for callers that already know which group they want.
+        if layer_type is None:
+            layer_type = self.layer_idx_to_group[layer_idx] if layer_idx is not None else None
+        return self._compute_cos_sin(x, position_ids, layer_type=layer_type)
+
     @torch.no_grad()
     @dynamic_rope_update  # power user: used with advanced RoPE types (e.g. dynamic rope)
-    def forward(self, x, position_ids, layer_type=None):
+    def _compute_cos_sin(self, x, position_ids, layer_type=None):
         inv_freq = getattr(self, f"{layer_type}_inv_freq")
         attention_scaling = getattr(self, f"{layer_type}_attention_scaling")
 
@@ -969,15 +986,20 @@ class DiffusionGemmaEncoderTextModel(DiffusionGemmaPreTrainedModel):
 
         # embed positions
         hidden_states = inputs_embeds
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in self.unique_layer_types:
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # Not gradient-checkpointed, so each encoder layer writes its prefix KV into the shared cache exactly once
         for i, encoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
             hidden_states = encoder_layer(
                 hidden_states,
-                position_embeddings=position_embeddings[self.config.layer_types[i]],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 attention_mask=causal_mask_mapping[self.config.layer_types[i]],
                 position_ids=position_ids,
                 past_key_values=past_key_values,
@@ -1312,14 +1334,19 @@ class DiffusionGemmaDecoderModel(DiffusionGemmaPreTrainedModel):
 
         # Embed positions
         hidden_states = inputs_embeds
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in self.unique_layer_types:
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, decoder_position_ids, layer_type)
+        for i in range(self.text_config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, decoder_position_ids, layer_idx=i)
 
         for i, decoder_layer in enumerate(self.layers[: self.text_config.num_hidden_layers]):
             hidden_states = decoder_layer(
                 hidden_states,
-                position_embeddings=position_embeddings[self.text_config.layer_types[i]],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 attention_mask=mask_mapping[self.text_config.layer_types[i]],
                 position_ids=decoder_position_ids,
                 past_key_values=past_key_values,

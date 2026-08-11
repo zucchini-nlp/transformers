@@ -514,15 +514,20 @@ class ModernBertModel(ModernBertPreTrainedModel):
                 "sliding_attention": create_bidirectional_sliding_window_mask(**mask_kwargs),
             }
 
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
                 hidden_states,
                 attention_mask=attention_mask_mapping[encoder_layer.attention_type],
-                position_embeddings=position_embeddings[encoder_layer.attention_type],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[encoder_layer.layer_idx]],
                 **kwargs,
             )
 

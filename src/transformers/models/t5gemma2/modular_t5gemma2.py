@@ -613,9 +613,14 @@ class T5Gemma2TextEncoder(T5Gemma2PreTrainedModel):
         hidden_states = inputs_embeds
 
         # global and local position embeddings
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # dropout
         hidden_states = self.dropout(hidden_states)
@@ -623,7 +628,7 @@ class T5Gemma2TextEncoder(T5Gemma2PreTrainedModel):
         for i, layer_module in enumerate(self.layers[: self.config.num_hidden_layers]):
             hidden_states = layer_module(
                 hidden_states,
-                position_embeddings[self.config.layer_types[i]],
+                position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 self_attn_mask_mapping[self.config.layer_types[i]],
                 position_ids,
                 **kwargs,
@@ -842,9 +847,14 @@ class T5Gemma2Decoder(T5Gemma2PreTrainedModel):
         hidden_states = inputs_embeds
 
         # global and local position embeddings
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # dropout
         hidden_states = self.dropout(hidden_states)
@@ -852,7 +862,7 @@ class T5Gemma2Decoder(T5Gemma2PreTrainedModel):
         for i, layer_module in enumerate(self.layers[: self.config.num_hidden_layers]):
             hidden_states = layer_module(
                 hidden_states,
-                position_embeddings[self.config.layer_types[i]],
+                position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 merged_attn_mask_mapping[self.config.layer_types[i]],
                 position_ids,
                 past_key_values,

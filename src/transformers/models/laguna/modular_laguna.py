@@ -426,15 +426,20 @@ class LagunaModel(LlamaModel):
                 causal_mask_mapping[layer_type] = mask_creation_functions[layer_type]()
 
         hidden_states = inputs_embeds
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in set(self.config.layer_types):
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         for i, decoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
             hidden_states = decoder_layer(
                 hidden_states,
                 attention_mask=causal_mask_mapping[self.config.layer_types[i]],
-                position_embeddings=position_embeddings[self.config.layer_types[i]],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 position_ids=position_ids,
                 past_key_values=past_key_values,
                 **kwargs,

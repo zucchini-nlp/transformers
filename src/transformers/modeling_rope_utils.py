@@ -130,6 +130,25 @@ def dynamic_rope_update(rope_forward):
     return wrapper
 
 
+def _resolve_rope_layer_config(config: "PreTrainedConfig", layer_type: str | None) -> "PreTrainedConfig":
+    """
+    Resolves the config to read RoPE-relevant attributes (e.g. `head_dim`) from, for a given RoPE layer type.
+
+    Models with a single RoPE config across all layers pass `layer_type=None` and get `config` back unchanged.
+    Models with per-layer-type RoPE (e.g. Gemma3, Gemma4) key `rope_parameters` by `config.layer_types`, and may
+    also need other attributes (like `head_dim`) resolved per layer type via `config.per_layer_config`.
+
+    Some models key `rope_parameters` by a RoPE-group label that is *not* a member of `config.layer_types` (e.g.
+    DeepSeek V4's `"main"` / `"compress"` groups, where several `layer_types` share one RoPE profile — see
+    `_rope_type_labels`). For those, `layer_type` isn't a valid `per_layer_config` key, so we fall back to the
+    flat config: it already carries the right RoPE hyperparameters for that group, and such models don't need
+    other attributes resolved per-group.
+    """
+    if layer_type is not None and layer_type in (getattr(config, "layer_types", None) or ()):
+        return config.per_layer_config[layer_type]
+    return config
+
+
 def _compute_linear_scaling_rope_parameters(
     config: Optional["PreTrainedConfig"] = None,
     device: Optional["torch.device"] = None,
@@ -162,11 +181,7 @@ def _compute_linear_scaling_rope_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin (unused in this type of RoPE).
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -226,11 +241,7 @@ def _compute_proportional_rope_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin (unused in this type of RoPE).
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -308,11 +319,7 @@ def _compute_dynamic_ntk_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin (unused in this type of RoPE).
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -399,11 +406,7 @@ def _compute_yarn_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin.
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -532,11 +535,7 @@ def _compute_longrope_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin.
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -621,11 +620,7 @@ def _compute_llama3_parameters(
         Tuple of (`torch.Tensor`, `float`), containing the inverse frequencies for the RoPE embeddings and the
         post-processing scaling factor applied to the computed cos/sin.
     """
-    # Sloppy workaround for per-layer-config in gemma4 family which raises error for other models (DS4)
-    try:
-        config = config.per_layer_config[layer_type] if layer_type is not None else config
-    except ValueError:
-        pass
+    config = _resolve_rope_layer_config(config, layer_type)
 
     # For backward compatibility standardize the `rope_parameters_dict` if it uses old format
     config.standardize_rope_params()
@@ -762,6 +757,46 @@ class RotaryEmbeddingConfigMixin:
         self.standardize_rope_params()
         return kwargs
 
+    def get_rope_group_labels(self: "PreTrainedConfig") -> list[str] | None:
+        """
+        Returns the labels used to key `rope_parameters` for per-group RoPE (one entry per distinct RoPE profile:
+        a `(rope_type, rope_theta, ...)` combination shared by one or more layers).
+
+        Defaults to `config.layer_types` — i.e. one RoPE profile per attention layer type, which is what most
+        multi-layer-type models (e.g. Gemma3, Gemma4) want. Models where several layer types share one RoPE
+        profile can override this to key `rope_parameters` by a different, smaller set of labels instead. See
+        also `get_rope_group_for_layer`, which resolves which of these labels a given layer actually uses. For
+        example DeepSeek V4 has three `layer_types` (`sliding_attention` / `compressed_sparse_attention` /
+        `heavily_compressed_attention`) but only two RoPE profiles, so it returns `("main", "compress")` here.
+        """
+        return getattr(self, "layer_types", None)
+
+    def get_rope_group_for_layer(self: "PreTrainedConfig", layer_idx: int) -> str | None:
+        """
+        Returns the RoPE-group label (one of `get_rope_group_labels()`) that layer `layer_idx` uses to look up its
+        precomputed `(cos, sin)` in the RoPE-group-keyed dict built by the model's rotary embedding module.
+
+        This is resolved per real layer index via `config.per_layer_config[layer_idx].rope_group` — exactly like
+        any other per-layer attribute (e.g. `head_dim`) — rather than via a static mapping from `layer_types`.
+        That matters because the assignment of layers to RoPE profiles need not follow `layer_types` at all: an
+        arbitrary, non-contiguous subset of layer indices can share one profile (or every layer can use a
+        distinct one) simply by setting `rope_group` in `per_layer_config` for the layers that need it — no
+        two layers are forced to duplicate a profile just because they happen to share an attention pattern, and
+        none are forced to differ just because they don't.
+
+        Defaults to `config.layer_types[layer_idx]` (one RoPE profile per attention layer type) when no per-layer
+        `rope_group` override is present, for backward compatibility with models that key `rope_parameters` by
+        `layer_types` directly (e.g. Gemma3, Gemma4). Models whose RoPE-profile labels don't coincide with any
+        `layer_types` entry (e.g. DeepSeek V4's `main` / `compress`) must set `rope_group` explicitly for every
+        layer in `per_layer_config`, since the default only ever falls back to the real layer type.
+        """
+        layer_config = self.per_layer_config[layer_idx]
+        rope_group = getattr(layer_config, "rope_group", None)
+        if rope_group is not None:
+            return rope_group
+        layer_types = getattr(self, "layer_types", None)
+        return layer_types[layer_idx] if layer_types is not None else None
+
     def standardize_rope_params(self):
         """
         Helper to standardize the config's rope params field by ensuring the params are defined for each
@@ -772,8 +807,7 @@ class RotaryEmbeddingConfigMixin:
         partial_rotary_factor = getattr(self, "partial_rotary_factor", None)
         rope_parameters = getattr(self, "rope_parameters", None) or {}
 
-        # Deepseekv4 has `layer_types` which are different from `_rope_type_labels`
-        layer_types = getattr(self, "_rope_type_labels", getattr(self, "layer_types", None))
+        layer_types = self.get_rope_group_labels()
 
         # Case 0: no RoPE params defined
         if not (rope_parameters or rope_theta):
@@ -822,9 +856,8 @@ class RotaryEmbeddingConfigMixin:
         if not rope_parameters_dict:
             return
 
-        if getattr(self, "layer_types", None) is not None and set(rope_parameters_dict.keys()).issubset(
-            self.layer_types
-        ):
+        layer_types = self.get_rope_group_labels()
+        if layer_types is not None and set(rope_parameters_dict.keys()).issubset(layer_types):
             pass
         else:
             rope_parameters_dict = {"full_attention": rope_parameters_dict}

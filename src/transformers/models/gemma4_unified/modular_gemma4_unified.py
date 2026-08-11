@@ -718,9 +718,14 @@ class Gemma4UnifiedTextModel(Gemma4UnifiedPreTrainedModel, LlamaModel):
 
         # embed positions
         hidden_states = inputs_embeds
+        # Compute (cos, sin) once per distinct RoPE group actually assigned to a layer (arbitrary, resolved per
+        # real layer index via `get_rope_group_for_layer` / `per_layer_config` — not derived from `layer_types`),
+        # so layers sharing one profile never trigger duplicate computation.
         position_embeddings = {}
-        for layer_type in self.unique_layer_types:
-            position_embeddings[layer_type] = self.rotary_emb(hidden_states, position_ids, layer_type)
+        for i in range(self.config.num_hidden_layers):
+            group = self.rotary_emb.layer_idx_to_group[i]
+            if group not in position_embeddings:
+                position_embeddings[group] = self.rotary_emb(hidden_states, position_ids, layer_idx=i)
 
         # Initialize as empty dict, or reuse past shared states. We use a UserDict instead of built-in dict (it behaves
         # the same) for fsdp2 support (otherwise, `_apply_to_tensors` rebuilds every dict it recurses into, and `shared_kv_states`
@@ -732,7 +737,7 @@ class Gemma4UnifiedTextModel(Gemma4UnifiedPreTrainedModel, LlamaModel):
             hidden_states = decoder_layer(
                 hidden_states,
                 shared_kv_states=shared_kv_states,
-                position_embeddings=position_embeddings[self.config.layer_types[i]],
+                position_embeddings=position_embeddings[self.rotary_emb.layer_idx_to_group[i]],
                 attention_mask=causal_mask_mapping[self.config.layer_types[i]],
                 position_ids=position_ids,
                 past_key_values=past_key_values,

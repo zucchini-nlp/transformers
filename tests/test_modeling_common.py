@@ -5937,7 +5937,11 @@ class ModelTesterMixin(ExportTesterMixin):
 
         kwargs = {}
         if is_nested_rope:
-            kwargs = {"layer_type": list(text_config.rope_parameters.keys())[0]}
+            # Pick a RoPE-group label actually assigned to a real layer (layer 0) rather than blindly grabbing the
+            # first `rope_parameters` key — some declared groups may not be used by any layer in this particular
+            # config (e.g. DeepSeek V4's tiny test config has no `sliding_attention` layer, so no `main` buffer is
+            # ever built for it) and would raise if used to look up a `RotaryEmbedding` buffer.
+            kwargs = {"layer_type": text_config.get_rope_group_for_layer(0)}
 
         # Inputs
         x = torch.randn(
@@ -6005,7 +6009,9 @@ class ModelTesterMixin(ExportTesterMixin):
         if not is_nested_rope:
             self.assertTrue((ntk_scaling_rope.inv_freq <= original_rope.inv_freq).all())
         else:
-            layer_types = getattr(text_config, "_rope_type_labels", getattr(text_config, "layer_types"))
+            # Only check groups actually assigned to a real layer — `get_rope_group_labels()` lists all *declared*
+            # profiles, but some may not be used by any layer in this config (e.g. no buffer is built for them).
+            layer_types = {text_config.get_rope_group_for_layer(i) for i in range(text_config.num_hidden_layers)}
             for layer_type in layer_types:
                 self.assertTrue(
                     (
@@ -6174,8 +6180,8 @@ def _set_config_rope_params(config: PreTrainedConfig, rope_params: dict) -> bool
     config.rope_parameters = getattr(config, "rope_parameters", {}) or {}
 
     # Nested rope parameters per layer type, not all models with `layer-types` use different RoPE thus we check `issubset`
-    # Deepseekv4 has `layer_types` which are different from `_rope_type_labels`
-    layer_types = getattr(config, "_rope_type_labels", getattr(config, "layer_types", None))
+    # Deepseekv4 keys `rope_parameters` by `get_rope_group_labels()`, not `layer_types` directly.
+    layer_types = config.get_rope_group_labels()
     if layer_types is not None and set(config.rope_parameters.keys()).issubset(layer_types):
         for layer_type in layer_types:
             # Don't update gemma4 proportional rope, it is quite special and return `dim // 4` freqs
