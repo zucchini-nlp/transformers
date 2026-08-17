@@ -27,7 +27,7 @@ import pathlib
 from typing import TYPE_CHECKING, Any, Optional
 
 import torch
-from torchvision.io import read_image
+from torchcodec.decoders import decode_image
 from torchvision.transforms.v2 import functional as tvF
 
 from ...image_processing_backends import TorchvisionBackend

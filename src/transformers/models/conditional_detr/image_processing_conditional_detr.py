@@ -24,7 +24,7 @@ from typing import Any, Optional
 import numpy as np
 import torch
 from torch import nn
-from torchvision.io import read_image
+from torchcodec.decoders import decode_image
 from torchvision.transforms.v2 import functional as tvF
 
 from ...image_processing_backends import TorchvisionBackend

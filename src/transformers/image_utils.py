@@ -28,6 +28,7 @@ from .utils import (
     is_torch_available,
     is_torch_tensor,
     is_torchvision_available,
+    is_torchcodec_available,
     is_vision_available,
     logging,
     requires_backends,
@@ -45,13 +46,17 @@ from .utils.import_utils import requires
 
 
 if is_vision_available():
+    # if pillow is availabe, load the pillow imports
     import PIL.Image
     import PIL.ImageOps
 
     PILImageResampling = PIL.Image.Resampling
 
+if is_torchcodec_available():
+    # if torchcodec is avaialbe, then load the torchcodec imports
+    from torchcodec.decoders import decode_image
+
 if is_torchvision_available():
-    from torchvision.io import ImageReadMode, decode_image
     from torchvision.transforms import InterpolationMode
     from torchvision.transforms.functional import pil_to_tensor
 
@@ -535,9 +540,9 @@ def load_image_as_tensor(
         if image.startswith("http://") or image.startswith("https://"):
             raw = httpx.get(image, timeout=timeout, follow_redirects=True).content
             buf = torch.frombuffer(bytearray(raw), dtype=torch.uint8)
-            return decode_image(buf, mode=ImageReadMode.RGB)
+            return decode_image(buf, mode="RGB")
         elif os.path.isfile(image):
-            return decode_image(image, mode=ImageReadMode.RGB)
+            return decode_image(image, mode="RGB")
         else:
             if image.startswith("data:image/"):
                 image = image.split(",")[1]
@@ -548,7 +553,7 @@ def load_image_as_tensor(
                     f"Incorrect image source. Must be a valid URL starting with `http://` or `https://`, a valid path to an image file, or a base64 encoded string. Got {image}. Failed with {e}"
                 )
             buf = torch.frombuffer(bytearray(raw), dtype=torch.uint8)
-            return decode_image(buf, mode=ImageReadMode.RGB)
+            return decode_image(buf, mode="RGB")
     elif isinstance(image, PIL.Image.Image):
         image = PIL.ImageOps.exif_transpose(image)
         return pil_to_tensor(image.convert("RGB"))
