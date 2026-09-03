@@ -399,7 +399,7 @@ class CohereCompassVisionRotaryEmbedding(nn.Module):
 class CohereCompassPreTrainedModel(PreTrainedModel):
     config: CohereCompassConfig
     base_model_prefix = "model"
-    input_modalities = ("image", "text")
+    input_modalities = ("image", "video", "text")
     supports_gradient_checkpointing = True
     _no_split_modules = [
         "CohereCompassDecoderLayer",
@@ -820,7 +820,7 @@ class CohereCompassVisionBlock(GradientCheckpointingLayer):
 @auto_docstring
 class CohereCompassVisionModel(CohereCompassPreTrainedModel):
     config: CohereCompassVisionConfig
-    input_modalities = ("image",)
+    input_modalities = ("image", "video")
     _can_record_outputs = {
         "hidden_states": CohereCompassVisionBlock,
         "attentions": CohereCompassVisionAttention,

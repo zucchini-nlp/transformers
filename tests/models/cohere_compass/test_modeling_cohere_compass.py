@@ -178,8 +178,10 @@ class CohereCompassModelTester(VLMModelTester):
         kwargs.setdefault("image_size", 32)
         kwargs.setdefault("patch_size", 16)
         kwargs.setdefault("num_image_tokens", 1)
+        kwargs.setdefault("num_video_tokens", 1)  # note: it is value per frame
         kwargs.setdefault("hidden_act", "silu")
         kwargs.setdefault("depth", 2)
+        kwargs.setdefault("seq_length", 10)  # accomodate special vision start tokens
         kwargs.setdefault("num_heads", 4)
         kwargs.setdefault("spatial_merge_size", 2)
         kwargs.setdefault("temporal_patch_size", 2)
@@ -198,11 +200,12 @@ class CohereCompassModelTester(VLMModelTester):
         )
         super().__init__(parent, **kwargs)
         self.out_hidden_size = self.hidden_size
+        if not self.num_frames % self.temporal_patch_size == 0:
+            raise ValueError("Adjust test values: `num_frames` must be divisible by `temporal_patch_size`")
 
     @property
     def _special_token_ids(self):
         return super()._special_token_ids | {
-            self.video_token_id,
             self.vision_start_token_id,
             self.vision_end_token_id,
         }
@@ -216,19 +219,40 @@ class CohereCompassModelTester(VLMModelTester):
             ]
         )
 
+    def create_pixel_values_videos(self):
+        patches_per_image = (self.image_size // self.patch_size) ** 2
+        return floats_tensor(
+            [
+                self.batch_size * patches_per_image * (self.num_frames // self.temporal_patch_size),
+                self.num_channels * (self.patch_size**2) * self.temporal_patch_size,
+            ]
+        )
+
     def place_image_tokens(self, input_ids, config):
         input_ids = input_ids.clone()
         for token_id in self._special_token_ids:
             input_ids[input_ids == token_id] = self.pad_token_id
         input_ids[:, 0] = self.vision_start_token_id
-        input_ids[:, 1] = self.image_token_id
+        input_ids[:, 1 : self.num_image_tokens + 1] = self.image_token_id
+        return input_ids
+
+    def place_video_tokens(self, input_ids, config):
+        for frame_id in range(self.num_frames // self.temporal_patch_size):
+            past_frame_len = frame_id * (self.num_video_tokens + 1)  # add one for vision start token
+            past_occupied_pos = self.num_image_tokens + past_frame_len  # we allocated images and N frames already
+            input_ids[:, past_occupied_pos + 1] = self.vision_start_token_id
+            input_ids[:, past_occupied_pos + 2 : past_occupied_pos + 2 + self.num_video_tokens] = self.video_token_id
         return input_ids
 
     def get_additional_inputs(self, config, input_ids, modality_inputs):
         mm_token_type_ids = torch.zeros_like(input_ids)
         mm_token_type_ids[input_ids == self.image_token_id] = 1
+        mm_token_type_ids[input_ids == self.video_token_id] = 2
         return {
             "image_grid_thw": torch.tensor([[1, 2, 2]] * self.batch_size, device=torch_device),
+            "video_grid_thw": torch.tensor(
+                [[self.num_frames // self.temporal_patch_size, 2, 2]] * self.batch_size, device=torch_device
+            ),
             "mm_token_type_ids": mm_token_type_ids,
         }
 
@@ -299,7 +323,9 @@ class CohereCompassModelTest(VLMModelTest, unittest.TestCase):
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
         config, inputs_dict = super().prepare_config_and_inputs_for_generate(batch_size=batch_size)
         patches_per_image = (self.model_tester.image_size // self.model_tester.patch_size) ** 2
+        videos_per_sample = self.model_tester.num_frames * batch_size * patches_per_image
         inputs_dict["pixel_values"] = self.model_tester.create_pixel_values()[: batch_size * patches_per_image]
+        inputs_dict["pixel_values_videos"] = self.model_tester.create_pixel_values_videos()[:videos_per_sample]
         return config, inputs_dict
 
     @unittest.skip("CohereCompass does not support video modeling.")

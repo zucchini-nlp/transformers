@@ -47,6 +47,10 @@ class VLMModelTester(MultiModalModelTester):
             + kwargs.get(
                 "num_image_tokens",
                 (kwargs.get("image_size", 8) // kwargs.get("patch_size", 4)) ** 2,
+            )
+            + kwargs.get(
+                "num_video_tokens",
+                kwargs.get("num_frames", 4) * (kwargs.get("image_size", 8) // kwargs.get("patch_size", 4)) ** 2,
             ),
         )
         kwargs.setdefault("pad_token_id", 0)
@@ -61,16 +65,21 @@ class VLMModelTester(MultiModalModelTester):
         kwargs.setdefault("num_labels", 3)
         kwargs.setdefault("num_choices", 4)
         kwargs.setdefault("image_token_id", 3)
+        kwargs.setdefault("image_token_id", 4)
         kwargs.setdefault("is_decoder", False)
         kwargs.setdefault("image_size", 8)
         kwargs.setdefault("patch_size", 4)
         kwargs.setdefault("num_channels", 3)
+        kwargs.setdefault("num_frames", 4)
         kwargs.setdefault("projection_dim", 32)
         kwargs.setdefault("projector_hidden_act", "gelu")
         kwargs.setdefault("vision_feature_select_strategy", "default")
         kwargs.setdefault("vision_feature_layer", -1)
         kwargs.setdefault("tie_word_embeddings", False)
         kwargs.setdefault("num_image_tokens", (kwargs["image_size"] // kwargs["patch_size"]) ** 2)
+        kwargs.setdefault(
+            "num_video_tokens", (kwargs["image_size"] // kwargs["patch_size"]) ** 2 * kwargs["num_frames"]
+        )
 
         super().__init__(parent, **kwargs)
 
@@ -84,6 +93,12 @@ class VLMModelTester(MultiModalModelTester):
         # Override to 5D for patch-based models
         return floats_tensor([self.batch_size, self.num_channels, self.image_size, self.image_size], scale=1.0)
 
+    def create_pixel_values_videos(self):
+        # Override for patch-based models
+        return floats_tensor(
+            [self.batch_size, self.num_frames, self.num_channels, self.image_size, self.image_size], scale=1.0
+        )
+
     def place_image_tokens(self, input_ids, config):
         # Override if the image tokens shouldn't be placed at the start of the test sequence
         image_token_id = getattr(config, "image_token_id", self.image_token_id)
@@ -94,19 +109,37 @@ class VLMModelTester(MultiModalModelTester):
         input_ids[:, : self.num_image_tokens] = image_token_id
         return input_ids
 
+    def place_video_tokens(self, input_ids, config):
+        # Override if the video tokens shouldn't be placed at the start of the test sequence
+        video_token_id = getattr(config, "video_token_id", self.video_token_id)
+        # Clear any accidental video tokens first
+        input_ids = input_ids.clone()
+        input_ids[input_ids == video_token_id] = self.bos_token_id
+        # Place video tokens after image
+        input_ids[:, self.num_image_tokens : self.num_image_tokens + self.num_video_tokens] = video_token_id
+        return input_ids
+
     # -- Hooks consumed by the shared base ---------------------------------------------------
 
     @property
     def _special_token_ids(self):
-        return super()._special_token_ids | {self.image_token_id}
+        special_tokens = super()._special_token_ids | {self.image_token_id}
+        if "video" in self.base_model_class.input_modalities:
+            special_tokens |= {self.video_token_id}
+        return special_tokens
 
     def _build_modality_sub_configs(self):
         return {"vision_config": self.get_vision_config()}
 
     def _prepare_modality_inputs(self, input_ids, config):
-        pixel_values = self.create_pixel_values()
+        data = {}
+        data["pixel_values"] = self.create_pixel_values()
         input_ids = self.place_image_tokens(input_ids, config)
-        return input_ids, {"pixel_values": pixel_values}
+
+        if "video" in self.base_model_class.input_modalities:
+            data["pixel_values_videos"] = self.create_pixel_values_videos()
+            input_ids = self.place_video_tokens(input_ids, config)
+        return input_ids, data
 
     # -- Vision sub-config construction ------------------------------------------------------
 
