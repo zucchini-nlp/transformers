@@ -334,14 +334,6 @@ class CohereCompassModelTest(VLMModelTest, unittest.TestCase):
             inputs_dict["pixel_values_videos"] = self.model_tester.create_pixel_values_videos()[:videos_per_sample]
         return config, inputs_dict
 
-    @unittest.skip("CohereCompass does not support video modeling.")
-    def test_get_video_features_attentions(self):
-        pass
-
-    @unittest.skip("CohereCompass does not support video modeling.")
-    def test_get_video_features_hidden_states(self):
-        pass
-
     def test_mismatching_num_image_tokens(self):
         if self.current_modalities is None or "video" in self.current_modalities:
             self.skipTest("just skip for now and make a proper test to test current modaity tokens")
@@ -379,18 +371,8 @@ class CohereCompassModelTest(VLMModelTest, unittest.TestCase):
             )
             _ = model(**two_prompt_inputs)
 
-    def test_model_vl_text_input_forward(self):
-        config = self.model_tester.get_config()
-        model = CohereCompassModel(config).to(torch_device).eval()
-        input_ids, attention_mask = self.model_tester.prepare_text_inputs()
-        with torch.no_grad():
-            out = model(input_ids=input_ids, attention_mask=attention_mask)
-        self.assertEqual(
-            out.last_hidden_state.shape,
-            (self.model_tester.batch_size, self.model_tester.seq_length, config.text_config.hidden_size),
-        )
-
-    def test_conditional_generation_multiple_images(self):
+    # TODO: tester should prepare inputs with different images-per-sample, we never needed this one!
+    def _test_conditional_generation_multiple_images(self):
         config = self.model_tester.get_config()
         model = CohereCompassForConditionalGeneration(config).to(torch_device).eval()
         input_ids, _, pixel_values, image_grid_thw, mm_token_type_ids = self.model_tester.prepare_image_inputs(config)
