@@ -13,11 +13,12 @@
 # limitations under the License.
 
 import copy
-import pytest
 import functools
 import inspect
 import unittest
 from inspect import signature
+
+import pytest
 
 from .multimodal_tester import MultiModalModelTest, MultiModalModelTester, ids_tensor
 from .test_modeling_common import (
@@ -195,8 +196,6 @@ class VLMModelTest(MultiModalModelTest):
     - `pipeline_model_mapping`: Override if not using default from model_tester
     """
 
-    # DON'T set `current_modalities` in models! It's auti-set when initializing a subclass
-    current_modalities = None
     MODALITY_COMBINATIONS = [("image",), ("video",), ("image", "video")]
 
     # All `test_xxx` NOT listed here is assumed to depend on
@@ -262,6 +261,17 @@ class VLMModelTest(MultiModalModelTest):
 
         for name in test_names:
             original = getattr(cls, name)
+            required = getattr(original, "required_modalities", None)
+
+            if required is not None:
+
+                @functools.wraps(original)
+                def wrapper(self, *args, __orig=original, __required=required, **kw):
+                    self.current_modalities = __required
+                    return __orig(self, *args, **kw)
+
+                setattr(cls, name, wrapper)
+                continue
 
             for combo in combos:
                 new_name = f"{name}_{'_'.join(combo)}"
@@ -270,6 +280,7 @@ class VLMModelTest(MultiModalModelTest):
                 def wrapper(self, *args, __orig=original, __combo=combo, **kw):
                     self.current_modalities = __combo
                     return __orig(self, *args, **kw)
+
                 setattr(cls, new_name, wrapper)
 
                 for modality in combo:

@@ -712,6 +712,20 @@ def sdpa_kernel(enable_flash, enable_math, enable_mem_efficient):
     return torch.nn.attention.sdpa_kernel(backends)
 
 
+def requires_modality(*modalities):
+    """
+    Declares that a test only makes sense when `modalities` are present in
+    `self.current_modalities` in case if `current_modalities` is auto-defined
+    as in VLMTester. For simple tests this is a no-op at this moment
+    """
+
+    def decorator(fn):
+        fn.required_modalities = frozenset(modalities)
+        return fn
+
+    return decorator
+
+
 @require_torch
 class ModelTesterMixin(ExportTesterMixin):
     model_tester = None
@@ -727,6 +741,9 @@ class ModelTesterMixin(ExportTesterMixin):
     has_attentions = True
     _is_composite = False
     model_split_percents = [0.5, 0.7, 0.9]
+
+    # DON'T set `current_modalities` in models! It's auti-set when initializing a MultiModal subclass
+    current_modalities = None
 
     # Note: for all mixins that utilize the Hub in some way, we should ensure that
     # they contain the `hub_retry` decorator in case of failures.
@@ -5127,9 +5144,6 @@ class ModelTesterMixin(ExportTesterMixin):
 
     @parameterized.expand([True, False, None])
     def test_get_text_features_output(self, return_dict: bool | None):
-        if self.current_modalities is not None:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         for model_class in self.all_model_classes:
             if not hasattr(model_class, "get_text_features"):
                 continue
@@ -5170,9 +5184,6 @@ class ModelTesterMixin(ExportTesterMixin):
                 self.assertIsInstance(outputs, tuple, "get_text_features() must return a tuple if return_dict=False")
 
     def test_get_text_features_hidden_states(self):
-        if self.current_modalities is not None:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_hidden_states_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.to(torch_device)
@@ -5210,9 +5221,6 @@ class ModelTesterMixin(ExportTesterMixin):
             check_hidden_states_output(inputs_dict, config, model_class)
 
     def test_get_text_features_attentions(self):
-        if self.current_modalities is not None:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_attentions_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.set_attn_implementation("eager")
@@ -5254,10 +5262,8 @@ class ModelTesterMixin(ExportTesterMixin):
             check_attentions_output(inputs_dict, config, model_class)
 
     @parameterized.expand([True, False, None])
+    @requires_modality("image")
     def test_get_image_features_output(self, return_dict: bool | None):
-        if self.current_modalities is None or "video" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         for model_class in self.all_model_classes:
             if not hasattr(model_class, "get_image_features"):
                 continue
@@ -5348,10 +5354,8 @@ class ModelTesterMixin(ExportTesterMixin):
             else:
                 self.assertIsInstance(outputs, tuple, "get_image_features() must return a tuple if return_dict=False")
 
+    @requires_modality("image")
     def test_get_image_features_hidden_states(self):
-        if self.current_modalities is None or "video" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_hidden_states_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.to(torch_device)
@@ -5391,10 +5395,8 @@ class ModelTesterMixin(ExportTesterMixin):
             set_value_subconfigs(config, "output_hidden_states", True)
             check_hidden_states_output(inputs_dict, config, model_class)
 
+    @requires_modality("image")
     def test_get_image_features_attentions(self):
-        if self.current_modalities is None or "video" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_attentions_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.set_attn_implementation("eager")
@@ -5581,10 +5583,8 @@ class ModelTesterMixin(ExportTesterMixin):
             check_attentions_output(inputs_dict, config, model_class)
 
     @parameterized.expand([True, False, None])
+    @requires_modality("video")
     def test_get_video_features_output(self, return_dict: bool | None):
-        if self.current_modalities is None or "image" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         for model_class in self.all_model_classes:
             if not hasattr(model_class, "get_video_features"):
                 continue
@@ -5656,10 +5656,8 @@ class ModelTesterMixin(ExportTesterMixin):
             else:
                 self.assertIsInstance(outputs, tuple, "get_video_features() must return a tuple if return_dict=False")
 
+    @requires_modality("video")
     def test_get_video_features_hidden_states(self):
-        if self.current_modalities is None or "image" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_hidden_states_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.to(torch_device)
@@ -5696,10 +5694,8 @@ class ModelTesterMixin(ExportTesterMixin):
 
             check_hidden_states_output(inputs_dict, config, model_class)
 
+    @requires_modality("video")
     def test_get_video_features_attentions(self):
-        if self.current_modalities is None or "image" in self.current_modalities:
-            self.skipTest("just skip for now and make a proper test to test current modaity")
-
         def check_attentions_output(inputs_dict, config, model_class):
             model = model_class(copy.deepcopy(config))
             model.set_attn_implementation("eager")
