@@ -107,7 +107,7 @@ class MultiModalModelTester:
         """Default causal (lower-triangular) attention mask. Override for bidirectional models like Gemma3."""
         return torch.tril(torch.ones_like(input_ids).to(torch_device))
 
-    def get_additional_inputs(self, config, input_ids, modality_inputs):
+    def get_additional_inputs(self, config, input_ids, modality_inputs, modality: str):
         """Model-specific extra inputs (e.g. LlavaNext `image_sizes`, Qwen3VL `mm_token_type_ids`).
 
         ``modality_inputs`` is the full dict returned by ``_prepare_modality_inputs``.
@@ -211,6 +211,7 @@ class MultiModalModelTester:
     # TODO: raushan we need to run tests per each modality separately as well as all modalities
     # at once if mixed input is supported. Mixed modality attr should be `True` by default on testers
     # We need a adapt `_prepare_modality_inputs()` for that!
+
 
 @require_torch
 class MultiModalModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin):

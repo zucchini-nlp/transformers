@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import copy
+import functools
+import inspect
 import unittest
 from inspect import signature
 
-from .multimodal_tester import MultiModalModelTest, MultiModalModelTester
+from .multimodal_tester import MultiModalModelTest, MultiModalModelTester, ids_tensor
 from .test_modeling_common import (
     floats_tensor,
     is_torch_available,
@@ -87,6 +89,32 @@ class VLMModelTester(MultiModalModelTester):
         if not hasattr(self, "head_dim"):
             self.head_dim = self.hidden_size // self.num_attention_heads
 
+    # allow inputs to be prepared for each supported vision modality and its combinations
+    def prepare_config_and_inputs_for_common(self, modalities: list[str] | None = None):
+        config = self.get_config()
+        input_ids = ids_tensor([self.batch_size, self.seq_length], self.vocab_size)
+
+        # Avoid flaky tests by scrubbing any accidental special tokens produced by ids_tensor.
+        # Modality placeholder tokens are scrubbed and placed by `_prepare_modality_inputs`.
+        safe_token_id = self._safe_token_id()
+        for token_id in self._special_token_ids:
+            input_ids[input_ids == token_id] = safe_token_id
+
+        # Create attention mask with final input_ids (after modality placeholders are placed) — important
+        # for models that derive padding from token values.
+        attention_mask = self.create_attention_mask(input_ids) if self.use_input_mask else None
+        inputs_dict = {"input_ids": input_ids, "attention_mask": attention_mask}
+
+        if modalities is not None:
+            modality_inputs = {}
+            for modality in modalities:
+                input_ids, current_data = self._prepare_modality_inputs(input_ids, config, modality=modality)
+                current_data.update(self.get_additional_inputs(config, input_ids, current_data, modality=modality))
+                modality_inputs.update(current_data)
+            inputs_dict.update(modality_inputs)
+            inputs_dict["input_ids"] = input_ids # re-set to add placeholder IDs
+        return config, inputs_dict
+
     # -- Overridable VLM-specific hooks ------------------------------------------------------
 
     def create_pixel_values(self):
@@ -131,14 +159,16 @@ class VLMModelTester(MultiModalModelTester):
     def _build_modality_sub_configs(self):
         return {"vision_config": self.get_vision_config()}
 
-    def _prepare_modality_inputs(self, input_ids, config):
+    def _prepare_modality_inputs(self, input_ids, config, modality: str):
         data = {}
-        data["pixel_values"] = self.create_pixel_values()
-        input_ids = self.place_image_tokens(input_ids, config)
-
-        if "video" in self.base_model_class.input_modalities:
+        if modality == "image":
+            data["pixel_values"] = self.create_pixel_values()
+            input_ids = self.place_image_tokens(input_ids, config)
+        elif modality == "video":
             data["pixel_values_videos"] = self.create_pixel_values_videos()
             input_ids = self.place_video_tokens(input_ids, config)
+        else:
+            raise ValueError(f"Unrecognized modality={modality}")
         return input_ids, data
 
     # -- Vision sub-config construction ------------------------------------------------------
@@ -164,13 +194,62 @@ class VLMModelTest(MultiModalModelTest):
     - `pipeline_model_mapping`: Override if not using default from model_tester
     """
 
+    MODALITY_COMBINATIONS = [("image",), ("video",), ("image", "video")]
+    current_modalities = None # DO NOT ever set in manually in models!
+
+    # All `test_xxx` NOT listed here is assumed to depend on
+    # `prepare_config_and_inputs_for_common()` and gets fanned out per modality
+    MODALITY_INDEPENDENT_TESTS = {
+        "test_config",
+        "test_model_is_small",
+    }
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if "model_tester_class" not in cls.__dict__:
+            return
+
+        supported = cls.model_tester_class.base_model_class.input_modalities
+        combos = [c for c in cls.MODALITY_COMBINATIONS if all(m in supported for m in c)]
+        test_names = [
+            name
+            for name, _ in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("test_") and name not in cls.MODALITY_INDEPENDENT_TESTS
+        ]
+
+        for name in test_names:
+            original = getattr(cls, name)
+
+            for combo in combos:
+                new_name = f"{name}_{'_'.join(combo)}"
+
+                @functools.wraps(original)
+                def wrapper(self, *args, __orig=original, **kw):
+                    return __orig(self, *args, **kw)
+
+                wrapper.modalities = combo
+                setattr(cls, new_name, wrapper)
+
+    def setUp(self):
+        super().setUp()
+
+        test_fn = getattr(self, self._testMethodName).__func__
+        combo = getattr(test_fn, "modalities", None)
+        if combo is None:
+            # this mean that test runs on default inputs, i.e. text-only
+            return
+
+        self.current_modalities = combo
+        original = self.model_tester.prepare_config_and_inputs_for_common
+        self.model_tester.prepare_config_and_inputs_for_common = functools.partial(original, combo)
+
     def test_mismatching_num_image_tokens(self):
         """
         Tests that VLMs throw an error with explicit message saying what is wrong
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompt has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
