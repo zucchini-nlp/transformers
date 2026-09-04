@@ -202,7 +202,7 @@ class UperNetModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
                 [self.model_tester.image_size // 4, self.model_tester.image_size // 4],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -216,7 +216,7 @@ class UperNetModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
 
     @require_timm
     def test_backbone_selection(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         config_dict = config.to_dict()
         config_dict["backbone_config"] = None

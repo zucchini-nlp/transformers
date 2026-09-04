@@ -141,7 +141,7 @@ class GitVisionModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -150,7 +150,7 @@ class GitVisionModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -419,7 +419,7 @@ class GitModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin,
         # GIT seq length shape depends on image inputs, overwrite
 
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             # If it doesn't support cache, skip the test
             decoder_config = config.get_text_config(decoder=True)

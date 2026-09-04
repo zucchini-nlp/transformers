@@ -206,7 +206,7 @@ class SuperPointModelTest(ModelTesterMixin, unittest.TestCase):
                     ],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -224,7 +224,7 @@ class SuperPointModelTest(ModelTesterMixin, unittest.TestCase):
         self.assertIsNotNone(model)
 
     def test_forward_labels_should_be_none(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config)
             model.to(torch_device)

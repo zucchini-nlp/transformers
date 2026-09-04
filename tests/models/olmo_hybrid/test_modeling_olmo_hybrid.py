@@ -80,7 +80,7 @@ class OlmoHybridModelTest(CausalLMModelTest, unittest.TestCase):
         A causal LM's logits at position `i` cannot depend on tokens at positions > `i`, even across
         separate forward calls with a shared cache.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
         model = OlmoHybridModel._from_config(config)
         model.to(torch_device)
@@ -109,7 +109,7 @@ class OlmoHybridModelTest(CausalLMModelTest, unittest.TestCase):
     # === Override test_attention_outputs (same pattern as Qwen3Next) ===
     def test_attention_outputs(self):
         """Needs to be overwritten as OlmoHybrid alternates between attention layers and gated deltanet layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         config._attn_implementation = "eager"
         seq_len = getattr(self.model_tester, "seq_length", None)

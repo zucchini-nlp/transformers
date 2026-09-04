@@ -47,7 +47,7 @@ class HYV3ModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_router_logits_and_no_aux_loss(self):
         """HYV3 returns router_logits but does not compute aux_loss (always None)."""
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.output_router_logits = True
 
         for model_class in self.all_model_classes:

@@ -255,7 +255,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -273,7 +273,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Override as SAM3Model has component-specific attention outputs
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -330,7 +330,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Override as SAM3Model has component-specific attention/hidden state outputs
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for k in config.sub_configs:
             if getattr(config, k) is not None:
                 getattr(config, k).output_hidden_states = True
@@ -409,7 +409,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     def test_hidden_states_output(self):
         """Test that SAM3 properly outputs component-specific hidden states."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             # Enable hidden states output
@@ -457,7 +457,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -510,7 +510,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     def test_forward_with_text_embeds(self):
         """Test that text_embeds parameter works correctly."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -542,7 +542,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     def test_forward_with_both_input_ids_and_text_embeds_raises_error(self):
         """Test that passing both input_ids and text_embeds raises an error."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -567,7 +567,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     def test_forward_with_vision_embeds(self):
         """Test that vision_embeds parameter works correctly."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -600,7 +600,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     def test_forward_with_both_pixel_values_and_vision_embeds_raises_error(self):
         """Test that passing both pixel_values and vision_embeds raises an error."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -673,7 +673,7 @@ class Sam3LiteTextModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
         Test that tuple and dict outputs are equivalent.
         SAM3 returns complex outputs with component-specific fields, so we need to ensure proper conversion.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0

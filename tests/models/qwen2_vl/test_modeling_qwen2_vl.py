@@ -205,7 +205,7 @@ class Qwen2VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompt has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -253,7 +253,7 @@ class Qwen2VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         Rope deltas are cached when we generate and re-used for decoding phase, byt are not reset
         automatically after generation ends. See https://github.com/huggingface/transformers/pull/36013 for more
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_generative_model_classes:
             model = model_class(config).to(torch_device)
 
@@ -283,7 +283,7 @@ class Qwen2VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         Tests that vision position ids are built correctly for images and for videos.
         See https://github.com/huggingface/transformers/pull/45400
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         model = Qwen2VLModel(config).to(torch_device)
         batch_size = input_dict["input_ids"].shape[0]
 
@@ -335,7 +335,7 @@ class Qwen2VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
     ):
         max_new_tokens = 30
         for model_class in self.all_generative_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             dummy_input = inputs_dict[model_class.main_input_name]
             if dummy_input.dtype in [torch.float32, torch.float16]:
@@ -446,7 +446,7 @@ class Qwen2VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         if not self.model_tester.is_training:
             self.skipTest(reason="ModelTester not in training mode")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.use_cache = False
         config.return_dict = True
 

@@ -209,7 +209,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_diffllama_sequence_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -221,7 +221,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         self.assertEqual(result.logits.shape, (self.model_tester.batch_size, self.model_tester.num_labels))
 
     def test_diffllama_sequence_classification_model_for_single_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "single_label_classification"
         input_ids = input_dict["input_ids"]
@@ -234,7 +234,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         self.assertEqual(result.logits.shape, (self.model_tester.batch_size, self.model_tester.num_labels))
 
     def test_diffllama_sequence_classification_model_for_multi_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "multi_label_classification"
         input_ids = input_dict["input_ids"]
@@ -249,7 +249,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         self.assertEqual(result.logits.shape, (self.model_tester.batch_size, self.model_tester.num_labels))
 
     def test_diffllama_token_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -272,7 +272,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
             return new_config
 
         # from untouched config -> ✅
-        base_config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        base_config, model_inputs = self.prepare_config_and_inputs_for_common()
         original_model = DiffLlamaForCausalLM(base_config).to(torch_device)
         original_model(**model_inputs)
 
@@ -366,7 +366,7 @@ class DiffLlamaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         """
         NOTE: this is the only test testing that the legacy `use_flash_attention=2` argument still works as intended.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 model = model_class(config)

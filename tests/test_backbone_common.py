@@ -62,7 +62,7 @@ class BackboneTesterMixin:
             config = config_class(out_features=["stage1", "stage2"], out_indices=[0, 2])
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -83,7 +83,7 @@ class BackboneTesterMixin:
         self.assertEqual(config_second.to_dict(), config_first.to_dict())
 
     def test_channels(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -106,7 +106,7 @@ class BackboneTesterMixin:
             self.assertListEqual(model.channels, [num_features[-1]])
 
     def test_create_from_modified_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -141,7 +141,7 @@ class BackboneTesterMixin:
             self.assertEqual(len(model.channels), 1)
 
     def test_backbone_common_attributes(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for backbone_class in self.all_model_classes:
             backbone = backbone_class(config)
@@ -163,7 +163,7 @@ class BackboneTesterMixin:
             self.assertTrue(len(backbone.out_feature_channels) == len(backbone.stage_names))
 
     def test_backbone_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         batch_size = inputs_dict["pixel_values"].shape[0]
 
         for backbone_class in self.all_model_classes:
@@ -194,7 +194,7 @@ class BackboneTesterMixin:
                 self.assertIsNotNone(outputs.attentions)
 
     def test_backbone_stage_selection(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         batch_size = inputs_dict["pixel_values"].shape[0]
 
         for backbone_class in self.all_model_classes:

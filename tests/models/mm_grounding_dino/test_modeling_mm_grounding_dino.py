@@ -334,7 +334,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         pass
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -474,7 +474,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
                 [decoder_seq_length, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -488,7 +488,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
 
     # removed retain_grad and grad on decoder_hidden_states, as queries don't require grad
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -518,7 +518,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         self.assertIsNotNone(cross_attentions.grad)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -530,7 +530,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
             self.assertListEqual(arg_names[: len(expected_arg_names)], expected_arg_names)
 
     def test_backbone_selection(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def _validate_backbone_init(config):
             for model_class in self.all_model_classes:
@@ -574,7 +574,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
     # Copied from tests.models.deformable_detr.test_modeling_deformable_detr.DeformableDetrModelTest.test_two_stage_training with DeformableDetr->MMGroundingDino
     def test_two_stage_training(self):
         model_class = MMGroundingDinoForObjectDetection
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         config.two_stage = True
         config.auxiliary_loss = True
@@ -588,7 +588,7 @@ class MMGroundingDinoModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.T
         loss.backward()
 
     def test_tied_weights_keys(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.tie_word_embeddings = True
         for model_class in self.all_model_classes:
             model_tied = model_class(config)

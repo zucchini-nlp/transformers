@@ -133,7 +133,7 @@ class TimesFmModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester = ConfigTester(self, config_class=TimesFmConfig)
 
     def test_create_and_run_model(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = TimesFmModelForPrediction(config)
         model.to(torch_device)
         model.eval()
@@ -163,7 +163,7 @@ class TimesFmModelTest(ModelTesterMixin, unittest.TestCase):
 
         tolerance = {torch.float32: 1e-5, torch.bfloat16: 1e-3, torch.float16: 1e-3}[dtype]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
 
         model_eager = TimesFmModelForPrediction._from_config(config, attn_implementation="eager")

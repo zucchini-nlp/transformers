@@ -56,7 +56,7 @@ class Lfm2ModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         """Lfm2Moe alternates between attention and short-conv layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"

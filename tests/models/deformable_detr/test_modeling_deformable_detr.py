@@ -245,7 +245,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         self.model_tester.create_and_check_deformable_detr_object_detection_head_model(*config_and_inputs)
 
     def test_tie_weights_is_not_modified(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.tie_word_embeddings = True
 
         config.with_box_refine = True
@@ -288,7 +288,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         pass
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -388,7 +388,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
             )
 
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
@@ -463,7 +463,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
     def test_retain_grad_hidden_states_attentions(self):
         # removed retain_grad and grad on decoder_hidden_states, as queries don't require grad
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -498,7 +498,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         self.assertIsNotNone(cross_attentions.grad)
 
     def test_forward_auxiliary_loss(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.auxiliary_loss = True
 
         # only test for object detection and segmentation model
@@ -514,7 +514,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
             self.assertEqual(len(outputs.auxiliary_outputs), self.model_tester.num_hidden_layers - 1)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -530,7 +530,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
                 self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_backbone_selection(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def _validate_backbone_init(config):
             for model_class in self.all_model_classes:
@@ -578,7 +578,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
 
     def test_two_stage_training(self):
         model_class = DeformableDetrForObjectDetection
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         config.two_stage = True
         config.auxiliary_loss = True
@@ -593,7 +593,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
 
     def create_and_check_model_fp16_forward(self):
         model_class = DeformableDetrForObjectDetection
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         model = model_class(config)
         model.to(torch_device)
@@ -606,7 +606,7 @@ class DeformableDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
     @require_torch_bf16
     def create_and_check_model_bf16_forward(self):
         model_class = DeformableDetrForObjectDetection
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         model = model_class(config, dtype=torch.bfloat16)
         model.to(torch_device)

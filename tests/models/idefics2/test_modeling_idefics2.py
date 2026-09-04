@@ -210,7 +210,7 @@ class Idefics2ModelTest(ModelTesterMixin, unittest.TestCase):
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_tokens_embeddings(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config = copy.deepcopy(original_config)
@@ -290,7 +290,7 @@ class Idefics2ModelTest(ModelTesterMixin, unittest.TestCase):
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_embeddings_untied(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         original_config.tie_word_embeddings = False
 
@@ -337,7 +337,7 @@ class Idefics2ModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_sdpa_can_dispatch_composite_models(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -401,7 +401,7 @@ class Idefics2ForConditionalGenerationModelTest(GenerationTesterMixin, ModelTest
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_tokens_embeddings(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config = copy.deepcopy(original_config)
@@ -474,7 +474,7 @@ class Idefics2ForConditionalGenerationModelTest(GenerationTesterMixin, ModelTest
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_embeddings_untied(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         original_config.tie_word_embeddings = False
 

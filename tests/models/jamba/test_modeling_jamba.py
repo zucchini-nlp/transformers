@@ -357,7 +357,7 @@ class JambaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
         r"""
         Let's make sure we can actually compute the loss and do a backward on it.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.num_experts = 3
         config.output_router_logits = True
@@ -398,7 +398,7 @@ class JambaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
         r"""
         Overriding the test_attention_outputs test as the Jamba model outputs attention only for its attention layers
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = getattr(self.model_tester, "seq_length", None)
@@ -472,7 +472,7 @@ class JambaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
         right padding + use cache with FA2
         """
         for model_class in self.all_generative_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:

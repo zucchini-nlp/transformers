@@ -59,7 +59,7 @@ class LagunaModelTest(CausalLMModelTest, unittest.TestCase):
         `moe_apply_router_weight_on_input=True` is not supported yet so we explicitly check that it
         raises and error on config construction time
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         cfg_kwargs = config.to_dict()
         cfg_kwargs["moe_apply_router_weight_on_input"] = True
         with self.assertRaises(NotImplementedError):
@@ -68,7 +68,7 @@ class LagunaModelTest(CausalLMModelTest, unittest.TestCase):
     @parameterized.expand([(True,), ("per-head",), ("per-element",)])
     def test_gating_variations(self, gating):
         """Checking whether each flavor option is properly propagated"""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.gating = gating
         # We only check the underlying base class for simplicity
         model = self.model_tester.base_model_class(config).to(torch_device).eval()

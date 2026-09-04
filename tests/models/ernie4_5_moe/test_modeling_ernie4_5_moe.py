@@ -66,7 +66,7 @@ class Ernie4_5_MoeModelTest(CausalLMModelTest, unittest.TestCase):
             if not model_class._supports_flash_attn:
                 self.skipTest(reason="Model does not support Flash Attention 2")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -96,7 +96,7 @@ class Ernie4_5_MoeModelTest(CausalLMModelTest, unittest.TestCase):
         Let's make sure we can actually compute the loss and do a backward on it.
         """
         set_seed(42)
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.num_experts = 3
         config.output_router_logits = True

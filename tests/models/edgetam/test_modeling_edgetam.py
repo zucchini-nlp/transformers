@@ -375,7 +375,7 @@ class EdgeTamModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase)
 
     def test_model_outputs_equivalence(self):
         # Modified from upstream to remove output_hidden_states as the timm model doesn't support it
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0

@@ -92,7 +92,7 @@ class Qwen3_5MoeTextModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         "Needs to be overwritten as Qwen3.5 Moe alternates between attention layers and gated deltanet layers."
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -434,7 +434,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
 
     def test_attention_outputs(self):
         "Needs to be overwritten as Qwen3.5 Moe alternates between attention layers and gated deltanet layers."
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -495,7 +495,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
         Tests that VLMs throw an explicit error when image count mismatches image-token count in text.
         Also checks multi-image cases where one prompt has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -542,7 +542,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
             )
 
     def test_image_forward(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         bsz = self.model_tester.batch_size
         channels = config.vision_config.in_chans
@@ -593,7 +593,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
             self.assertIsNotNone(outputs)
 
     def test_video_forward(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         bsz = self.model_tester.batch_size
         channels = config.vision_config.in_chans

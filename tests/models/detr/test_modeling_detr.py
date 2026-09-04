@@ -272,7 +272,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         decoder_seq_length = self.model_tester.decoder_seq_length
@@ -377,7 +377,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
     def test_retain_grad_hidden_states_attentions(self):
         # removed retain_grad and grad on decoder_hidden_states, as queries don't require grad
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -411,7 +411,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         self.assertIsNotNone(cross_attentions.grad)
 
     def test_forward_auxiliary_loss(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.auxiliary_loss = True
 
         # only test for object detection and segmentation model
@@ -427,7 +427,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             self.assertEqual(len(outputs.auxiliary_outputs), self.model_tester.num_hidden_layers - 1)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -443,7 +443,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                 self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_backbone_selection(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def _validate_backbone_init(config):
             for model_class in self.all_model_classes:
@@ -493,7 +493,7 @@ class DetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         _validate_backbone_init(config)
 
     def test_greyscale_images(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # use greyscale pixel values
         inputs_dict["pixel_values"] = floats_tensor(

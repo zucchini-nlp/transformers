@@ -555,7 +555,7 @@ class Wav2Vec2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
         pass
 
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -759,7 +759,7 @@ class Wav2Vec2RobustModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -817,7 +817,7 @@ class Wav2Vec2RobustModelTest(ModelTesterMixin, unittest.TestCase):
             module.masked_spec_embed.data.fill_(3)
 
     def test_model_for_pretraining(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = Wav2Vec2ForPreTraining(config).to(torch_device)
 
         batch_size = inputs_dict["input_values"].shape[0]

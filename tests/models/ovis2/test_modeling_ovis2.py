@@ -190,7 +190,7 @@ class Ovis2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
         self.config_tester.run_common_tests()
 
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -212,7 +212,7 @@ class Ovis2ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
     # overwrite inputs_embeds tests because we need to delete "pixel values" for LVLMs
     # while some other models require pixel_values to be present
     def test_inputs_embeds_matches_input_ids(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

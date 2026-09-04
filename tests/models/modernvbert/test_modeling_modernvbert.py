@@ -303,7 +303,7 @@ class ModernVBertModelTest(ModelTesterMixin, unittest.TestCase):
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_tokens_embeddings(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config = copy.deepcopy(original_config)
@@ -384,7 +384,7 @@ class ModernVBertModelTest(ModelTesterMixin, unittest.TestCase):
 
     # We need to override as we need to prepare such that the image token is the last token
     def test_resize_embeddings_untied(self):
-        (original_config, inputs_dict) = self.model_tester.prepare_config_and_inputs_for_common()
+        (original_config, inputs_dict) = self.prepare_config_and_inputs_for_common()
 
         original_config.tie_word_embeddings = False
 

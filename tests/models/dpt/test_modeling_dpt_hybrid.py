@@ -199,7 +199,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -224,7 +224,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             if model_class.__name__ == "DPTForDepthEstimation":
                 continue
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             if model_class.__name__ in MODEL_MAPPING_NAMES.values():
@@ -242,7 +242,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             if model_class.__name__ == "DPTForDepthEstimation":
                 continue
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.use_cache = False
             config.return_dict = True
 
@@ -264,7 +264,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     def test_raise_readout_type(self):
         # We do this test only for DPTForDepthEstimation since it is the only model that uses readout_type
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.readout_type = "add"
         with self.assertRaises(ValueError):
             _ = DPTForDepthEstimation(config)

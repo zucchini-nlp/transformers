@@ -220,7 +220,7 @@ class JanusVisionText2TextModelTest(ModelTesterMixin, GenerationTesterMixin, Pip
 
     def test_sdpa_can_dispatch_composite_models(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -283,7 +283,7 @@ class JanusVisionText2TextModelTest(ModelTesterMixin, GenerationTesterMixin, Pip
                     # self.skipTest(reason=f"`supports_gradient_checkpointing` is False for {model_class.__name__}.")
                     continue
 
-                config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+                config, inputs_dict = self.prepare_config_and_inputs_for_common()
                 config.use_cache = False
                 config.return_dict = True
                 model = model_class(config)

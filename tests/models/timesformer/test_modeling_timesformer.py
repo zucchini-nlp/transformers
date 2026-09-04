@@ -190,7 +190,7 @@ class TimesformerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -217,7 +217,7 @@ class TimesformerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
             self.skipTest(reason="Model has no attentions")
 
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             for model_class in self.all_model_classes:
@@ -294,7 +294,7 @@ class TimesformerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
                 [seq_length, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True

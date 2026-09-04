@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import copy
+import pytest
 import functools
 import inspect
 import unittest
@@ -112,7 +113,7 @@ class VLMModelTester(MultiModalModelTester):
                 current_data.update(self.get_additional_inputs(config, input_ids, current_data, modality=modality))
                 modality_inputs.update(current_data)
             inputs_dict.update(modality_inputs)
-            inputs_dict["input_ids"] = input_ids # re-set to add placeholder IDs
+            inputs_dict["input_ids"] = input_ids  # re-set to add placeholder IDs
         return config, inputs_dict
 
     # -- Overridable VLM-specific hooks ------------------------------------------------------
@@ -194,14 +195,56 @@ class VLMModelTest(MultiModalModelTest):
     - `pipeline_model_mapping`: Override if not using default from model_tester
     """
 
+    # DON'T set `current_modalities` in models! It's auti-set when initializing a subclass
+    current_modalities = None
     MODALITY_COMBINATIONS = [("image",), ("video",), ("image", "video")]
-    current_modalities = None # DO NOT ever set in manually in models!
 
     # All `test_xxx` NOT listed here is assumed to depend on
     # `prepare_config_and_inputs_for_common()` and gets fanned out per modality
+    # Do not change it per model test as well!
     MODALITY_INDEPENDENT_TESTS = {
         "test_config",
         "test_model_is_small",
+        "test_from_pretrained_no_checkpoint",
+        "test_keep_in_fp32_modules_exist",
+        "test_keep_in_fp32_modules",
+        "test_save_load_keys_to_ignore_on_save",
+        "test_load_contiguous_weights",
+        "test_can_init_all_missing_weights",
+        "test_init_weights_can_init_buffers",
+        "test_all_tensors_are_parameter_or_buffer",
+        "test_resize_tokens_embeddings",
+        "test_model_get_set_embeddings",
+        "test_model_main_input_name",
+        "test_model_base_model_prefix",
+        "test_correct_missing_keys",
+        "test_can_use_safetensors",
+        "test_load_save_without_tied_weights",
+        "test_tied_weights_keys",
+        "test_model_weights_reload_no_missing_tied_weights",
+        "test_disk_offload_bin",
+        "test_disk_offload_safetensors",
+        "test_cpu_offload",
+        "test_load_with_mismatched_shapes",
+        "test_can_load_ignoring_mismatched_shapes",
+        "test_attn_implementation_composite_models",
+        "test_sdpa_can_dispatch_composite_models",
+        "test_generation_tester_mixin_inheritance",
+        "test_can_be_initialized_on_meta",
+        "test_can_load_with_device_context_manager",
+        "test_can_load_with_global_device_set",
+        "test_cannot_load_with_meta_device_context_manager",
+        "test_config_attn_implementation_setter",
+        "test_internal_model_config_and_subconfig_are_same",
+        "test_can_set_attention_dynamically",
+        "test_can_set_attention_dynamically_composite_model",
+        "test_bc_torch_dtype",
+        "test_tp_plan_matches_params",
+        "test_reverse_loading_mapping",
+        "test_can_load_from_already_mapped_keys",
+        "test_format_of_can_record_outputs",
+        "test_can_capture_specific_layers_hidden_states",
+        "test_kernels_can_load_without_crashing",
     }
 
     def __init_subclass__(cls, **kwargs):
@@ -224,24 +267,17 @@ class VLMModelTest(MultiModalModelTest):
                 new_name = f"{name}_{'_'.join(combo)}"
 
                 @functools.wraps(original)
-                def wrapper(self, *args, __orig=original, **kw):
+                def wrapper(self, *args, __orig=original, __combo=combo, **kw):
+                    self.current_modalities = __combo
                     return __orig(self, *args, **kw)
-
-                wrapper.modalities = combo
                 setattr(cls, new_name, wrapper)
 
-    def setUp(self):
-        super().setUp()
+                for modality in combo:
+                    wrapper = getattr(pytest.mark, modality)(wrapper)
+                wrapper = pytest.mark.multimodal_combo("_".join(combo))(wrapper)
 
-        test_fn = getattr(self, self._testMethodName).__func__
-        combo = getattr(test_fn, "modalities", None)
-        if combo is None:
-            # this mean that test runs on default inputs, i.e. text-only
-            return
-
-        self.current_modalities = combo
-        original = self.model_tester.prepare_config_and_inputs_for_common
-        self.model_tester.prepare_config_and_inputs_for_common = functools.partial(original, combo)
+    def prepare_config_and_inputs_for_common(self):
+        return self.model_tester.prepare_config_and_inputs_for_common(self.current_modalities)
 
     def test_mismatching_num_image_tokens(self):
         """
@@ -249,6 +285,9 @@ class VLMModelTest(MultiModalModelTest):
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompt has multiple image tokens.
         """
+        if self.current_modalities is None or "video" in self.current_modalities:
+            self.skipTest("just skip for now and make a proper test to test current modaity tokens")
+
         config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)

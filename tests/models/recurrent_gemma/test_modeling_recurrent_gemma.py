@@ -54,7 +54,7 @@ class RecurrentGemmaModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         """Only attention layers produce attention weights, not recurrent layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = getattr(self.model_tester, "seq_length", None)

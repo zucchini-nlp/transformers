@@ -122,7 +122,7 @@ class VideomtForUniversalSegmentationTest(ModelTesterMixin, PipelineTesterMixin,
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -139,7 +139,7 @@ class VideomtForUniversalSegmentationTest(ModelTesterMixin, PipelineTesterMixin,
         pass
 
     def test_image_inputs_raise(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = VideomtForUniversalSegmentation(config).to(torch_device)
         model.eval()
 
@@ -147,7 +147,7 @@ class VideomtForUniversalSegmentationTest(ModelTesterMixin, PipelineTesterMixin,
             model(inputs_dict["pixel_values_videos"][:, 0])
 
     def test_pixel_values_name_raises(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = VideomtForUniversalSegmentation(config).to(torch_device)
         model.eval()
 

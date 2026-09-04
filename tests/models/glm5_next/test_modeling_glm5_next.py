@@ -172,7 +172,7 @@ class Glm5NextModelTest(VLMModelTest, unittest.TestCase):
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
         """Override similar to GLM4V: images shaped as (bs*patch_len, dim) so we can't slice to batches in generate"""
         config, inputs_dict = super().prepare_config_and_inputs_for_generate(batch_size)
-        _, full_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        _, full_inputs = self.prepare_config_and_inputs_for_common()
 
         num_patches = int(inputs_dict["image_grid_thw"].prod(-1).sum().item())
         inputs_dict["pixel_values"] = full_inputs["pixel_values"][:num_patches]
@@ -258,7 +258,7 @@ class Glm5NextModelTest(VLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         """Needs to be overwritten as GLM5 Next VL alternates between attention layers and KDA layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         config.return_dict = True
         text_config = config.get_text_config()
@@ -334,7 +334,7 @@ class Glm5NextModelTest(VLMModelTest, unittest.TestCase):
 
     def test_hidden_states_output(self):
         """Override to account for the difference in MHC and the final state shapes"""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.text_config.output_hidden_states = True
 
         for model_class in self.all_model_classes:
@@ -376,7 +376,7 @@ class Glm5NextModelTest(VLMModelTest, unittest.TestCase):
         """
         Overridden as flattened over patches, so slicing one row removes one patch rather than one complete image.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()

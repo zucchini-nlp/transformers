@@ -96,7 +96,7 @@ class MuseGlimmerVision2TextModelTest(VLMModelTest, unittest.TestCase):
     def test_mismatching_num_image_tokens(self):
         # Overwritten -- MuseGlimmer packs patches along the first `pixel_values` dim, so removing an image
         # means dropping its patch rows and its `image_grid_thw` row together.
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         patches_per_image = input_dict["pixel_values"].shape[0] // input_dict["image_grid_thw"].shape[0]
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)

@@ -178,12 +178,12 @@ class Nemotron3_5AsrForRNNTModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_model(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_prompt_conditioning_changes_logits(self):
         """The language-ID prompt must actually steer the model: different `prompt_ids` -> different logits."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = Nemotron3_5AsrForRNNT(config=config).to(torch_device).eval()
         inputs_dict = {k: v.to(torch_device) for k, v in inputs_dict.items()}
         base = {k: v for k, v in inputs_dict.items() if k != "prompt_ids"}
@@ -198,7 +198,7 @@ class Nemotron3_5AsrForRNNTModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_missing_prompt_ids_defaults(self):
         """Without `prompt_ids` the model defaults to `config.default_prompt_id` (with a warning) and still runs."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = Nemotron3_5AsrForRNNT(config=config).to(torch_device).eval()
         no_prompt = {k: v.to(torch_device) for k, v in inputs_dict.items() if k != "prompt_ids"}
         default_prompt = torch.full(
@@ -256,7 +256,7 @@ class Nemotron3_5AsrForRNNTModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:

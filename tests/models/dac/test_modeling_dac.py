@@ -157,7 +157,7 @@ class DacModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         super().test_batching_equivalence()
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -190,7 +190,7 @@ class DacModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_determinism(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def check_determinism(first, second):
             # outputs are not tensors but list (since each sequence don't have the same frame_length)
@@ -216,7 +216,7 @@ class DacModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                 check_determinism(first, second)
 
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0

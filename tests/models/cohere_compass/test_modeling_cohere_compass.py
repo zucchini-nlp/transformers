@@ -328,8 +328,10 @@ class CohereCompassModelTest(VLMModelTest, unittest.TestCase):
         config, inputs_dict = super().prepare_config_and_inputs_for_generate(batch_size=batch_size)
         patches_per_image = (self.model_tester.image_size // self.model_tester.patch_size) ** 2
         videos_per_sample = self.model_tester.num_frames * batch_size * patches_per_image
-        inputs_dict["pixel_values"] = self.model_tester.create_pixel_values()[: batch_size * patches_per_image]
-        inputs_dict["pixel_values_videos"] = self.model_tester.create_pixel_values_videos()[:videos_per_sample]
+        if "pixel_values" in inputs_dict:
+            inputs_dict["pixel_values"] = self.model_tester.create_pixel_values()[: batch_size * patches_per_image]
+        if "pixel_values_videos" in inputs_dict:
+            inputs_dict["pixel_values_videos"] = self.model_tester.create_pixel_values_videos()[:videos_per_sample]
         return config, inputs_dict
 
     @unittest.skip("CohereCompass does not support video modeling.")
@@ -341,10 +343,10 @@ class CohereCompassModelTest(VLMModelTest, unittest.TestCase):
         pass
 
     def test_mismatching_num_image_tokens(self):
-        if self.current_modalities is not None and "video" in self.current_modalities:
+        if self.current_modalities is None or "video" in self.current_modalities:
             self.skipTest("just skip for now and make a proper test to test current modaity tokens")
 
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         patches_per_image = (self.model_tester.image_size // self.model_tester.patch_size) ** 2
 
         for model_class in self.all_model_classes:

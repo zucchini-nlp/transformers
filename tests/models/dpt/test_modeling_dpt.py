@@ -183,7 +183,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -208,7 +208,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             if model_class.__name__ == "DPTForDepthEstimation":
                 continue
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             if model_class.__name__ in MODEL_MAPPING_NAMES.values():
@@ -226,7 +226,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             if model_class.__name__ == "DPTForDepthEstimation":
                 continue
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.use_cache = False
             config.return_dict = True
 
@@ -256,7 +256,7 @@ class DPTModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                     # Confirm out_indices propagated to backbone
                     self.assertEqual(len(model.backbone.out_indices), 2)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config_dict = config.to_dict()
         config_dict["use_pretrained_backbone"] = True
         config_dict["backbone_config"] = None

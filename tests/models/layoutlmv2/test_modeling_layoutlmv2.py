@@ -321,7 +321,7 @@ class LayoutLMv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
         self.model_tester.create_and_check_for_question_answering(*config_and_inputs)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         # LayoutLMv2 has a different expected sequence length
@@ -410,7 +410,7 @@ class LayoutLMv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
                 [expected_seq_len, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -460,7 +460,7 @@ class LayoutLMv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
                     ),
                 )
 
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config.output_hidden_states = True

@@ -149,7 +149,7 @@ class CHMv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     def test_model_get_set_embeddings(self):
         """CHMv2 uses patch (convolutional) embeddings, not token embeddings."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config)
             # Patch embeddings are nn.Module (Conv2d), not nn.Embedding

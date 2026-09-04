@@ -268,7 +268,7 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         super().test_batching_equivalence()
 
     def test_oneformer_model(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_oneformer_model(config, **inputs, output_hidden_states=False)
 
     def test_oneformer_universal_segmentation_head_model(self):
@@ -306,7 +306,7 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -343,11 +343,11 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         self.assertTrue(outputs.loss is not None)
 
     def test_hidden_states_output(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_oneformer_model(config, **inputs, output_hidden_states=True)
 
     def test_attention_outputs(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -428,7 +428,7 @@ class OneFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
 
     @require_timm
     def test_backbone_selection(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         config_dict = config.to_dict()
         config_dict["backbone_config"] = None

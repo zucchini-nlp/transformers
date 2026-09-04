@@ -156,7 +156,7 @@ class Gemma4TextModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_all_bidirectional_attention_uses_bidirectional_mask(self):
         self.model_tester.use_bidirectional_attention = "all"
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
 
         model = Gemma4TextModel(config).to(torch_device)
@@ -512,7 +512,7 @@ class Gemma4Vision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitte
 
     def test_training(self):
         # Overwrite to test training with text-only samples, should not raise errors
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         model = Gemma4ForConditionalGeneration(config)
@@ -583,7 +583,7 @@ class Gemma4Vision2TextModelTest(ModelTesterMixin, GenerationTesterMixin, unitte
     def test_per_layer_inputs_are_correctly_forwarded(self):
         from transformers.models.gemma4.modeling_gemma4 import Gemma4TextModel
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         model = Gemma4ForConditionalGeneration(config).to(torch_device)
         model.eval()

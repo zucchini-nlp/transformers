@@ -133,7 +133,7 @@ def _test_encoder_eager_matches_sdpa_inference(
         }
 
     for model_class in self.all_model_classes:
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         set_config_for_less_flaky_test(config)
 
         model = model_class(config)
@@ -366,7 +366,7 @@ class VideoLlama3VisionModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -383,7 +383,7 @@ class VideoLlama3VisionModelTest(ModelTesterMixin, unittest.TestCase):
         _test_encoder_eager_matches_sdpa_inference(self, dtype, output_attentions, enable_kernels)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -466,7 +466,7 @@ class VideoLlama3VisionModelTest(ModelTesterMixin, unittest.TestCase):
                 [seq_length, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -481,7 +481,7 @@ class VideoLlama3VisionModelTest(ModelTesterMixin, unittest.TestCase):
             check_hidden_states_output(inputs_dict, config, model_class)
 
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for k in config.sub_configs:
             getattr(config, k).output_hidden_states = True
 
@@ -673,7 +673,7 @@ class VideoLlama3ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Tes
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompt has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             curr_input_dict = copy.deepcopy(input_dict)
@@ -720,7 +720,7 @@ class VideoLlama3ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Tes
     ):
         max_new_tokens = 30
         for model_class in self.all_generative_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             dummy_input = inputs_dict[model_class.main_input_name]
             if dummy_input.dtype in [torch.float32, torch.float16]:

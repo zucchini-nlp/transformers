@@ -180,7 +180,7 @@ class InstructBlipVisionModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -189,7 +189,7 @@ class InstructBlipVisionModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -551,7 +551,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
         # The shared helper neither builds `qformer_input_ids` (required by InstructBLIP's Q-Former) nor can read
         # the base `InstructBlipModel`'s nested sub-outputs, so we inject the former and restrict to the generative
         # class.
-        _, full_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        _, full_inputs = self.prepare_config_and_inputs_for_common()
         qformer_input_ids = full_inputs["qformer_input_ids"]
         base_prepare_for_class = self._prepare_for_class
 
@@ -582,7 +582,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
             if not model_class._supports_flash_attn:
                 self.skipTest(f"{model_class.__name__} does not support Flash Attention 2")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             if not all(
                 submodel._supports_flash_attn for submodel in model.modules() if isinstance(submodel, PreTrainedModel)
@@ -634,7 +634,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
             if not model_class._supports_flash_attn:
                 self.skipTest(f"{model_class.__name__} does not support flash_attention_2")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             if not all(
                 submodel._supports_flash_attn for submodel in model.modules() if isinstance(submodel, PreTrainedModel)
@@ -667,7 +667,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
                 self.assertTrue(model_from_pretrained.config._attn_implementation != "flash_attention_2")
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -679,7 +679,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
             self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_load_vision_qformer_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save InstructBlipConfig and check if we can load InstructBlipVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -724,7 +724,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -761,7 +761,7 @@ class InstructBlipForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, Gene
         InstructBlip's `get_image_features` uses `qformer_input_ids` and `qformer_attention_mask` along with `pixel_values`,
         so we override this method to keep those, and only discard `input_ids` and `attention_mask`.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         del inputs_dict["input_ids"]
         del inputs_dict["attention_mask"]
         return config, inputs_dict

@@ -259,7 +259,7 @@ class PegasusModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         self.model_tester.create_and_check_decoder_model_past_large_inputs(*config_and_inputs)
 
     def test_encoder_decoder_model_standalone(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.check_encoder_decoder_model_standalone(*config_and_inputs)
 
     @require_torch_fp16

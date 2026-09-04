@@ -197,7 +197,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -206,7 +206,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -244,7 +244,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
         self.assertIsNotNone(model)
 
     def test_gradient_checkpointing_backward_compatibility(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -257,7 +257,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(model.is_gradient_checkpointing)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         # we add 1 here due to the special message token in X-CLIP's vision encoder
@@ -313,7 +313,7 @@ class XCLIPVisionModelTest(ModelTesterMixin, unittest.TestCase):
 
     @require_torch_multi_gpu
     def test_multi_gpu_data_parallel_forward(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # move input tensors to cuda:O
         for k, v in inputs_dict.items():
@@ -590,7 +590,7 @@ class XCLIPModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save XCLIPConfig and check if we can load XCLIPVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -618,7 +618,7 @@ class XCLIPModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         where the batch size * time dimension is flattened. So, instead we use the model_tester.prepare_config_and_inputs()
         which prepares video inputs with shape (batch_size, num_frames, num_channels, height, width) instead.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         del inputs_dict["input_ids"]
         del inputs_dict["attention_mask"]
         del inputs_dict["return_loss"]

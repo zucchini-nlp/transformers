@@ -85,7 +85,7 @@ class HrmTextModelTest(CausalLMModelTest, unittest.TestCase):
         """`config.prefix_lm=True` with `token_type_ids` produces a different forward pass than
         the pure-causal default. Guards the PrefixLM mask path that the slow integration tests
         also exercise."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         # prefix input
         config.prefix_lm = True
         input_ids = inputs_dict["input_ids"]
@@ -106,7 +106,7 @@ class HrmTextModelTest(CausalLMModelTest, unittest.TestCase):
     def test_flash_attention_rejected_when_prefix_lm(self):
         """`config.prefix_lm=True` + FlashAttention must raise at attention-implementation
         resolution time — FA cannot represent the PrefixLM 4-D mask overlay."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.prefix_lm = True
         model = HrmTextForCausalLM(config)
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -128,7 +128,7 @@ class HrmTextModelTest(CausalLMModelTest, unittest.TestCase):
         Overriden to account for the proper number of hidden layers that are adjusted
         in the post init of the config.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -211,7 +211,7 @@ class HrmTextModelTest(CausalLMModelTest, unittest.TestCase):
                 [seq_length, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True

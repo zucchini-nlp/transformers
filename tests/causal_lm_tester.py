@@ -314,7 +314,7 @@ class CausalLMModelTest(
     def test_sequence_classification_model(self):
         if self.model_tester.sequence_classification_class is None:
             self.skipTest("Model does not support sequence classification")
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -328,7 +328,7 @@ class CausalLMModelTest(
     def test_sequence_classification_model_for_single_label(self):
         if self.model_tester.sequence_classification_class is None:
             self.skipTest("Model does not support sequence classification")
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "single_label_classification"
         input_ids = input_dict["input_ids"]
@@ -343,7 +343,7 @@ class CausalLMModelTest(
     def test_sequence_classification_model_for_multi_label(self):
         if self.model_tester.sequence_classification_class is None:
             self.skipTest("Model does not support sequence classification")
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "multi_label_classification"
         input_ids = input_dict["input_ids"]
@@ -360,7 +360,7 @@ class CausalLMModelTest(
     def test_token_classification_model(self):
         if self.model_tester.token_classification_class is None:
             self.skipTest("Model does not support token classification")
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -377,7 +377,7 @@ class CausalLMModelTest(
     def test_question_answering_model(self):
         if self.model_tester.question_answering_class is None:
             self.skipTest("Model does not support question answering")
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
 
         input_ids = input_dict["input_ids"]
@@ -418,7 +418,7 @@ class CausalLMModelTest(
 
             # Set seed for deterministic test - ensures reproducible model initialization and inputs
             set_seed(42)
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -449,7 +449,7 @@ class CausalLMModelTest(
         if not getattr(self.model_tester, "is_training", False):
             self.skipTest(reason="ModelTester is not configured to run training tests")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         with tempfile.TemporaryDirectory() as tmpdir:
             with torch.device(torch_device):

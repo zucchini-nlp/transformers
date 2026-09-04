@@ -182,7 +182,7 @@ class Qwen4ExpTextModelTest(CausalLMModelTest, unittest.TestCase):
             torch.testing.assert_close(actual, expected, rtol=1e-5, atol=1e-5)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
         config.return_dict = True
         seq_len = self.model_tester.seq_length
@@ -205,7 +205,7 @@ class Qwen4ExpTextModelTest(CausalLMModelTest, unittest.TestCase):
             )
 
     def test_hidden_states_output(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         batch_size, seq_len = inputs_dict["input_ids"].shape
         expected_shapes = [(batch_size, seq_len, config.hc_count * config.hidden_size)] * config.num_hidden_layers
@@ -577,7 +577,7 @@ class Qwen4ExpCompositeModelTest(VLMModelTest, unittest.TestCase):
             self.assertListEqual([state.shape for state in iteration_hidden_states], expected_shapes)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
         expected_num_attentions = sum(
             layer_type != "linear_attention" for layer_type in config.text_config.layer_types
@@ -598,7 +598,7 @@ class Qwen4ExpCompositeModelTest(VLMModelTest, unittest.TestCase):
             )
 
     def test_hidden_states_output(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         batch_size, seq_length = inputs_dict["input_ids"].shape
         expected_shapes = [
             (batch_size, seq_length, config.text_config.hc_count * config.text_config.hidden_size)
@@ -615,7 +615,7 @@ class Qwen4ExpCompositeModelTest(VLMModelTest, unittest.TestCase):
             self.assertListEqual([hidden_state.shape for hidden_state in outputs.hidden_states], expected_shapes)
 
     def test_mismatching_num_image_tokens(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device).eval()
             with torch.no_grad():
@@ -693,7 +693,7 @@ class Qwen4ExpCompositeModelTest(VLMModelTest, unittest.TestCase):
         torch.testing.assert_close(actual, expected[:, input_ids.shape[1] :])
 
     def test_video_forward(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         inputs["input_ids"][inputs["input_ids"] == config.image_token_id] = config.video_token_id
         inputs["mm_token_type_ids"][inputs["mm_token_type_ids"] == 1] = 2
         inputs["pixel_values_videos"] = inputs.pop("pixel_values")

@@ -229,7 +229,7 @@ class LlavaNextVideoForConditionalGenerationModelTest(ModelTesterMixin, Generati
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompr has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -291,7 +291,7 @@ class LlavaNextVideoForConditionalGenerationModelTest(ModelTesterMixin, Generati
         Test that we can use either one vision feature layer, or a list of
         vision feature layers.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.vision_feature_layer = vision_feature_layer
 
         num_feature_layers = 1 if isinstance(vision_feature_layer, int) else len(vision_feature_layer)
@@ -335,7 +335,7 @@ class LlavaNextVideoForConditionalGenerationModelTest(ModelTesterMixin, Generati
         Despite using `pixel_values_videos` in forward, LlavaNextVideo's `get_video_features` method
         instead uses `pixel_values` as input, so we need to override the inputs accordingly.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         inputs_dict = {"pixel_values": inputs_dict["pixel_values_videos"]}
         return config, inputs_dict
 

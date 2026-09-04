@@ -225,7 +225,7 @@ class Gemma3nAudioModelTest(ModelTesterMixin, unittest.TestCase):
         Tests the audio encoder's forward pass against pre-computed golden values.
         This ensures the PyTorch-based audio encoding model is correct and consistent.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = Gemma3nAudioEncoder(config).to(torch_device).eval()
 
         with torch.no_grad():

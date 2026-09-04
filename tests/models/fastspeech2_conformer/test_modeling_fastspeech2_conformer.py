@@ -142,7 +142,7 @@ class FastSpeech2ConformerModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_duration_energy_pitch_output(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = self.model_tester.seq_length
@@ -183,7 +183,7 @@ class FastSpeech2ConformerModelTest(ModelTesterMixin, unittest.TestCase):
                     self.assertEqual(expected_seq_length, self.model_tester.seq_length)
                 self.assertEqual(expected_hidden_size, self.model_tester.hidden_size)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         inputs_dict["output_hidden_states"] = True
         _check_hidden_states_output(inputs_dict, config, FastSpeech2ConformerModel)
@@ -204,7 +204,7 @@ class FastSpeech2ConformerModelTest(ModelTesterMixin, unittest.TestCase):
         self.assertEqual(info["missing_keys"], set())
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = FastSpeech2ConformerModel(config)
         signature = inspect.signature(model.forward)
         # signature.parameters is an OrderedDict => so arg_names order is deterministic
@@ -229,7 +229,7 @@ class FastSpeech2ConformerModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Override as FastSpeech2Conformer does not output cross attentions
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -267,7 +267,7 @@ class FastSpeech2ConformerModelTest(ModelTesterMixin, unittest.TestCase):
         Custom `test_attention_outputs` since FastSpeech2Conformer does not output cross attentions, has variable
         decoder attention shape, and uniquely outputs energy, pitch, and durations.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = self.model_tester.seq_length
@@ -562,7 +562,7 @@ class FastSpeech2ConformerWithHifiGanTest(ModelTesterMixin, unittest.TestCase):
         return inputs_dict
 
     def test_duration_energy_pitch_output(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.model_config.return_dict = True
 
         seq_len = self.model_tester.seq_length
@@ -603,7 +603,7 @@ class FastSpeech2ConformerWithHifiGanTest(ModelTesterMixin, unittest.TestCase):
                     self.assertEqual(expected_seq_length, self.model_tester.seq_length)
                 self.assertEqual(expected_hidden_size, self.model_tester.hidden_size)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         inputs_dict["output_hidden_states"] = True
         _check_hidden_states_output(inputs_dict, config, FastSpeech2ConformerWithHifiGan)
@@ -624,7 +624,7 @@ class FastSpeech2ConformerWithHifiGanTest(ModelTesterMixin, unittest.TestCase):
         self.assertEqual(info["missing_keys"], set())
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = FastSpeech2ConformerWithHifiGan(config)
         signature = inspect.signature(model.forward)
         # signature.parameters is an OrderedDict => so arg_names order is deterministic
@@ -649,7 +649,7 @@ class FastSpeech2ConformerWithHifiGanTest(ModelTesterMixin, unittest.TestCase):
 
     # Override as FastSpeech2Conformer does not output cross attentions
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.model_config.output_hidden_states = True
         config.model_config.output_attentions = True
 
@@ -687,7 +687,7 @@ class FastSpeech2ConformerWithHifiGanTest(ModelTesterMixin, unittest.TestCase):
         Custom `test_attention_outputs` since FastSpeech2Conformer does not output cross attentions, has variable
         decoder attention shape, and uniquely outputs energy, pitch, and durations.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.model_config.return_dict = True
 
         seq_len = self.model_tester.seq_length

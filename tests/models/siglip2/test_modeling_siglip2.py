@@ -64,7 +64,7 @@ if is_vision_available():
 class Siglip2ModelTesterMixin(ModelTesterMixin):
     def test_sdpa_can_dispatch_composite_models(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -102,7 +102,7 @@ class Siglip2ModelTesterMixin(ModelTesterMixin):
                 self.skipTest(f"{model_class.__name__} does not support Flash Attention 2")
 
             # Prepare inputs
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             if "pixel_values" in inputs_dict:
                 inputs_dict["pixel_values"] = inputs_dict["pixel_values"].to(dtype)
 
@@ -291,7 +291,7 @@ class Siglip2VisionModelTest(Siglip2ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -300,7 +300,7 @@ class Siglip2VisionModelTest(Siglip2ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -563,7 +563,7 @@ class Siglip2ModelTest(Siglip2ModelTesterMixin, PipelineTesterMixin, unittest.Te
         pass
 
     def test_load_vision_text_config(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Save Siglip2Config and check if we can load Siglip2VisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

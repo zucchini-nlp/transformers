@@ -747,7 +747,7 @@ class PerceiverModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
     def test_correct_missing_keys(self):
         if not self.test_missing_keys:
             self.skipTest(reason="test_missing_keys is set to False")
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             # most Perceiver models don't have a typical head like is the case with BERT

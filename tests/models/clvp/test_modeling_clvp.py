@@ -303,7 +303,7 @@ class ClvpDecoderTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
 
     def test_training(self):
         # we will only test the ClvpForCausalLM since it outputs loss
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         model = ClvpForCausalLM(config)
@@ -454,7 +454,7 @@ class ClvpModelForConditionalGenerationTest(ModelTesterMixin, unittest.TestCase)
             # the sequence lengths by adding `decoder_fixing_codes` tokens at the end.
             self.assertEqual(speech_encoder_hidden_states[0].shape[-1], config.speech_config.hidden_size)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -479,7 +479,7 @@ class ClvpModelForConditionalGenerationTest(ModelTesterMixin, unittest.TestCase)
         pass
 
     def test_load_speech_text_decoder_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save ClvpConfig and check if we can load ClvpEncoderConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

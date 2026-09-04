@@ -266,7 +266,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         when number of images doesn't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompt has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -298,7 +298,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         """
         Test that models can be created and initialized with different spatial_merge_size values.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Test that model can be created with different spatial_merge_size values
         for spatial_merge_size in [1, 2, 4]:
@@ -324,7 +324,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         """
         Test that the model correctly handles variable image sizes.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -365,7 +365,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         """
         Test that model outputs are consistent across different input configurations.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -383,7 +383,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         """
         Test that the vision projection correctly transforms vision embeddings to text space.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         model = LightOnOcrModel(config).to(torch_device)
         model.eval()
@@ -414,7 +414,7 @@ class LightOnOcrForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         """
         Test the get_image_features method.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         model = LightOnOcrModel(config).to(torch_device)
         model.eval()

@@ -217,7 +217,7 @@ class MaskFormerSwinModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -259,7 +259,7 @@ class MaskFormerSwinModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         )
 
     def test_hidden_states_output(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         image_size = (
             self.model_tester.image_size
@@ -278,7 +278,7 @@ class MaskFormerSwinModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
             self.check_hidden_states_output(inputs_dict, config, model_class, image_size)
 
     def test_hidden_states_output_with_padding(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.patch_size = 3
 
         image_size = (
@@ -313,7 +313,7 @@ class MaskFormerSwinModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Te
         pass
 
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
@@ -382,7 +382,7 @@ class MaskFormerSwinBackboneTest(unittest.TestCase, BackboneTesterMixin):
 
     # Overriding as returned hidden states are tuples of tensors instead of a single tensor
     def test_backbone_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         batch_size = inputs_dict["pixel_values"].shape[0]
 
         for backbone_class in self.all_model_classes:

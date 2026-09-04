@@ -54,7 +54,7 @@ class MiniMaxM2ModelTest(CausalLMModelTest, unittest.TestCase):
         """
         # Set seed for deterministic test - ensures reproducible model initialization and inputs
         set_seed(42)
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.num_experts = 3
         config.output_router_logits = True

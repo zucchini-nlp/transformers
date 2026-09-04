@@ -56,7 +56,7 @@ class MellumModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_load_balancing_loss(self):
         # Copied from Qwen3-Moe
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.num_experts = 3
         config.expert_interval = 2

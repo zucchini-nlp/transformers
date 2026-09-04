@@ -204,7 +204,7 @@ class MoonshineModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         self.assertFalse(torch.allclose(out.loss, aligned_ce(out.logits, labels)))
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = getattr(self.model_tester, "seq_length", None)
@@ -341,7 +341,7 @@ class MoonshineModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
                     [decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -355,7 +355,7 @@ class MoonshineModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
 
     # Copied from tests.models.whisper.test_modeling_whisper.WhisperModelTest.test_inputs_embeds
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -378,7 +378,7 @@ class MoonshineModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -427,7 +427,7 @@ class MoonshineModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCas
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 

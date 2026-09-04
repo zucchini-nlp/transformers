@@ -628,7 +628,7 @@ class ExportTesterMixin:
         if hasattr(self.model_tester, "prepare_config_and_inputs_for_model_class"):
             config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_model_class(model_class)
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
         inputs_dict = self._prepare_for_class(inputs_dict, model_class)
         inputs_dict = _clean_inputs_for_export(inputs_dict, config)
 

@@ -273,7 +273,7 @@ class UMT5ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin
 
     # UMT5ForSequenceClassification does not support inputs_embeds
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in (UMT5Model, UMT5ForConditionalGeneration, UMT5ForQuestionAnswering):
             model = model_class(config)
@@ -304,7 +304,7 @@ class UMT5ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin
     # overwrite because T5 doesn't accept position ids as input and expects `decoder_input_ids`
     def test_custom_4d_attention_mask(self):
         for model_class in self.all_generative_model_classes:
-            config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, input_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config).to(device=torch_device, dtype=torch.float32)
 
             (

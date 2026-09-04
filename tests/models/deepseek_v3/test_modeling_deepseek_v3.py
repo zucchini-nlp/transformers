@@ -336,7 +336,7 @@ class DeepseekV3ModelTest(
         Original issue is also due to dimensionalities, here specifically due to dims not being a multiple of 2.
         """
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config._attn_implementation = "flex_attention"
 
             # Disable dropout
@@ -359,7 +359,7 @@ class DeepseekV3ModelTest(
             _ = model(**dummy_inputs)
 
     def test_deepseek_v3_sequence_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)

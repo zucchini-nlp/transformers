@@ -192,7 +192,7 @@ class VitsModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
     @require_torch_multi_gpu
     # override to force all elements of the batch to have the same sequence length across GPUs
     def test_multi_gpu_data_parallel_forward(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.use_stochastic_duration_prediction = False
 
         # move input tensors to cuda:O
@@ -231,7 +231,7 @@ class VitsModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # override since the model is not deterministic, so we need to set the seed for each forward pass
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
@@ -308,7 +308,7 @@ class VitsModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # override since the model is not deterministic, so we need to set the seed for each forward pass
     def test_save_load(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def check_save_load(out1, out2):
             # make sure we don't have nans

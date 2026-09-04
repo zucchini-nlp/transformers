@@ -258,7 +258,7 @@ class LlavaOnevisionForConditionalGenerationModelTest(ModelTesterMixin, Generati
         Test that we can use either one vision feature layer, or a list of
         vision feature layers.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.vision_feature_layer = vision_feature_layer
 
         num_feature_layers = 1 if isinstance(vision_feature_layer, int) else len(vision_feature_layer)

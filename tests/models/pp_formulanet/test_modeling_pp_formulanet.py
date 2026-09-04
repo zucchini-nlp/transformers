@@ -158,7 +158,7 @@ class PPFormulaNetModelTest(VLMModelTest, unittest.TestCase):
         if not self.has_attentions:
             self.skipTest(reason="Model does not output attentions")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -237,7 +237,7 @@ class PPFormulaNetModelTest(VLMModelTest, unittest.TestCase):
                     [self.model_tester.decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True

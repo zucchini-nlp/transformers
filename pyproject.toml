@@ -84,6 +84,9 @@ markers = [
     "is_training_test: marks tests that use the TrainingTesterMixin (deselect with '-m \"not is_training_test\"')",
     "is_tensor_parallel_test: marks tests that use the TensorParallelTesterMixin (deselect with '-m \"not is_tensor_parallel_test\"')",
     "is_fsdp_test: marks tests that use the FSDPTesterMixin (deselect with '-m \"not is_fsdp_test\"')",
+    "image: test run with image modality",
+    "video: test run with video modality",
+    "multimodal_combo: parametrized by full vision-only modality combination",
 ]
 log_cli = 1
 log_cli_level = "WARNING"

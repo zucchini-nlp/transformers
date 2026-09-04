@@ -200,7 +200,7 @@ class VibeVoiceAsrForConditionalGenerationModelTest(ModelTesterMixin, Generation
     def test_sdpa_can_dispatch_composite_models(self):
         # VibeVoiceAsr is audio+text composite; but audio components do not use attention
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:

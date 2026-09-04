@@ -131,7 +131,7 @@ class UnivNetModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -165,7 +165,7 @@ class UnivNetModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_batched_inputs_outputs(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -187,7 +187,7 @@ class UnivNetModelTest(ModelTesterMixin, unittest.TestCase):
             )
 
     def test_unbatched_inputs_outputs(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

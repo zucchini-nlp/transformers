@@ -202,7 +202,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
 
     def test_model(self):
         """Tests that we can run a forward pass with the base model"""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaModel(config=config).to(torch_device).eval()
         expected_shape = (self.model_tester.batch_size, self.model_tester.canvas_length, self.model_tester.hidden_size)
 
@@ -261,7 +261,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         on the decoder keeping the read-only cache (`_can_checkpoint_with_cache`). Both must reproduce the exact
         same loss and gradients as the non-checkpointed forward, including encoder gradients through the cache.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         # Checkpointing only engages in train mode, so determinism requires disabling dropout instead of eval()
         config.text_config.attention_dropout = 0.0
         config.vision_config.dropout = 0.0
@@ -306,7 +306,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
            decoder self-conditioning weights
         2. The LM Head weights are the same as the embedding weights -- in both the text encoder and in the decoder!
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # 1. text encoder trainable params == decoder trainable params (excluding decoder self-conditioning)
@@ -325,7 +325,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         DiffusionGemma's decoder never writes a cache, so the common kwarg `use_cache` is silently ignored instead
         of raising. This keeps the model usable with gradient checkpointing, which forces `use_cache=False`.
         """
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # Either value is accepted and has no effect: no exception, and the output matches omitting the kwarg.
@@ -339,7 +339,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         DiffusionGemma has a custom function to create an attention mask for the decoder. Contrarily
         to other mask creation functions, it requires a KV cache
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         dummy_canvas = torch.ones((2, 4), dtype=torch.int32, device=torch_device)
@@ -361,7 +361,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         concat_kv_length = prefill_length + canvas_length
         batch_size = 2
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # Apply prefill (smaller than sliding window)
@@ -408,7 +408,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         )
         expected_attention_mask_shape = (batch_size, 1, canvas_length, concat_kv_length)
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # Apply prefill (smaller than sliding window)
@@ -450,7 +450,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         )
         expected_attention_mask_shape = (batch_size, 1, canvas_length, concat_kv_length)
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # Apply prefill (smaller than sliding window)
@@ -504,7 +504,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         # Double-check test assumption that left-padding should be past the sliding window
         self.assertTrue(prefill_length - left_padding_length > sliding_window_length)
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.text_config.sliding_window = sliding_window_length
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
@@ -539,7 +539,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         original test, the mask is materialized (a materialized mask is needed at compile time)
         """
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         prefill_length = 8
         canvas_length = config.canvas_length
@@ -579,7 +579,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         This is the most complex mask preparation test, including static caches, left-padding, and mask preparation
         beyond the sliding window length.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         prefill_length = 16
         sliding_window_length = 8
@@ -658,7 +658,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
     )
     def test_generate(self, name, generate_kwargs):
         """Tests `generate` calls with common flags"""
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
         model.generation_config.eos_token_id = None  # force generation up to `max_new_tokens`
 
@@ -671,7 +671,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
 
     def test_generate_text_only(self):
         """Same as `test_generate`, but only with text inputs (no images)"""
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
         model.generation_config.eos_token_id = None  # force generation up to `max_new_tokens`
 
@@ -682,7 +682,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
 
     def test_generate_without_return_dict(self):
         """Same as `test_generate_text_only`, but return_dict_in_generate=False"""
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
         model.generation_config.eos_token_id = None  # force generation up to `max_new_tokens`
         model.generation_config.return_dict_in_generate = False
@@ -697,7 +697,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         Same as the base case in `test_generate`, but we parameterize the generation call with a
         `DiffusionGemmaGenerationConfig`
         """
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # force `eos_token_id = None` to not stop before reaching `max_new_tokens`
@@ -712,7 +712,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         Same as `test_generate_from_generation_config`, but we override some parameters with kwargs in the
         `generate` call. Remember: kwargs > generation config
         """
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 
         # force `eos_token_id = None` to not stop before reaching `max_new_tokens`
@@ -727,7 +727,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         Tests that we can pass in past_key_values outputted from a previous `generate` into a subsequent call.
         This pattern is used in chat sessions.
         """
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
         model.generation_config.eos_token_id = None  # force generation up to `max_new_tokens`
 
@@ -761,7 +761,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
     @slow
     def test_generate_beyond_sliding_window(self, name, cache_implementation):
         """Tests that generate can run beyond the sliding window length"""
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         # Canvas length has to be much smaller than sliding window to correctly check the mask
         # and input-length has to be smaller than sliding length! We will check three cases:
         # 1) input/mask is smaller than window
@@ -791,7 +791,7 @@ class DiffusionGemmaVisionText2TextModelTest(ModelTesterMixin, unittest.TestCase
         # TODO(huggingface team): after a tiny diffusion model is created, this test can be moved into
         # its right place, i.e. tests/generation/test_streamers.py
 
-        config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, model_inputs = self.prepare_config_and_inputs_for_common()
         input_ids = model_inputs["input_ids"][:1, :]  # streaming requires bsz=1
         model = DiffusionGemmaForBlockDiffusion(config=config).to(torch_device).eval()
 

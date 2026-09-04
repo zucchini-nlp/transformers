@@ -345,7 +345,7 @@ class ZambaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixi
         r"""
         Overriding the test_attention_outputs test as the Zamba model outputs attention only for its attention layers
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = getattr(self.model_tester, "seq_length", None)

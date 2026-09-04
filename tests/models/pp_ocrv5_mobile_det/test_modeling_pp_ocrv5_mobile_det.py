@@ -171,7 +171,7 @@ class PPOCRV5MobileDetModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -195,7 +195,7 @@ class PPOCRV5MobileDetModelTest(ModelTesterMixin, unittest.TestCase):
 
             self.assertEqual(len(hidden_states), expected_num_stages + 1)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
             check_hidden_states_output(inputs_dict, config, model_class)
@@ -216,7 +216,7 @@ class PPOCRV5MobileDetModelTest(ModelTesterMixin, unittest.TestCase):
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

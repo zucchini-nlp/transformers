@@ -208,7 +208,7 @@ class MoshiDecoderTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config = copy.deepcopy(original_config)
@@ -639,7 +639,7 @@ class MoshiTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCase):
             if not model_class._supports_sdpa:
                 self.skipTest(f"{model_class.__name__} does not support SDPA")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             dummy_input = inputs_dict[model_class.main_input_name]
             if dummy_input.dtype in [torch.float32, torch.bfloat16]:

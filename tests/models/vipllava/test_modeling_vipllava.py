@@ -199,7 +199,7 @@ class VipLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTest
         when number of images doesn't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompr has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -241,7 +241,7 @@ class VipLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTest
         # and added support for a list of layers with granite vision support, while vipllava
         # originally supported multiple feature layers, and added support for a single layer for
         # for compatibility reasons.
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.vision_feature_layers = vision_feature_layers
 
         num_feature_layers = 1 if isinstance(vision_feature_layers, int) else len(vision_feature_layers)

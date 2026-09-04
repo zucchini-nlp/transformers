@@ -203,7 +203,7 @@ class PromptDepthAnythingModelTest(ModelTesterMixin, PipelineTesterMixin, unitte
 
                 self.assertEqual(len(model.backbone.out_indices), 2)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         config_dict = config.to_dict()
         config_dict["backbone"] = "facebook/dinov2-small"

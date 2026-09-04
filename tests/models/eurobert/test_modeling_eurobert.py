@@ -235,7 +235,7 @@ class EuroBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
             self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_eurobert_sequence_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -247,7 +247,7 @@ class EuroBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
         self.assertEqual(result.logits.shape, (self.model_tester.batch_size, self.model_tester.num_labels))
 
     def test_eurobert_sequence_classification_model_for_single_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "single_label_classification"
         input_ids = input_dict["input_ids"]
@@ -260,7 +260,7 @@ class EuroBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
         self.assertEqual(result.logits.shape, (self.model_tester.batch_size, self.model_tester.num_labels))
 
     def test_eurobert_sequence_classification_model_for_multi_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "multi_label_classification"
         input_ids = input_dict["input_ids"]
@@ -299,7 +299,7 @@ class EuroBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
             return new_config
 
         # from untouched config -> ✅
-        base_config, model_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        base_config, model_inputs = self.prepare_config_and_inputs_for_common()
         original_model = EuroBertForMaskedLM(base_config).to(torch_device)
         original_model(**model_inputs)
 

@@ -224,7 +224,7 @@ class Gemma3Vision2TextModelTest(VLMModelTest, unittest.TestCase):
 
     def test_training(self):
         # Overwrite to test training with text-only samples, should not raise errors
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         model = Gemma3ForConditionalGeneration(config)
@@ -262,7 +262,7 @@ class Gemma3Vision2TextModelTest(VLMModelTest, unittest.TestCase):
         cannot attend to future images, even within the same batch.
         """
         set_seed(42)
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
         model = Gemma3Model(config).to(torch_device)
 

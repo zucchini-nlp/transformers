@@ -439,7 +439,7 @@ class IdeficsModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMi
             if model_class == IdeficsModel:
                 self.skipTest(reason="IdeficsModel does not support training")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             model = model_class(config)
@@ -459,7 +459,7 @@ class IdeficsModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMi
             if model_class == IdeficsModel:
                 self.skipTest(reason="IdeficsModel does not support training")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.use_cache = False
             config.return_dict = True
 
@@ -491,7 +491,7 @@ class IdeficsModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMi
 
         # Tests that we can continue generating from past key values, returned from a previous `generate` call
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             # Ensure left padding in the mask because otherwise position ids will
             # not be consecutive. Randomly mask leftmost tokens
@@ -553,7 +553,7 @@ class IdeficsModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMi
             self._check_caches_are_equal(outputs.past_key_values, outputs_cached.past_key_values)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -622,7 +622,7 @@ class IdeficsModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMi
                 [seq_length, self.model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -702,7 +702,7 @@ class IdeficsForVisionText2TextTest(IdeficsModelTest, GenerationTesterMixin, uni
 
         # Tests that we can continue generating from past key values, returned from a previous `generate` call
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             # Ensure left padding in the mask because otherwise position ids will
             # not be consecutive. Randomly mask leftmost tokens
@@ -793,7 +793,7 @@ class IdeficsForVisionText2TextTest(IdeficsModelTest, GenerationTesterMixin, uni
         """Overwrite for IDEFICS: Ensure image attention mask is processed while continuing from `inputs_embeds`."""
 
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
             set_config_for_less_flaky_test(config)
 
             model = model_class(config).to(torch_device).eval()

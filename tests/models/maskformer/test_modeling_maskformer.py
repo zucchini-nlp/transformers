@@ -238,7 +238,7 @@ class MaskFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
         self.config_tester.run_common_tests()
 
     def test_maskformer_model(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_maskformer_model(config, **inputs, output_hidden_states=False)
 
     def test_maskformer_instance_segmentation_head_model(self):
@@ -293,11 +293,11 @@ class MaskFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
         self.assertTrue(outputs.loss is not None)
 
     def test_hidden_states_output(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_maskformer_model(config, **inputs, output_hidden_states=True)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -373,7 +373,7 @@ class MaskFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
         self.assertIsNotNone(attentions.grad)
 
     def test_forward_auxiliary_loss(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.use_auxiliary_loss = True
         config.output_auxiliary_logits = True
         config.output_hidden_states = True
@@ -422,7 +422,7 @@ class MaskFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
                     ),
                 )
 
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config.output_hidden_states = True
@@ -453,7 +453,7 @@ class MaskFormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCa
 
     @require_timm
     def test_backbone_selection(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         config_dict = config.to_dict()
         config_dict["backbone_config"] = None

@@ -213,7 +213,7 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
         self.config_tester.run_common_tests()
 
     def test_mask2former_model(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_mask2former_model(config, **inputs, output_hidden_states=False)
 
     def test_mask2former_instance_segmentation_head_model(self):
@@ -263,11 +263,11 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
         self.assertTrue(outputs.loss is not None)
 
     def test_hidden_states_output(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_mask2former_model(config, **inputs, output_hidden_states=True)
 
     def test_attention_outputs(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -320,7 +320,7 @@ class Mask2FormerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
 
     @require_timm
     def test_backbone_selection(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         config_dict = config.to_dict()
         config_dict["backbone_config"] = None

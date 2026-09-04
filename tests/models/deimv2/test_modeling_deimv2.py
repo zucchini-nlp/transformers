@@ -359,7 +359,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # Override: Multi-scale deformable attention outputs have different shapes than standard self-attention
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -495,7 +495,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                     [self.model_tester.num_queries, self.model_tester.d_model],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -508,7 +508,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # Override: Custom gradient retention check for multi-scale deformable attention outputs
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -542,7 +542,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # Override: Deimv2 uses pixel_values as main input, not input_ids
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -552,7 +552,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_backbone_selection(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def _validate_backbone_init(config):
             for model_class in self.all_model_classes:
@@ -603,7 +603,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -625,7 +625,7 @@ class Deimv2ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         h, w = inputs_dict["pixel_values"].shape[-2:]
 
         for key, tensor in inputs_dict.items():
@@ -974,7 +974,7 @@ class Deimv2LiteEncoderModelTest(ModelTesterMixin, PipelineTesterMixin, unittest
                     [self.model_tester.num_queries, self.model_tester.d_model],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -987,7 +987,7 @@ class Deimv2LiteEncoderModelTest(ModelTesterMixin, PipelineTesterMixin, unittest
 
     # Override: Deimv2 uses pixel_values as main input, not input_ids
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1351,7 +1351,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Override: Multi-scale deformable attention outputs have different shapes than standard self-attention
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:
@@ -1488,7 +1488,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
                     [self.model_tester.num_queries, self.model_tester.d_model],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -1501,7 +1501,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Override: Custom gradient retention check for multi-scale deformable attention outputs
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -1535,7 +1535,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Override: Deimv2 uses pixel_values as main input, not input_ids
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1554,7 +1554,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1576,7 +1576,7 @@ class Deimv2DINOv3ModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Test
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         h, w = inputs_dict["pixel_values"].shape[-2:]
 
         for key, tensor in inputs_dict.items():

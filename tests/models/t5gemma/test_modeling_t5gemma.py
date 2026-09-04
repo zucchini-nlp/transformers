@@ -646,7 +646,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     # Based on tests.models.t5.test_modeling_t5.T5ModelTest.test_inputs_embeds
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in (T5GemmaModel, T5GemmaForConditionalGeneration):
             model = model_class(config)
@@ -756,7 +756,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     # Based on tests.models.gemma.test_modeling_gemma.GemmaModelTest.test_Gemma_sequence_classification_model with Gemma -> T5Gemma (Add is_encoder_decoder option)
     def test_T5Gemma_sequence_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -773,7 +773,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     # Based on tests.models.gemma.test_modeling_gemma.GemmaModelTest.test_Gemma_sequence_classification_model_for_single_label with Gemma -> T5Gemma (Add is_encoder_decoder option)
     def test_T5Gemma_sequence_classification_model_for_single_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "single_label_classification"
         input_ids = input_dict["input_ids"]
@@ -791,7 +791,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     # Based on tests.models.gemma.test_modeling_gemma.GemmaModelTest.test_Gemma_sequence_classification_model_for_multi_label with Gemma -> T5Gemma (Add is_encoder_decoder option)
     def test_T5Gemma_sequence_classification_model_for_multi_label(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.problem_type = "multi_label_classification"
         input_ids = input_dict["input_ids"]
@@ -811,7 +811,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     # Based on tests.models.gemma.test_modeling_gemma.GemmaModelTest.test_Gemma_token_classification_model with Gemma -> T5Gemma (Add is_encoder_decoder option)
     def test_T5Gemma_token_classification_model(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         input_ids = input_dict["input_ids"]
         attention_mask = input_ids.ne(1).to(torch_device)
@@ -839,7 +839,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             if not model_class._supports_sdpa:
                 self.skipTest(reason="Model does not support SDPA")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config).to(torch_device)
             dummy_input = inputs_dict[model_class.main_input_name].to(torch_device)
             decoder_dummy_input = torch.ones_like(dummy_input)
@@ -870,7 +870,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         if not self.has_attentions:
             self.skipTest(reason="Model does not output attentions")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
 
@@ -1007,7 +1007,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             if any(model_name in model_class.__name__.lower() for model_name in ["umt5"]):
                 self.skipTest(reason="TODO: needs modeling or test input preparation fixes for compatibility")
 
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             if not hasattr(config.get_text_config(), "use_cache"):
                 self.skipTest(reason=f"{model_class.__name__} doesn't support caching")
@@ -1088,7 +1088,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
     # Based on tests.test_modeling_common.ModelTesterMixin.test_inputs_embeds_matches_input_ids
     # Update encoder and decoder embeddings
     def test_inputs_embeds_matches_input_ids(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model_class = self.model_tester.model_class
 
         model = model_class(config)
@@ -1171,7 +1171,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
                     [decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -1187,7 +1187,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
     # Excluding the final token from input_ids
     def test_custom_4d_attention_mask(self):
         for model_class in self.all_generative_model_classes:
-            config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, input_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config).to(device=torch_device, dtype=torch.float32)
 
             (
@@ -1228,7 +1228,7 @@ class T5GemmaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             if not model_class._supports_flex_attn or self._is_composite:
                 self.skipTest(reason="This model does not support flex attention")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config._attn_implementation = "flex_attention"
             # Flex Attention cannot use dropout
             config.encoder.attention_dropout = 0
@@ -1544,7 +1544,7 @@ class T5GemmaEncoderOnlyModelTest(ModelTesterMixin, unittest.TestCase):
             if not model_class._supports_flex_attn or self._is_composite:
                 self.skipTest(reason="This model does not support flex attention")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config._attn_implementation = "flex_attention"
             # Flex Attention cannot use dropout
             config.encoder.attention_dropout = 0

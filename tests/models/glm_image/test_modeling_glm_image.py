@@ -211,7 +211,7 @@ class GlmImageModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
 
     # GlmImage has images shaped as (bs*patch_len, dim) so we can't slice to batches in generate
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # We don't want a few model inputs in our model input dictionary for generation tests
         input_keys_to_ignore = [
@@ -266,7 +266,7 @@ class GlmImageModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
             self.skipTest(reason="ModelTester is not configured to run training tests")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             if model_class.__name__ in [
@@ -422,7 +422,7 @@ class GlmImageModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.TestCa
         GlmImage internally preprocesses the image_grid_thw input by selecting source grids,
         so we need to prepare inputs accordingly for testing get_image_features. We also discard text-related inputs.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         # Select only source grids (every other grid starting from index 0)
         # Grid layout: [s0_source, s0_target, s1_source, s1_target, ...]
         num_grids_per_sample = 2  # 1 source + 1 target

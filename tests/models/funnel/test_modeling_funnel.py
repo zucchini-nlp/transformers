@@ -457,7 +457,7 @@ class FunnelBaseModelTest(ModelTesterMixin, unittest.TestCase):
 
     # overwrite from test_modeling_common
     def test_training(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         for model_class in self.all_model_classes:

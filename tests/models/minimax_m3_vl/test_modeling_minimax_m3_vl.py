@@ -318,7 +318,7 @@ class MiniMaxM3VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTest
         occupy the same slots and see the same key blocks as in an unpadded run -- unlike left-padding,
         which shifts the slot-anchored block boundaries (see `test_left_padding_compatibility`).
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.text_config._attn_implementation = "eager"
         vocab = config.text_config.vocab_size
         pad_id = config.text_config.pad_token_id
@@ -356,7 +356,7 @@ class MiniMaxM3VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTest
         Tests that VLMs raise an explicit error when the number of images doesn't match the number
         of image tokens in the text, and that genuine multi-image cases are accepted.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         num_patches = self.model_tester.num_patches
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -387,7 +387,7 @@ class MiniMaxM3VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTest
 
     def test_video_forward(self):
         """Video frames flow through the same vision tower as images and scatter into the video-token slots."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         batch_size = self.model_tester.batch_size
         num_channels = self.model_tester.num_channels
@@ -433,7 +433,7 @@ class MiniMaxM3VLModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTest
 
     def test_mismatching_num_video_tokens(self):
         """VLMs must raise when the number of videos doesn't match the number of video tokens in the text."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         batch_size = self.model_tester.batch_size
         num_channels = self.model_tester.num_channels

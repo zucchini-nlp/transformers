@@ -391,7 +391,7 @@ class BridgeTowerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
                 [num_image_features, self.model_tester.vision_model_tester.hidden_size],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -404,7 +404,7 @@ class BridgeTowerModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestC
 
     # Override as `hidden states output` is different for BridgeTower
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = self.has_attentions
 
@@ -555,7 +555,7 @@ class BridgeTowerModelTrainingTest(unittest.TestCase):
         self.config_tester = ConfigTester(self, config_class=BridgeTowerConfig, hidden_size=32, vocab_size=99)
 
     def _prepare_inputs_for_training(self, model_class):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if model_class == BridgeTowerForMaskedLM:
             inputs_dict["labels"] = inputs_dict["input_ids"]
         elif model_class == BridgeTowerForImageAndTextRetrieval:

@@ -333,7 +333,7 @@ class HiggsAudioV2ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Te
 
     def test_forward_with_logits_to_keep(self):
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
             batch_size, sequence_length = inputs["input_ids"].shape[:2]
             model = model_class(config).to(device=torch_device).eval()
             # some models have labels but `logits_to_keep` should not be used in train mode
@@ -363,7 +363,7 @@ class HiggsAudioV2ModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Te
             if any(model_name in model_class.__name__.lower() for model_name in ["umt5"]):
                 self.skipTest(reason="TODO: needs modeling or test input preparation fixes for compatibility")
 
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             if not hasattr(config.get_text_config(), "use_cache"):
                 self.skipTest(reason=f"{model_class.__name__} doesn't support caching")

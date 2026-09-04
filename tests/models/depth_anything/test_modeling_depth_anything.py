@@ -200,7 +200,7 @@ class DepthAnythingModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.Tes
                 # Confirm out_indices propagated to backbone
                 self.assertEqual(len(model.backbone.out_indices), 2)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # These kwargs are all removed and are supported only for BC
         # In new models we have only `backbone_config`. Let's test that there is no regression

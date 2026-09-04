@@ -142,7 +142,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester.create_and_check_model_forward(*config_and_inputs)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -157,7 +157,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
         super().test_batching_equivalence(atol=atol, rtol=rtol)
 
     def test_gradient_checkpointing_backward_compatibility(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -298,7 +298,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Copied from transformers.tests.encodec.test_modeling_encodecEncodecModelTest.test_determinism
     def test_determinism(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def check_determinism(first, second):
             # outputs are not tensors but list (since each sequence don't have the same frame_length)
@@ -325,7 +325,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Copied from transformers.tests.encodec.test_modeling_encodecEncodecModelTest.test_model_outputs_equivalence
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
@@ -364,7 +364,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
             check_equivalence(model, tuple_inputs, dict_inputs)
 
     def test_initialization(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         configs_no_init = _config_zero_init(config)
         for model_class in self.all_model_classes:
             model = model_class(config=configs_no_init)
@@ -389,7 +389,7 @@ class HiggsAudioV2TokenizerModelTest(ModelTesterMixin, unittest.TestCase):
     @is_flaky()
     def test_flash_attn_2_inference_equivalence(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:

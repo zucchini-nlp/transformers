@@ -452,7 +452,7 @@ class ParakeetForCTCModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -647,7 +647,7 @@ class ParakeetForTDTModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_model(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     @unittest.skip(reason="ParakeetForTDT does not use inputs_embeds")
@@ -697,7 +697,7 @@ class ParakeetForTDTModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -968,7 +968,7 @@ class ParakeetForRNNTModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_model(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     @unittest.skip(reason="ParakeetForRNNT does not use inputs_embeds")
@@ -1018,7 +1018,7 @@ class ParakeetForRNNTModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:

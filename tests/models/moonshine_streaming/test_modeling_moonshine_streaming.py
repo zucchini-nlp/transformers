@@ -203,7 +203,7 @@ class MoonshineStreamingModelTest(ModelTesterMixin, PipelineTesterMixin, unittes
     model_split_percents = [0.5, 0.9, 0.95]
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         seq_len = getattr(self.model_tester, "seq_length", None)
@@ -340,7 +340,7 @@ class MoonshineStreamingModelTest(ModelTesterMixin, PipelineTesterMixin, unittes
                     [decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -355,7 +355,7 @@ class MoonshineStreamingModelTest(ModelTesterMixin, PipelineTesterMixin, unittes
 
     # Copied from tests.models.whisper.test_modeling_whisper.WhisperModelTest.test_inputs_embeds
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -378,7 +378,7 @@ class MoonshineStreamingModelTest(ModelTesterMixin, PipelineTesterMixin, unittes
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -427,7 +427,7 @@ class MoonshineStreamingModelTest(ModelTesterMixin, PipelineTesterMixin, unittes
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 

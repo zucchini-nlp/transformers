@@ -164,7 +164,7 @@ class BlipVisionModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -173,7 +173,7 @@ class BlipVisionModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -429,7 +429,7 @@ class BlipModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         pass
 
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save BlipConfig and check if we can load BlipVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -450,7 +450,7 @@ class BlipModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         self.assertIsNotNone(model)
 
     def test_get_image_features(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         keys_to_pop = ["input_ids", "attention_mask", "return_loss"]
 
@@ -469,7 +469,7 @@ class BlipModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         )
 
     def test_get_text_features(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         keys_to_pop = ["pixel_values", "return_loss"]
 
@@ -488,7 +488,7 @@ class BlipModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         )
 
     def test_get_multimodal_features(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         keys_to_pop = ["return_loss"]
 
@@ -674,7 +674,7 @@ class BlipVQAModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester = BlipVQAModelTester(self)
 
     def _prepare_inputs_for_vqa(self):
-        _, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        _, inputs_dict = self.prepare_config_and_inputs_for_common()
         inputs_dict["decoder_input_ids"] = inputs_dict["input_ids"]
         inputs_dict.pop("return_loss")
         return inputs_dict
@@ -697,7 +697,7 @@ class BlipVQAModelTest(ModelTesterMixin, unittest.TestCase):
         for model_class in self.all_model_classes:
             model = model_class(self.model_tester.get_config()).to(torch_device)
             model.train()
-            loss = model(**self.model_tester.prepare_config_and_inputs_for_common()[1]).loss
+            loss = model(**self.prepare_config_and_inputs_for_common()[1]).loss
             loss.backward()
 
             # verify the gradients are not None
@@ -770,7 +770,7 @@ class BlipTextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -796,7 +796,7 @@ class BlipTextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(reason="ModelTester is not setup for training")
 
         for model_class in self.all_model_classes[:-1]:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             model = model_class(config)
@@ -815,7 +815,7 @@ class BlipTextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(reason="ModelTester is not setup for training")
 
         for model_class in self.all_model_classes[:-1]:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.use_cache = False
             config.return_dict = True
 
@@ -832,7 +832,7 @@ class BlipTextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
             loss.backward()
 
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save BlipConfig and check if we can load BlipVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -886,7 +886,7 @@ class BlipTextImageModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -912,7 +912,7 @@ class BlipTextImageModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(reason="ModelTester is not setup for training")
 
         for model_class in self.all_model_classes[:-1]:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             model = model_class(config)
@@ -931,7 +931,7 @@ class BlipTextImageModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(reason="ModelTester is not setup for training")
 
         for model_class in self.all_model_classes[:-1]:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.use_cache = False
             config.return_dict = True
 
@@ -948,7 +948,7 @@ class BlipTextImageModelTest(ModelTesterMixin, unittest.TestCase):
             loss.backward()
 
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save BlipConfig and check if we can load BlipVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

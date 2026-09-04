@@ -94,7 +94,7 @@ class GptOssModelTest(CausalLMModelTest, unittest.TestCase):
     @require_torch_accelerator
     def test_kernelize_does_not_crash(self):
         """Regression test #45799 and #46619: `kernelize` should not crash with `use_kernelized_func` + `use_kernel_forward_from_hub`."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = GptOssModel(config).to(device=torch_device)
         # This used to raise TypeError because apply_rotary_pos_emb was not wrapped as nn.Module
         # and also because a stale `position_ids` arg made its signature mismatch the hub rotary kernel
@@ -110,7 +110,7 @@ class GptOssModelTest(CausalLMModelTest, unittest.TestCase):
         """
         from kernels import get_kernel
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         expected_kernel = "kernels-community/vllm-flash-attn3"
         flash = get_kernel(expected_kernel)
         if flash is None:

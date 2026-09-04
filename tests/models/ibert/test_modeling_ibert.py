@@ -324,7 +324,7 @@ class IBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # Override
     def test_model_get_set_embeddings(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -339,7 +339,7 @@ class IBertModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
     # Override
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

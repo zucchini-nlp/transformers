@@ -172,7 +172,7 @@ class PI0ForConditionalGenerationModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_model_loss_per_sample(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.loss_reduction = "none"  # check that loss per sample is returned
         model = PI0ForConditionalGeneration(config).eval().to(device=torch_device)
         with torch.no_grad():
@@ -279,7 +279,7 @@ class PI0ForConditionalGenerationModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_full_run_smoke(self):
         torch.manual_seed(0)
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.loss_reduction = "none"  # check with loss per sample is returned
         model = PI0ForConditionalGeneration(config).to(device=torch_device).eval()
 

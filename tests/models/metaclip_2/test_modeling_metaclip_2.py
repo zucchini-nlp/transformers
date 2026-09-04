@@ -171,7 +171,7 @@ class MetaClip2ModelTesterMixin(ModelTesterMixin):
 
     def test_sdpa_can_dispatch_composite_models(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -225,7 +225,7 @@ class MetaClip2VisionModelTest(MetaClip2ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -234,7 +234,7 @@ class MetaClip2VisionModelTest(MetaClip2ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -561,7 +561,7 @@ class MetaClip2ModelTest(MetaClip2ModelTesterMixin, PipelineTesterMixin, unittes
         pass
 
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save MetaClip2Config and check if we can load MetaClip2VisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

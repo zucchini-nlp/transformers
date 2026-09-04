@@ -92,7 +92,7 @@ class ZayaModelTest(CausalLMModelTest, unittest.TestCase):
             self.assertEqual(layer.recurrent_states[0].shape, recurrent_shape)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         config._attn_implementation = "eager"
 
@@ -128,7 +128,7 @@ class ZayaModelTest(CausalLMModelTest, unittest.TestCase):
         Tests the frequency properties of the different RoPE scaling types on the model RoPE layer.
         Copied from Laguna to adapt to per-layer-type rope configs.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         partial_rotary_factor = config.rope_parameters["hybrid"]["partial_rotary_factor"]
 
         def set_rope_params(rope_params):
@@ -209,7 +209,7 @@ class ZayaModelTest(CausalLMModelTest, unittest.TestCase):
             ZayaConfig(num_experts_per_tok=2)
 
     def test_sliding_attention_mask_is_used(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.layer_types = ["hybrid_sliding"] + ["hybrid"] * (config.num_hidden_layers - 1)
         config.sliding_window = 3
         config._attn_implementation = "eager"
@@ -253,7 +253,7 @@ class ZayaModelTest(CausalLMModelTest, unittest.TestCase):
             torch.testing.assert_close(full_states[:, 3:], cached_states, rtol=1e-5, atol=1e-5)
 
     def test_zaya_cache_reorder_and_reset(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         cache = DynamicCache(config=config)
         conv_state_size = config.num_key_value_heads * config.head_dim + config.num_attention_heads * config.head_dim
         cache.update_conv_state(

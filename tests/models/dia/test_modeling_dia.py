@@ -239,7 +239,7 @@ class DiaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin,
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
         # DIA should not have a `None` eos token id because it uses certain LogitsProcessors
         # so we overwrite preparation
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # We don't want a few model inputs in our model input dictionary for generation tests
         input_keys_to_ignore = [
@@ -305,7 +305,7 @@ class DiaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin,
 
     @is_flaky
     def test_encoder_decoder_model_standalone(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.check_encoder_decoder_model_standalone(*config_and_inputs)
 
     # Overriding shape checks as Dia has different shapes on encoder/decoder using a composite config
@@ -416,7 +416,7 @@ class DiaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin,
         Overwritten as it relies on hardcoded namings atm - checking for our case here specifically
         """
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -450,7 +450,7 @@ class DiaModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin,
         """Only a small change due to the expected shapes"""
         # Tests that we can continue generating from past key values, returned from a previous `generate` call
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             # Let's make it always:
             # 1. use cache (for obvious reasons)

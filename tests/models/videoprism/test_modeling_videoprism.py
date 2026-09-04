@@ -223,7 +223,7 @@ class VideoPrismVisionModelTest(VideoPrismModelTest, unittest.TestCase):
         )
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -236,7 +236,7 @@ class VideoPrismVisionModelTest(VideoPrismModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         """ViViT-style attention test for the spatial then temporal VideoPrismVisionModel stack."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         model_class = VideoPrismVisionModel
 
@@ -327,7 +327,7 @@ class VideoPrismVisionModelTest(VideoPrismModelTest, unittest.TestCase):
             )
             torch.testing.assert_close(hidden_states[-1], outputs.last_hidden_state)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model_class = VideoPrismVisionModel
 
         inputs_dict["output_hidden_states"] = True
@@ -577,7 +577,7 @@ class VideoPrismClipModelTest(VideoPrismModelTest, unittest.TestCase):
 
     # Copied from tests.models.clip.test_modeling_clip.CLIPModelTest.test_load_vision_text_config with CLIP->VideoPrism
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save VideoPrismConfig and check if we can load VideoPrismVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -748,7 +748,7 @@ class VideoPrismForVideoClassificationTest(VideoPrismModelTest, unittest.TestCas
         self.model_tester.create_and_check_model(*config_and_inputs)
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config)
             self.assertIsInstance(model.get_input_embeddings(), nn.Module)
@@ -757,7 +757,7 @@ class VideoPrismForVideoClassificationTest(VideoPrismModelTest, unittest.TestCas
 
     def test_attention_outputs(self):
         """Attentions come from the spatial then temporal VideoPrismVisionModel backbone."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         model_class = VideoPrismForVideoClassification
 
@@ -837,7 +837,7 @@ class VideoPrismForVideoClassificationTest(VideoPrismModelTest, unittest.TestCas
                 ],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model_class = VideoPrismForVideoClassification
 
         inputs_dict["output_hidden_states"] = True

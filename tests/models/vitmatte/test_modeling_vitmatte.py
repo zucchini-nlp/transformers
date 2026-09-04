@@ -212,7 +212,7 @@ class VitMatteModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
                 [2, 2],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -238,7 +238,7 @@ class VitMatteModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase
                     # Confirm out_indices propagated to backbone
                     self.assertEqual(len(model.backbone.out_indices), 2)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config_dict = config.to_dict()
         config_dict["use_pretrained_backbone"] = True
         config_dict["backbone_config"] = None

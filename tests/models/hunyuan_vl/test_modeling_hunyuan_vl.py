@@ -151,7 +151,7 @@ class HunYuanVLModelTest(VLMModelTest, unittest.TestCase):
     skip_test_image_features_output_shape = True
 
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         filtered_inputs_dict = {}
         for key, value in inputs_dict.items():
             if key == "pixel_values":
@@ -267,7 +267,7 @@ class HunYuanVLModelTest(VLMModelTest, unittest.TestCase):
             self.assertNotIn(alias, config.to_dict())
 
     def test_mismatching_num_image_tokens(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()

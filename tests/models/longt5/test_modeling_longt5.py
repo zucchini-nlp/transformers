@@ -512,7 +512,7 @@ class LongT5ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
     # overwrite because T5 doesn't accept position ids as input and expects `decoder_input_ids`
     def test_custom_4d_attention_mask(self):
         for model_class in self.all_generative_model_classes:
-            config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, input_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config).to(device=torch_device, dtype=torch.float32)
 
             (
@@ -563,7 +563,7 @@ class LongT5ModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMix
             self.skipTest(reason="has_attentions is set to False")
 
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             seq_len = getattr(self.model_tester, "seq_length", None)
@@ -700,7 +700,7 @@ class LongT5TGlobalModelTest(LongT5ModelTest):
             self.skipTest(reason="has_attentions is set to False")
 
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             seq_len = getattr(self.model_tester, "seq_length", None)
@@ -965,7 +965,7 @@ class LongT5EncoderOnlyModelTest(ModelTesterMixin, unittest.TestCase):
             self.skipTest(reason="has_attentions is set to False")
 
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             block_len = getattr(self.model_tester, "block_len", 4)
@@ -1043,7 +1043,7 @@ class LongT5EncoderOnlyTGlobalModelTest(LongT5EncoderOnlyModelTest):
             self.skipTest(reason="has_attentions is set to False")
 
         else:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             block_len = getattr(self.model_tester, "block_len", None)

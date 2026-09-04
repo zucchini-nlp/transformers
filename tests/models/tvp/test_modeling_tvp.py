@@ -207,7 +207,7 @@ class TVPModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                 elif model.__class__.__name__ == "TvpForVideoGrounding":
                     self.assertEqual(len(model.model.vision_model.backbone.out_indices), 2)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         # Force load_backbone path
         config.is_hybrid = False
 

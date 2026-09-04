@@ -210,7 +210,7 @@ class Ernie4_5_VLMoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.
         """
         Same as in GLM4V, see `tests/models/glm4v/test_modeling_glm4v.py` for reference
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # We don't want a few model inputs in our model input dictionary for generation tests
         input_keys_to_ignore = [
@@ -247,7 +247,7 @@ class Ernie4_5_VLMoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.
         return config, filtered_inputs_dict
 
     def test_inputs_embeds_matches_input_ids(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

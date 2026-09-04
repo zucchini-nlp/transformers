@@ -129,12 +129,12 @@ class ShieldGemma2ModelTest(VLMModelTest, unittest.TestCase):
         return super()._prepare_for_class(inputs_dict, model_class, return_labels=False)
 
     def test_model(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_model(config, inputs_dict)
 
     def test_sdpa_can_dispatch_composite_models(self):
         """Override: ShieldGemma2 has double-nesting (wrapper -> Gemma3ForConditionalGeneration -> Gemma3Model)."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = ShieldGemma2ForImageClassification(config)
 
         with tempfile.TemporaryDirectory() as tmpdirname:

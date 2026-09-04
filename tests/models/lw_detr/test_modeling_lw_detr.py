@@ -175,7 +175,7 @@ class LwDetrViTBackboneTest(ModelTesterMixin, BackboneTesterMixin, unittest.Test
         self.model_tester.create_and_check_backbone(*config_and_inputs)
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -224,7 +224,7 @@ class LwDetrViTBackboneTest(ModelTesterMixin, BackboneTesterMixin, unittest.Test
                     expected_unwindowed_attention_shape,
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_attentions"] = True
@@ -259,7 +259,7 @@ class LwDetrViTBackboneTest(ModelTesterMixin, BackboneTesterMixin, unittest.Test
                 ],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -273,7 +273,7 @@ class LwDetrViTBackboneTest(ModelTesterMixin, BackboneTesterMixin, unittest.Test
 
     # overwrite since LwDetrVitDet only supports retraining gradients of hidden states
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = self.has_attentions
 
@@ -559,7 +559,7 @@ class LwDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
 
             self.assertEqual(correct_outlen, out_len)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         inputs_dict["output_hidden_states"] = False
 
@@ -596,7 +596,7 @@ class LwDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                     ],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_attentions"] = False
@@ -609,7 +609,7 @@ class LwDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
             check_hidden_states_output(inputs_dict, config, model_class)
 
     def test_retain_grad_hidden_states_attentions(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = True
 
@@ -635,7 +635,7 @@ class LwDetrModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
         self.assertIsNotNone(attentions.grad)
 
     def test_forward_auxiliary_loss(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.auxiliary_loss = True
 
         # only test for object detection and segmentation model

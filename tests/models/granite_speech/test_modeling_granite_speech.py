@@ -135,7 +135,7 @@ class GraniteSpeechForConditionalGenerationModelTest(ALMModelTest, unittest.Test
 
     def test_inputs_embeds(self):
         # Overwrite inputs_embeds tests because we need to delete "input_features" for the audio model
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

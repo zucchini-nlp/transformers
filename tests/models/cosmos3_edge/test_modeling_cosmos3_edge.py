@@ -102,7 +102,7 @@ class Cosmos3EdgeTextModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester = Cosmos3EdgeTextModelTester(self)
 
     def test_model(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.create_and_check_model(config, inputs)
 
 
@@ -220,7 +220,7 @@ class Cosmos3EdgeModelTest(VLMModelTest, unittest.TestCase):
 
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
         """Keep packed visual patches aligned with the corresponding text batch during generation tests."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         patches_per_image = (self.model_tester.image_size // config.vision_config.patch_size) ** 2
         filtered_inputs_dict = {}
 
@@ -249,7 +249,7 @@ class Cosmos3EdgeModelTest(VLMModelTest, unittest.TestCase):
     def test_mismatching_num_image_tokens(self):
         # The shared VLM test slices one image tensor at a time. Edge stores images as a packed sequence of patches,
         # so an image must be sliced as its full `grid_thw.prod()` span instead.
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         patches_per_image = (self.model_tester.image_size // config.vision_config.patch_size) ** 2
 
         for model_class in self.all_model_classes:

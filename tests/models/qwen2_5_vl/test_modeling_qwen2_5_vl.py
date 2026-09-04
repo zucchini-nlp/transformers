@@ -213,7 +213,7 @@ class Qwen2_5_VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompr has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -258,7 +258,7 @@ class Qwen2_5_VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
         Tests that vision position ids are built correctly for images and for videos.
         See https://github.com/huggingface/transformers/pull/45400
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         model = Qwen2_5_VLModel(config).to(torch_device)
         batch_size = input_dict["input_ids"].shape[0]
 
@@ -309,7 +309,7 @@ class Qwen2_5_VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
         self.assertListEqual(position_ids.tolist(), expected_positions.tolist())
 
     def test_video_forward(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         B = self.model_tester.batch_size
         C = config.vision_config.in_chans
@@ -366,7 +366,7 @@ class Qwen2_5_VLModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
     ):
         max_new_tokens = 30
         for model_class in self.all_generative_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             dummy_input = inputs_dict[model_class.main_input_name]
             if dummy_input.dtype in [torch.float32, torch.float16]:

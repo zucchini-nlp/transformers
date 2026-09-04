@@ -218,7 +218,7 @@ class CohereAsrModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -267,7 +267,7 @@ class CohereAsrModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTester
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 

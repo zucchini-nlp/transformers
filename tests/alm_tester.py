@@ -180,7 +180,7 @@ class ALMModelTest(MultiModalModelTest):
         when number of audios don't match number of audio tokens in the text.
         Also we need to test multi-audio cases when one prompt has multiple audio tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         audio_feature_key = self.model_tester.get_audio_feature_key()
         audio_mask_key = self.model_tester.audio_mask_key
 

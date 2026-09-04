@@ -78,7 +78,7 @@ class GraniteSpeechPlusForConditionalGenerationModelTest(GraniteSpeechForConditi
     def test_encoder_hidden_layers_concat_shape(self):
         """``encoder_config.cat_hidden_layers`` concatenates selected intermediate hidden states with the final
         hidden state along the feature dim before the projector."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = GraniteSpeechPlusForConditionalGeneration(config).to(torch_device).eval()
         with torch.no_grad():
             out = model.get_audio_features(inputs_dict["input_features"].to(next(model.parameters()).device))

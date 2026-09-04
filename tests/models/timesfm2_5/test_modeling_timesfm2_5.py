@@ -113,7 +113,7 @@ class TimesFm2_5ModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester = ConfigTester(self, config_class=TimesFm2_5Config)
 
     def test_create_and_run_model(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = TimesFm2_5ModelForPrediction(config)
         model.to(torch_device)
         model.eval()
@@ -123,7 +123,7 @@ class TimesFm2_5ModelTest(ModelTesterMixin, unittest.TestCase):
     def test_run_model_with_window_size(self):
         # `window_size` decomposes each series into trend + residual, so the moving-average helper is only
         # reached on this path. Guards against the wrong-name regression that raised AttributeError (#46821).
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = TimesFm2_5ModelForPrediction(config)
         model.to(torch_device)
         model.eval()
@@ -160,7 +160,7 @@ class TimesFm2_5ModelTest(ModelTesterMixin, unittest.TestCase):
 
         tolerance = {torch.float32: 1e-5, torch.bfloat16: 1e-3, torch.float16: 1e-3}[dtype]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
 
         model_eager = TimesFm2_5ModelForPrediction._from_config(config, attn_implementation="eager")
@@ -202,7 +202,7 @@ class TimesFm2_5ModelTest(ModelTesterMixin, unittest.TestCase):
         flash/flex equivalence test (which injects external attention masks) does not apply.
         This override directly verifies eager vs flash/flex equivalence.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         dtype = torch.bfloat16
         tolerance = 1e-2
@@ -248,7 +248,7 @@ class TimesFm2_5ModelTest(ModelTesterMixin, unittest.TestCase):
         TimesFM 2.5 specific test for retain_grad since the model returns mean_predictions
         as the first tensor, not last_hidden_state like standard models.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.output_hidden_states = True
         config.output_attentions = self.has_attentions
 

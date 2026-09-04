@@ -639,7 +639,7 @@ class BarkFineModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -698,7 +698,7 @@ class BarkFineModelTest(ModelTesterMixin, unittest.TestCase):
         )
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -711,7 +711,7 @@ class BarkFineModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_model_get_set_embeddings(self):
         # one embedding layer per codebook
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -724,7 +724,7 @@ class BarkFineModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_resize_tokens_embeddings(self):
         # resizing tokens_embeddings of a ModuleList
-        original_config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        original_config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -775,7 +775,7 @@ class BarkFineModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_resize_embeddings_untied(self):
         # resizing tokens_embeddings of a ModuleList
-        original_config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        original_config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 

@@ -465,11 +465,11 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         self.model_tester.create_and_check_decoder_model_past_large_inputs(*config_and_inputs)
 
     def test_encoder_decoder_model_standalone(self):
-        config_and_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config_and_inputs = self.prepare_config_and_inputs_for_common()
         self.model_tester.check_encoder_decoder_model_standalone(*config_and_inputs)
 
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -564,7 +564,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             model.generate(input_features, language=["en"] * (input_features.shape[0] + 1))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -622,7 +622,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
                     [decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -635,7 +635,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             check_hidden_states_output(inputs_dict, config, model_class)
 
     def test_attention_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
 
         # force eager attention to support output attentions
@@ -737,7 +737,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -785,7 +785,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is False")
 
@@ -836,7 +836,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         pass
 
     def test_mask_feature_prob(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.mask_feature_prob = 0.2
         config.mask_feature_length = 2
 
@@ -850,7 +850,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             self.assertTrue(encoder_last_hidden_state.shape, (13, 30, 16))
 
     def test_mask_time_prob(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.mask_time_prob = 0.2
         config.mask_time_length = 2
 
@@ -864,7 +864,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             self.assertTrue(encoder_last_hidden_state.shape, (13, 30, 16))
 
     def test_generate_with_prompt_ids_max_length(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.max_target_positions = 7
 
         model = WhisperForConditionalGeneration(config).eval().to(torch_device)
@@ -887,7 +887,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         model.generate(input_features, max_new_tokens=1, prompt_ids=prompt_ids)
 
     def test_generate_longform_with_prompt_ids(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         model = WhisperForConditionalGeneration(config).eval().to(torch_device)
 
         prompt_ids = torch.arange(5).to(torch_device)
@@ -927,7 +927,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
                     self.assertTrue(not any(i in row for i in model.generation_config.suppress_tokens))
 
     def _check_longform_generate_single_batch(self, condition_on_prev_tokens):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         model = WhisperForConditionalGeneration(config).eval().to(torch_device)
         input_features = input_dict["input_features"]
@@ -1006,7 +1006,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
         self._check_longform_generate_single_batch(condition_on_prev_tokens=True)
 
     def _check_longform_generate_multi_batch(self, condition_on_prev_tokens):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         model = WhisperForConditionalGeneration(config).eval().to(torch_device)
         input_features = input_dict["input_features"].to(torch_device)
@@ -1095,7 +1095,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
 
     @is_flaky()  # TODO (joao, sanchit): fails ~9% of the times. Does the original test have the same issue?
     def test_custom_4d_attention_mask(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         model = WhisperForConditionalGeneration(config).to(device=torch_device, dtype=torch.float32)
         model.eval()
 
@@ -1152,7 +1152,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             self.assertIsInstance(pred_ids, expected_output_type)
 
     def test_labels_sequence_max_length_correct(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_generative_model_classes:
             input_features = input_dict["input_features"]
@@ -1164,7 +1164,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             model(input_features=input_features, labels=labels)
 
     def test_labels_sequence_max_length_correct_after_changing_config(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_generative_model_classes:
             input_features = input_dict["input_features"]
@@ -1178,7 +1178,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
             model(input_features=input_features, labels=labels)
 
     def test_labels_sequence_max_length_error(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_generative_model_classes:
             input_features = input_dict["input_features"]
@@ -1191,7 +1191,7 @@ class WhisperModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMi
                 model(input_features=input_features, labels=labels)
 
     def test_labels_sequence_max_length_error_after_changing_config(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_generative_model_classes:
             model = model_class(config).to(torch_device)
@@ -3174,7 +3174,7 @@ class WhisperEncoderModelTest(ModelTesterMixin, unittest.TestCase):
         self.config_tester.run_common_tests()
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -3200,7 +3200,7 @@ class WhisperEncoderModelTest(ModelTesterMixin, unittest.TestCase):
 
     # the equivalent test is passing the encoder outputs directly to the model
     def test_encoder_outputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -3230,7 +3230,7 @@ class WhisperEncoderModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Needs to override as the encoder input embedding is a Conv1d
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

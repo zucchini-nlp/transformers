@@ -132,7 +132,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
     max_new_tokens = 3
 
     def prepare_config_and_inputs_for_generate(self, batch_size=2):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # We don't want a few model inputs in our model input dictionary for generation tests
         input_keys_to_ignore = [
@@ -1047,7 +1047,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
         Having a standard KV cache format is important for a consistent API (and for advanced generation methods).
         """
         for model_class in self.all_generative_model_classes:
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             # If it doesn't support cache, skip the test
             decoder_config = config.get_text_config(decoder=True)
@@ -1263,7 +1263,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
 
             # Set seed for deterministic test - ensures reproducible model initialization and inputs
             set_seed(42)
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             if not hasattr(config.get_text_config(), "use_cache"):
                 self.skipTest(reason=f"{model_class.__name__} doesn't support caching")
@@ -1383,7 +1383,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
         recurrent_layer_types = {"linear_attention", "conv", "hybrid", "hybrid_sliding"}
 
         for model_class in self.all_generative_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             layer_types = set(getattr(config.get_text_config(), "layer_types", None) or ())
             if not (layer_types & recurrent_layer_types):
                 self.skipTest(reason=f"{model_class.__name__} declares no recurrent layer types")
@@ -2064,7 +2064,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
             if not model_class._supports_flash_attn:
                 self.skipTest(f"{model_class.__name__} does not support Flash Attention.")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             if config.is_encoder_decoder:
                 self.skipTest("Model is an encoder-decoder")
 
@@ -2172,7 +2172,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
             if model_class._is_stateful:  # non-transformer models most probably have no packing support
                 self.skipTest(f"{model_class.__name__} doesn't support packing!")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             if config.is_encoder_decoder:
                 self.skipTest("Model is an encoder-decoder")
 
@@ -2364,7 +2364,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
         for model_class in self.all_generative_model_classes:
             if not model_class._can_compile_fullgraph:
                 self.skipTest(f"{model_class.__name__} is not guaranteed to work with custom 4D attention masks")
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             set_config_for_less_flaky_test(config)
             if getattr(config, "sliding_window", 0) is not None and getattr(config, "sliding_window", 0) > 0:
                 self.skipTest(f"{model_class.__name__} with sliding window attention is not supported by this test")
@@ -2404,7 +2404,7 @@ class GenerationTesterMixin(ExportGenerateTesterMixin):
             if "logits_to_keep" not in set(inspect.signature(model_class.forward).parameters.keys()):
                 self.skipTest(reason="This model does not support `logits_to_keep` argument.")
 
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
             batch_size, sequence_length = inputs["input_ids"].shape[:2]
             vocab_size = config.get_text_config().vocab_size
             model = model_class(config).to(device=torch_device).eval()

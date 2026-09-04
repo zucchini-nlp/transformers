@@ -210,7 +210,7 @@ class SuperGlueModelTest(ModelTesterMixin, unittest.TestCase):
                     [hidden_states_size, maximum_num_matches],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -246,7 +246,7 @@ class SuperGlueModelTest(ModelTesterMixin, unittest.TestCase):
                     expected_attention_shape,
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_attentions"] = True
@@ -266,7 +266,7 @@ class SuperGlueModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertIsNotNone(model)
 
     def test_forward_labels_should_be_none(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config)
             model.to(torch_device)
@@ -330,7 +330,7 @@ class SuperGlueModelTest(ModelTesterMixin, unittest.TestCase):
         def equivalence(tensor1, tensor2):
             return torch.max(torch.abs(tensor1 - tensor2))
 
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config.output_hidden_states = True

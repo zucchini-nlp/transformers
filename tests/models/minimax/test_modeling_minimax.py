@@ -69,7 +69,7 @@ class MiniMaxModelTest(CausalLMModelTest, unittest.TestCase):
         r"""
         Let's make sure we can actually compute the loss and do a backward on it.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_labels = 3
         config.num_local_experts = 3
         config.output_router_logits = True
@@ -186,7 +186,7 @@ class MiniMaxModelTest(CausalLMModelTest, unittest.TestCase):
     def test_attention_outputs(self):
         """Overridden: linear-attention layers record their decayed KV state of shape (batch, heads, head_dim,
         head_dim) in `attentions`, instead of the (batch, heads, seq_len, seq_len) probs of full-attention layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         model = MiniMaxModel._from_config(config, attn_implementation="eager").to(torch_device).eval()
         seq_len = inputs_dict["input_ids"].shape[-1]
         head_dim = getattr(config, "head_dim", None) or config.hidden_size // config.num_attention_heads

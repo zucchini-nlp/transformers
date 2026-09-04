@@ -60,7 +60,7 @@ if is_vision_available():
 class SiglipModelTesterMixin(ModelTesterMixin):
     def test_sdpa_can_dispatch_composite_models(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -197,7 +197,7 @@ class SiglipVisionModelTest(SiglipModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -206,7 +206,7 @@ class SiglipVisionModelTest(SiglipModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_vision_transformer_get_set_input_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         transformer = SiglipVisionModel(config)
 
         self.assertIsInstance(transformer.get_input_embeddings(), nn.Conv2d)
@@ -222,7 +222,7 @@ class SiglipVisionModelTest(SiglipModelTesterMixin, unittest.TestCase):
         self.assertIs(transformer.get_input_embeddings(), new_embeddings)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -489,7 +489,7 @@ class SiglipModelTest(SiglipModelTesterMixin, PipelineTesterMixin, unittest.Test
 
     # Copied from tests.models.clip.test_modeling_clip.CLIPModelTest.test_load_vision_text_config with CLIP->Siglip
     def test_load_vision_text_config(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # Save SiglipConfig and check if we can load SiglipVisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

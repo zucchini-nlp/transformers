@@ -338,7 +338,7 @@ class KyutaiSpeechToTextModelTest(ModelTesterMixin, GenerationTesterMixin, Pipel
         # TODO: this tester has non-standard input monkey-patching in `prepare_config_and_inputs_for_generate`,
         # and the test fails with the monkey-patched test inputs (bad shapes for the test) ☠️ The base inputs work
         # fine, though.
-        unpadded_custom_inputs = self.model_tester.prepare_config_and_inputs_for_common()[1]
+        unpadded_custom_inputs = self.prepare_config_and_inputs_for_common()[1]
         super().test_left_padding_compatibility(unpadded_custom_inputs=unpadded_custom_inputs)
 
     def test_generate_continue_from_past_key_values(self):
@@ -349,7 +349,7 @@ class KyutaiSpeechToTextModelTest(ModelTesterMixin, GenerationTesterMixin, Pipel
             if any(model_name in model_class.__name__.lower() for model_name in ["umt5"]):
                 self.skipTest(reason="TODO: needs modeling or test input preparation fixes for compatibility")
 
-            config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs = self.prepare_config_and_inputs_for_common()
 
             if not hasattr(config.get_text_config(), "use_cache"):
                 self.skipTest(reason=f"{model_class.__name__} doesn't support caching")

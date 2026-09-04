@@ -237,7 +237,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
 
     @run_test_using_subprocess
     def test_mixed_input(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             curr_inputs = copy.deepcopy(inputs)
             model = model_class(config).to(torch_device).eval()
@@ -252,7 +252,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
                 _ = model(**curr_inputs)
 
     def test_video_only_input(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             curr_inputs = copy.deepcopy(inputs)
             model = model_class(config).to(torch_device).eval()
@@ -266,7 +266,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
             _ = model(**curr_inputs)
 
     def test_image_only_input(self):
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             curr_inputs = copy.deepcopy(inputs)
             model = model_class(config).to(torch_device).eval()
@@ -315,7 +315,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
                     ),
                 )
 
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config.output_hidden_states = True
@@ -345,7 +345,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         when number of images don't match number of image tokens in the text.
         Also we need to test multi-image cases when one prompr has multiple image tokens.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -382,7 +382,7 @@ class VideoLlavaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTe
         Test that we can use either one vision feature layer, or a list of
         vision feature layers.
         """
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.vision_feature_layer = vision_feature_layer
 
         num_feature_layers = 1 if isinstance(vision_feature_layer, int) else len(vision_feature_layer)

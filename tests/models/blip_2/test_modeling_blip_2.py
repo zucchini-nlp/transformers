@@ -179,7 +179,7 @@ class Blip2VisionModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_get_set_embeddings(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -189,7 +189,7 @@ class Blip2VisionModelTest(ModelTesterMixin, unittest.TestCase):
 
     def test_forward_signature(self):
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             signature = inspect.signature(model.forward)
             # signature.parameters is an OrderedDict => so arg_names order is deterministic
@@ -534,7 +534,7 @@ class Blip2ForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, GenerationT
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -565,7 +565,7 @@ class Blip2ForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, GenerationT
                         raise ValueError("The eager model should not have SDPA attention layers")
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -577,7 +577,7 @@ class Blip2ForConditionalGenerationDecoderOnlyTest(ModelTesterMixin, GenerationT
             self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_load_vision_qformer_text_config(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Save Blip2Config and check if we can load Blip2VisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -917,7 +917,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -949,7 +949,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
 
     def test_forward_signature(self):
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             signature = inspect.signature(model.forward)
             # signature.parameters is an OrderedDict => so arg_names order is deterministic
@@ -959,7 +959,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
             self.assertListEqual(arg_names[:1], expected_arg_names)
 
     def test_load_vision_qformer_text_config(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Save Blip2Config and check if we can load Blip2VisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:
@@ -980,7 +980,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
         self.assertIsNotNone(model)
 
     def test_get_text_features(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         inputs_dict = {
             "input_ids": torch.LongTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]).to(torch_device),
@@ -993,7 +993,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
         self.assertEqual(text_features[0].shape, (1, 10, config.text_config.hidden_size))
 
     def test_get_image_features(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         keys_to_pop = ["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask"]
 
@@ -1009,7 +1009,7 @@ class Blip2ModelTest(ModelTesterMixin, PipelineTesterMixin, GenerationTesterMixi
         )
 
     def test_get_qformer_features(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         keys_to_pop = ["input_ids", "attention_mask", "decoder_input_ids", "decoder_attention_mask"]
 
@@ -1152,7 +1152,7 @@ class Blip2TextModelWithProjectionTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1317,7 +1317,7 @@ class Blip2VisionModelWithProjectionTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_model_common_attributes(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1326,7 +1326,7 @@ class Blip2VisionModelWithProjectionTest(ModelTesterMixin, unittest.TestCase):
             self.assertTrue(x is None or isinstance(x, nn.Linear))
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1467,7 +1467,7 @@ class Blip2TextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
         pass
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -1482,7 +1482,7 @@ class Blip2TextRetrievalModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertListEqual(arg_names[: len(expected_arg_names)], expected_arg_names)
 
     def test_load_vision_qformer_text_config(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Save Blip2Config and check if we can load Blip2VisionConfig from it
         with tempfile.TemporaryDirectory() as tmp_dir_name:

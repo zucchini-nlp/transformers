@@ -226,7 +226,7 @@ class LightGlueModelTest(ModelTesterMixin, unittest.TestCase):
                     [maximum_num_matches, hidden_states_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -258,7 +258,7 @@ class LightGlueModelTest(ModelTesterMixin, unittest.TestCase):
                     expected_attention_shape,
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_attentions"] = True
@@ -279,7 +279,7 @@ class LightGlueModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Copied from tests.models.superglue.test_modeling_superglue.SuperGlueModelTest.test_forward_labels_should_be_none
     def test_forward_labels_should_be_none(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config)
             model.to(torch_device)

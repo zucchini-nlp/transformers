@@ -63,7 +63,7 @@ class TrainingTesterMixin(ABC):
     # ============================================================
     def _get_model_modality(self) -> str:
         """Detect the modality of the model based on its input signature."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         if "input_ids" in inputs_dict:
             return "text"
@@ -213,7 +213,7 @@ class TrainingTesterMixin(ABC):
 
         modality = self._get_model_modality()
         logger.info(f"{Colors.CYAN}Detected modality:{Colors.RESET} {modality}")
-        _, sample_inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        _, sample_inputs = self.prepare_config_and_inputs_for_common()
 
         if modality == "text":
             # For text models, we need a tokenizer - use a simple one or create fake tokens

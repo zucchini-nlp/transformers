@@ -56,7 +56,7 @@ class ArceeModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_arcee_mlp_uses_relu_squared(self):
         """Test that ArceeMLP uses ReLU² activation instead of SiLU."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config.hidden_act = "relu2"  # Ensure we're using relu2 activation
         model = ArceeModel(config)
 

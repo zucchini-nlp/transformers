@@ -179,7 +179,7 @@ class RegNetModelTest(ModelTesterMixin, PipelineTesterMixin, unittest.TestCase):
                 [self.model_tester.image_size // 2, self.model_tester.image_size // 2],
             )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         layers_type = ["basic", "bottleneck"]
         for model_class in self.all_model_classes:
             for layer_type in layers_type:

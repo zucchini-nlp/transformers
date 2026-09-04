@@ -259,7 +259,7 @@ class UVDocModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester.create_and_check_uvdoc_document_rectification(*config_and_inputs)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -278,7 +278,7 @@ class UVDocModelTest(ModelTesterMixin, unittest.TestCase):
             "bfloat16": torch.bfloat16,
         }[dtype_str]
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)

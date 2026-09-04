@@ -171,7 +171,7 @@ class NemotronAsrStreamingForRNNTModelTest(ParakeetForRNNTModelTest):
         sizes the encoder consumes, so silently falling back to the model default could mismatch the chunks
         the processor produced and corrupt the transcript. The guard raises before the generator is consumed.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = NemotronAsrStreamingForRNNT(config=config).to(torch_device).eval()
 
         consumed = False

@@ -88,7 +88,7 @@ class MiMoV2FlashModelTest(CausalLMModelTest, unittest.TestCase):
     # Test from Gemma3 adapted to MiMo
     def test_model_rope_scaling_frequencies(self):
         """Tests the frequency properties of the different RoPE scaling types on the model RoPE layer."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Retrieves the RoPE layer class from the base model class.
         base_model = self.model_tester.base_model_class(config)

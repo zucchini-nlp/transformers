@@ -293,7 +293,7 @@ class MllamaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTester
 
     def test_resize_embeddings_results_in_successful_loss(self):
         # resizing embeddings should result in successful loss computation
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         model = MllamaForConditionalGeneration(config).to(torch_device)
         model_vocab_size = config.get_text_config().vocab_size
@@ -418,7 +418,7 @@ class MllamaForConditionalGenerationModelTest(ModelTesterMixin, GenerationTester
         Tests that our cached generation with text-only inputs works. When mllama was introduced, this feature
         required cache modifications (because layers are skipped in practice). This test should prevent regressions.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_generative_model_classes:
             model = model_class(config)

@@ -249,7 +249,7 @@ def _test_eager_matches_sdpa_inference(
     for model_class in self.all_model_classes:
         # Set seed for deterministic test - ensures reproducible model initialization and inputs
         set_seed(42)
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         set_config_for_less_flaky_test(config)
 
         # If it's a model with sliding window attention, let's test it with sliding window
@@ -584,7 +584,7 @@ def _test_eager_matches_batched_and_grouped_inference(self, name, dtype):
     for model_class in self.all_model_classes:
         # Set seed for deterministic test - ensures reproducible model initialization and inputs
         set_seed(42)
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         set_config_for_less_flaky_test(config)
         model = model_class(config).eval().to(torch_device).to(dtype)
         set_model_for_less_flaky_test(model)
@@ -742,6 +742,10 @@ class ModelTesterMixin(ExportTesterMixin):
     def all_generative_model_classes(self):
         return tuple(model_class for model_class in self.all_model_classes if model_class.can_generate())
 
+    # To be override by multimodal tests to pass on `modality_combo` as arg to tester
+    def prepare_config_and_inputs_for_common(self):
+        return self.model_tester.prepare_config_and_inputs_for_common()
+
     def _prepare_for_class(self, inputs_dict, model_class, return_labels=False):
         inputs_dict = copy.deepcopy(inputs_dict)
         if model_class.__name__ in get_values(MODEL_FOR_MULTIPLE_CHOICE_MAPPING_NAMES):
@@ -855,7 +859,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_save_load(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             model.to(torch_device)
             model.eval()
@@ -892,7 +896,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 torch.testing.assert_close(first, second, msg="Running save/load and forward yields different results")
 
     def test_from_pretrained_no_checkpoint(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(copy.deepcopy(config))
             state_dict = model.state_dict()
@@ -915,7 +919,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_keep_in_fp32_modules_exist(self):
         """Test that both the `_keep_in_fp32` and `_keep_in_fp32_strict` targets match some layers, to avoid any typo"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             with self.subTest(model_class.__name__):
                 model = model_class(copy.deepcopy(config))
@@ -951,7 +955,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_keep_in_fp32_modules(self):
         """Test that the flag `_keep_in_fp32_modules` and `_keep_in_fp32_modules_strict`  is correctly respected."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             with self.subTest(model_class.__name__):
                 model = model_class(copy.deepcopy(config))
@@ -985,7 +989,7 @@ class ModelTesterMixin(ExportTesterMixin):
                             self.assertTrue(param.dtype == torch.bfloat16, f"{name} was upcasted but it should NOT be")
 
     def test_save_load_keys_to_ignore_on_save(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(copy.deepcopy(config))
@@ -1025,7 +1029,7 @@ class ModelTesterMixin(ExportTesterMixin):
         operation from `core_model_loading` may have affected the original weights.
         """
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
 
             model = model_class(config)
             self.assertTrue(all(param.is_contiguous() for param in list(model.parameters())))
@@ -1037,7 +1041,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 self.assertTrue(all(param.is_contiguous() for param in list(model.parameters())))
 
     def test_gradient_checkpointing_backward_compatibility(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -1048,7 +1052,7 @@ class ModelTesterMixin(ExportTesterMixin):
             self.assertTrue(model.is_gradient_checkpointing)
 
     def test_gradient_checkpointing_enable_disable(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -1087,7 +1091,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     )
 
     def test_peft_gradient_checkpointing_enable_disable(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -1125,7 +1129,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     )
 
     def test_enable_input_require_grads(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(copy.deepcopy(config))
             if not hasattr(model, "get_input_embeddings"):
@@ -1141,7 +1145,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if not getattr(self.model_tester, "is_training", False):
             self.skipTest(reason="ModelTester is not configured to run training tests")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if hasattr(config, "use_cache"):
             config.use_cache = False
 
@@ -1233,7 +1237,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_can_init_all_missing_weights(self):
         """Ensure that all weights are correctly taken into account in `_init_weights`"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # This is used to get the addition year of the model
         filename = inspect.getfile(config.__class__)
@@ -1320,7 +1324,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_init_weights_can_init_buffers(self):
         """Ensure that all buffers (persistent and non-persistent) are correctly taken into account in `_init_weights`"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         # Usually, buffers are not initialized randomly (it's kind of the point of having a Buffer instead of a Parameter...)
         # However, some PositionalEmbedding modules have a `positional_embedding` buffer, initialized randomly with normal
@@ -1387,7 +1391,7 @@ class ModelTesterMixin(ExportTesterMixin):
         the torch_device and perform a forward pass."""
         # Set seed to ensure stable model initialization - avoids numerical issues (NaN) with some models
         set_seed(42)
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             # Apparently this model cannot correctly create its inputs and has to use another function....
@@ -1422,7 +1426,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     raise e
 
     def test_torch_save_load(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if config.__class__ not in MODEL_MAPPING:
             self.skipTest(reason=f"{config.__class__.__name__} not in MODEL_MAPPING")
 
@@ -1471,7 +1475,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 check_equal(load_state_dict(pt_checkpoint_path))
 
     def test_determinism(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def check_determinism(first, second):
             # Simply don't compare if both tensors only contain `nan` elements
@@ -1554,7 +1558,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
         # Set seed for deterministic test - ensures reproducible model initialization and inputs
         set_seed(42)
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
         set_config_for_less_flaky_test(config)
 
         for model_class in self.all_model_classes:
@@ -1608,7 +1612,7 @@ class ModelTesterMixin(ExportTesterMixin):
             "sep_token_id",
             "tie_word_embeddings",
         ]
-        config, batched_input = self.model_tester.prepare_config_and_inputs_for_common()
+        config, batched_input = self.prepare_config_and_inputs_for_common()
         batch_size = self.model_tester.batch_size
 
         config_dict = config.to_diff_dict()
@@ -1666,7 +1670,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     # self.skipTest(reason=f"`supports_gradient_checkpointing` is False for {model_class.__name__}.")
                     continue
 
-                config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+                config, inputs_dict = self.prepare_config_and_inputs_for_common()
                 config.use_cache = False
                 config.return_dict = True
 
@@ -1798,7 +1802,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if not seq2seq_lm_classes:
             self.skipTest(reason="No sequence-to-sequence language modeling head to check")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if not config.is_encoder_decoder:
             self.skipTest(reason="Model is not an encoder-decoder")
 
@@ -1892,7 +1896,7 @@ class ModelTesterMixin(ExportTesterMixin):
             self.skipTest(reason="ModelTester is not configured to run training tests")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             config.return_dict = True
 
             if model_class.__name__ in [
@@ -1939,7 +1943,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if not self.has_attentions:
             self.skipTest(reason="Model does not output attentions")
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -2101,7 +2105,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     [decoder_seq_length, self.model_tester.hidden_size],
                 )
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             inputs_dict["output_hidden_states"] = True
@@ -2180,13 +2184,13 @@ class ModelTesterMixin(ExportTesterMixin):
                 self.assertIsNotNone(attentions.grad)
 
     def _prepare_config_and_inputs_for_retain_grad_hidden_states_attentions(self):
-        return self.model_tester.prepare_config_and_inputs_for_common()
+        return self.prepare_config_and_inputs_for_common()
 
     def test_feed_forward_chunking(self):
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             set_seed(42)
             model = model_class(copy.deepcopy(original_config))
@@ -2211,7 +2215,7 @@ class ModelTesterMixin(ExportTesterMixin):
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             config = copy.deepcopy(original_config)
@@ -2289,7 +2293,7 @@ class ModelTesterMixin(ExportTesterMixin):
         (
             original_config,
             inputs_dict,
-        ) = self.model_tester.prepare_config_and_inputs_for_common()
+        ) = self.prepare_config_and_inputs_for_common()
         inputs_dict.pop("labels", None)
 
         for model_class in self.all_model_classes:
@@ -2469,7 +2473,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is set to `False`")
 
-        original_config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        original_config, inputs_dict = self.prepare_config_and_inputs_for_common()
         original_config.tie_word_embeddings = False
         try:
             original_config.get_text_config().tie_word_embeddings = False
@@ -2583,7 +2587,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if not self.test_resize_embeddings:
             self.skipTest(reason="test_resize_embeddings is set to `False`")
 
-        original_config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        original_config, inputs_dict = self.prepare_config_and_inputs_for_common()
         original_config.tie_word_embeddings = False
         try:
             original_config.get_text_config().tie_word_embeddings = False
@@ -2629,7 +2633,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     )
 
     def test_model_get_set_embeddings(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(copy.deepcopy(config))
@@ -2659,7 +2663,7 @@ class ModelTesterMixin(ExportTesterMixin):
         a reason in description.
         """
         for model_class in self.all_generative_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             self.assertTrue(model.base_model is not model)
 
@@ -2668,7 +2672,7 @@ class ModelTesterMixin(ExportTesterMixin):
             self.skipTest(reason="test_missing_keys is set to `False`")
 
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             base_model_prefix = model.base_model_prefix
 
@@ -2691,7 +2695,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_can_use_safetensors(self):
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model_tied = model_class(config)
             with tempfile.TemporaryDirectory() as d:
                 try:
@@ -2735,7 +2739,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_load_save_without_tied_weights(self):
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             config.tie_word_embeddings = False
 
             model = model_class(config)  # we init the model without tie
@@ -2766,7 +2770,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 )
 
     def test_tied_weights_keys(self):
-        original_config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        original_config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             copied_config = copy.deepcopy(original_config)
             copied_config.get_text_config().tie_word_embeddings = True
@@ -2808,7 +2812,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_model_weights_reload_no_missing_tied_weights(self):
         for model_class in self.all_model_classes:
-            config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+            config, _ = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             with tempfile.TemporaryDirectory() as tmp_dir:
                 model.save_pretrained(tmp_dir)
@@ -2865,7 +2869,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 )
 
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
@@ -2940,7 +2944,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 )
 
     def test_inputs_embeds(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -2973,7 +2977,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 model(**inputs)[0]
 
     def test_inputs_embeds_matches_input_ids(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class.__name__ not in get_values(MODEL_MAPPING_NAMES):
@@ -3022,7 +3026,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @require_torch_gpu
     @require_torch_multi_gpu
     def test_multi_gpu_data_parallel_forward(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         # move input tensors to accelerator O
         for k, v in inputs_dict.items():
@@ -3066,7 +3070,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @mark.accelerate_tests
     @require_torch_accelerator
     def test_disk_offload_bin(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class._no_split_modules is None:
@@ -3115,7 +3119,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @mark.accelerate_tests
     @require_torch_accelerator
     def test_disk_offload_safetensors(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class._no_split_modules is None:
@@ -3155,7 +3159,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @mark.accelerate_tests
     @require_torch_accelerator
     def test_cpu_offload(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class._no_split_modules is None:
@@ -3198,7 +3202,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @mark.accelerate_tests
     @require_torch_multi_accelerator
     def test_model_parallelism(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class._no_split_modules is None:
@@ -3236,7 +3240,7 @@ class ModelTesterMixin(ExportTesterMixin):
                         torch.testing.assert_close(base_output[0], new_output[0], rtol=1e-5, atol=1e-5)
 
     def test_problem_types(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         problem_types = [
             {"title": "multi_label_classification", "num_labels": 2, "dtype": torch.float},
@@ -3284,7 +3288,7 @@ class ModelTesterMixin(ExportTesterMixin):
     def test_load_with_mismatched_shapes(self):
         if not self.test_mismatched_shapes:
             self.skipTest(reason="test_mismatched_shapes is set to False")
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if model_class.__name__ not in get_values(MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING_NAMES):
@@ -3332,7 +3336,7 @@ class ModelTesterMixin(ExportTesterMixin):
         # Set seed for deterministic weight initialization
         set_seed(42)
 
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         configs_no_init = _config_zero_init(config)
         configs_no_init.num_labels = 3
@@ -3418,7 +3422,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_model_is_small(self):
         # Just a consistency check to make sure we are not running tests on 1M parameter models.
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(copy.deepcopy(config))
@@ -3447,7 +3451,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
             # Set seed for deterministic test - ensures reproducible model initialization and inputs
             set_seed(42)
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             # flash attention variants does not always support arbitrary headim
             config = self._prepare_config_headdim(config, 16)
@@ -3658,7 +3662,7 @@ class ModelTesterMixin(ExportTesterMixin):
             if not self._is_composite:
                 self.skipTest("Model is not a composite model.")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
             # set eager as it will be the one supported in all models
             # we just need to test if passing 'attn_implementation' as a dict fails or not
@@ -3718,7 +3722,7 @@ class ModelTesterMixin(ExportTesterMixin):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -3761,7 +3765,7 @@ class ModelTesterMixin(ExportTesterMixin):
             self.skipTest(f"{self.all_model_classes[0].__name__} does not support SDPA")
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
 
             with tempfile.TemporaryDirectory() as tmpdirname:
@@ -3843,7 +3847,7 @@ class ModelTesterMixin(ExportTesterMixin):
             if not model_class._supports_sdpa:
                 self.skipTest(f"{model_class.__name__} does not support SDPA")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             inputs_dict = self._prepare_for_class(inputs_dict, model_class)
             if config.model_type == "paligemma":
                 self.skipTest(
@@ -3934,7 +3938,7 @@ class ModelTesterMixin(ExportTesterMixin):
             if not model_class._supports_sdpa:
                 self.skipTest(f"{model_class.__name__} does not support SDPA")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             inputs_dict = self._prepare_for_class(inputs_dict, model_class)
             if config.model_type == "dbrx":
                 self.skipTest(
@@ -4008,7 +4012,7 @@ class ModelTesterMixin(ExportTesterMixin):
         expected_attn_implementations = _expected_attn_implementations(attn_implementation)
 
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             if not self._is_composite:
                 self.skipTest("This model is not a composite model!")
@@ -4084,7 +4088,7 @@ class ModelTesterMixin(ExportTesterMixin):
         for model_class in self.all_generative_model_classes:  # TODO: this test should run on all classes instead
             if not model_class._supports_flash_attn:
                 self.skipTest(f"{model_class.__name__} does not support Flash Attention 2")
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)
             if not all(
                 submodel._supports_flash_attn for submodel in model.modules() if isinstance(submodel, PreTrainedModel)
@@ -4151,7 +4155,7 @@ class ModelTesterMixin(ExportTesterMixin):
         torch.compiler.reset()
         dtype = torch.float16
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         cls = self._torch_compile_train_cls  # e.g. LlamaFroCausalLM
         if not cls._supports_flash_attn:
             self.skipTest(f"{cls.__name__} does not support Flash Attention 2")
@@ -4183,7 +4187,7 @@ class ModelTesterMixin(ExportTesterMixin):
             if not model_class._supports_flash_attn:
                 self.skipTest(f"{model_class.__name__} does not support {attn_implementation}")
 
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             model = model_class(config)  # let's construct it here to see if any submodels can't support flash attn
             if not all(
                 submodel._supports_flash_attn for submodel in model.modules() if isinstance(submodel, PreTrainedModel)
@@ -4248,7 +4252,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_sliding_window_mask(self):
         """Tests that we can control the sliding window attention behavior of a model."""
-        config, inputs = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs = self.prepare_config_and_inputs_for_common()
 
         if not self.has_attentions:
             self.skipTest(reason="Model does not support output_attentions")
@@ -4307,7 +4311,7 @@ class ModelTesterMixin(ExportTesterMixin):
         if getattr(self, "_torch_compile_train_cls", None) is None:
             self.skipTest(f"{self.__class__.__name__} doesn't have the attribute `_torch_compile_train_cls`.")
 
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         cls = self._torch_compile_train_cls
         attn_implementation = getattr(self, "_torch_compile_train_attn_implementation", None)
         if attn_implementation is not None:
@@ -4441,7 +4445,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @require_torch_accelerator
     def test_flex_attention_with_grads(self):
         for model_class in self.all_model_classes:
-            config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+            config, inputs_dict = self.prepare_config_and_inputs_for_common()
             inputs_dict = self._prepare_for_class(inputs_dict, model_class)
             model = model_class(config).to(device=torch_device)
 
@@ -4505,7 +4509,7 @@ class ModelTesterMixin(ExportTesterMixin):
             )
 
     def test_can_be_initialized_on_meta(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             # If it does not raise here, the test passes
             with torch.device("meta"):
@@ -4513,7 +4517,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     @require_torch_accelerator
     def test_can_load_with_device_context_manager(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         # Need to specify index 0 here, as `torch_device` is simply the str of the type, e.g. "cuda"
         device = torch.device(torch_device, index=0)
         for model_class in self.all_model_classes:
@@ -4540,7 +4544,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @run_test_using_subprocess
     @require_torch_accelerator
     def test_can_load_with_global_device_set(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         # Need to specify index 0 here, as `torch_device` is simply the str of the type, e.g. "cuda"
         device = torch.device(torch_device, index=0)
         default_device = torch.get_default_device()
@@ -4568,7 +4572,7 @@ class ModelTesterMixin(ExportTesterMixin):
             )
 
     def test_cannot_load_with_meta_device_context_manager(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             # Need to deepcopy here as it is modified in-place in save_pretrained (it sets sdpa for default attn, which
             # is not supported for e.g. dpt_hybrid)
@@ -4583,7 +4587,7 @@ class ModelTesterMixin(ExportTesterMixin):
                         _ = model_class.from_pretrained(tmpdirname)
 
     def test_config_attn_implementation_setter(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         def check_attn_implementation_setter(config: PreTrainedConfig, attn_implementation: str):
             if not config._attn_implementation == attn_implementation:
@@ -4611,7 +4615,7 @@ class ModelTesterMixin(ExportTesterMixin):
         check_attn_implementation_setter(config, "eager")
 
     def test_internal_model_config_and_subconfig_are_same(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         subconfig_keys = list(config.sub_configs.keys())
         for model_class in self.all_model_classes:
             if len(config.sub_configs) == 0:
@@ -4650,7 +4654,7 @@ class ModelTesterMixin(ExportTesterMixin):
                         )
 
     def test_can_set_attention_dynamically(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             if not model_class._can_set_attn_implementation():
                 self.skipTest(reason="This model does not support setting its attention dynamically")
@@ -4699,7 +4703,7 @@ class ModelTesterMixin(ExportTesterMixin):
                     self.assertTrue(getattr(model.config, subconfig_key)._attn_implementation == "sdpa")
 
     def test_can_set_attention_dynamically_composite_model(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             if not model_class._can_set_attn_implementation():
                 self.skipTest(reason="This model does not support setting its attention dynamically")
@@ -4739,7 +4743,7 @@ class ModelTesterMixin(ExportTesterMixin):
         """
         Test that we can still use `torch_dtype` argument correctly, for BC.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             if "TimmBackbone" in model_class.__name__:
                 self.skipTest("TimmBackbone should not run this test")
@@ -4764,7 +4768,7 @@ class ModelTesterMixin(ExportTesterMixin):
     def test_tp_plan_matches_params(self):
         """Make sure that each entry of the tp plan matches at least one param (this avoid typos and/or edge cases
         with regexes)"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         # If none of the config and subconfigs have a tp_plan, then skip (otherwise we should make sure to respect the plan)
         if config.base_model_tp_plan is None and all(
             getattr(getattr(config, key), "base_model_tp_plan", None) is None for key in config.sub_configs
@@ -4823,7 +4827,7 @@ class ModelTesterMixin(ExportTesterMixin):
                 is the case. In practice, the mappings are still coherent and a base model can still be loaded from
                 the head model, thanks to the `base_model_prefix` which will remove the prefix automatically.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         #  Some MoE models alternate between a classic MLP and a MoE layer, in which case we want to have at
         # lest one MoE layer here to check the mapping
@@ -4931,7 +4935,7 @@ class ModelTesterMixin(ExportTesterMixin):
         """Test that we can correctly reload a model if we chose `save_original_format=False` in `save_pretrained`,
         i.e. we do not reapply weight conversions when reloading if it was saved correctly already.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             # Each individual model is a subtest
@@ -4957,7 +4961,7 @@ class ModelTesterMixin(ExportTesterMixin):
         Specifically, it tests both the model_tester and its text_model_tester (if any),
         and filters for "input_ids", "token_type_ids", and "attention_mask" keys.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if hasattr(self.model_tester, "text_model_tester"):
             _, inputs_dict = self.model_tester.text_model_tester.prepare_config_and_inputs_for_common()
         else:
@@ -4976,7 +4980,7 @@ class ModelTesterMixin(ExportTesterMixin):
         and filters for keys related to images. It excludes video-related keys, but allows
         "spatial_shapes" and "qformer_input_ids" keys as required by some architectures.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if hasattr(self.model_tester, "vision_model_tester"):
             _, inputs_dict = self.model_tester.vision_model_tester.prepare_config_and_inputs_for_common()
         else:
@@ -4996,7 +5000,7 @@ class ModelTesterMixin(ExportTesterMixin):
         Specifically, it tests both the model_tester and its audio_model_tester (if any),
         and filters for keys related to audio.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if hasattr(self.model_tester, "audio_model_tester"):
             _, inputs_dict = self.model_tester.audio_model_tester.prepare_config_and_inputs_for_common()
         else:
@@ -5019,7 +5023,7 @@ class ModelTesterMixin(ExportTesterMixin):
         and filters for keys related to videos. It also handles key renaming for video inputs
         if there is no dedicated video_model_tester.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         if hasattr(self.model_tester, "video_model_tester"):
             _, inputs_dict = self.model_tester.video_model_tester.prepare_config_and_inputs_for_common()
         else:
@@ -5721,7 +5725,7 @@ class ModelTesterMixin(ExportTesterMixin):
         Note that chaining on different outputs (i.e. first call is set to capture "hidden_states" and 2nd to capture "attentions"
         is allowed, as we do not mix up outputs in this case.)
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         COUNTER = defaultdict(lambda: 0)
         origional_set = CompileableContextVar.set
@@ -5789,7 +5793,7 @@ class ModelTesterMixin(ExportTesterMixin):
         a dictionnary with output names as keys and a recorder or list of recorders as values. A recorder can be an
         OutputRecorder instance, a module class we want to record outputs of or the name of this module class (a str).
         """
-        config = self.model_tester.prepare_config_and_inputs_for_common()[0]
+        config = self.prepare_config_and_inputs_for_common()[0]
 
         for model_class in self.all_model_classes:
             # Each individual model is a subtest
@@ -5818,7 +5822,7 @@ class ModelTesterMixin(ExportTesterMixin):
         """
         Test that we can capture only a subset of the hidden states with `output_hidden_states`.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             # Each individual model is a subtest
@@ -5878,7 +5882,7 @@ class ModelTesterMixin(ExportTesterMixin):
     @require_torch_accelerator
     def test_kernels_can_load_without_crashing(self):
         """Check whether activating kernels leads to an (value) error"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
@@ -5894,7 +5898,7 @@ class ModelTesterMixin(ExportTesterMixin):
         Tests that we can initialize a model with RoPE scaling in the config, that it can run a forward pass, and
         that a few basic model output properties are honored.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         text_config = config.get_text_config(decoder=True)
         base_model_class = None
         for model_class in self.all_model_classes:
@@ -5979,7 +5983,7 @@ class ModelTesterMixin(ExportTesterMixin):
 
     def test_model_rope_scaling_frequencies(self):
         """Tests the frequency properties of the different RoPE scaling types on the model RoPE layer."""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         text_config = config.get_text_config(decoder=True)
         base_model_class = None
         for model_class in self.all_model_classes:

@@ -147,7 +147,7 @@ class Qwen3VLMoeModelTest(VLMModelTest, unittest.TestCase):
 
     def test_mismatching_num_image_tokens(self):
         # Override the base test because we need to slice image_grid_thw too
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             model.eval()
@@ -194,7 +194,7 @@ class Qwen3VLMoeModelTest(VLMModelTest, unittest.TestCase):
             )
 
     def test_image_forward(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         B = self.model_tester.batch_size
         C = config.vision_config.in_channels
@@ -246,7 +246,7 @@ class Qwen3VLMoeModelTest(VLMModelTest, unittest.TestCase):
             self.assertIsNotNone(outputs)
 
     def test_video_forward(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         B = self.model_tester.batch_size
         C = config.vision_config.in_channels

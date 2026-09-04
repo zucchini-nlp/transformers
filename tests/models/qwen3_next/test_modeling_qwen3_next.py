@@ -96,7 +96,7 @@ class Qwen3NextModelTest(CausalLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         "Needs to be overwritten as Qwen3-Next alternates between attention layers and gated deltanet layers."
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         # force eager attention to support output attentions
         config._attn_implementation = "eager"
@@ -150,7 +150,7 @@ class Qwen3NextModelTest(CausalLMModelTest, unittest.TestCase):
         A causal LM's logits at position `i` cannot depend on tokens at positions > `i`, even across
         separate forward calls with a shared cache.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         config._attn_implementation = "eager"
         # GatedDeltaNet's fused norm-gate kernel only supports silu/swish/sigmoid; the shared tester
         # default `gelu` would raise before exercising the cache path.

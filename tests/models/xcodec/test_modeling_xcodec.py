@@ -136,7 +136,7 @@ class XcodecModelTest(ModelTesterMixin, unittest.TestCase):
         self.model_tester.create_and_check_model_forward(*config_and_inputs)
 
     def test_forward_signature(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             model = model_class(config)
@@ -148,7 +148,7 @@ class XcodecModelTest(ModelTesterMixin, unittest.TestCase):
             self.assertListEqual(arg_names[: len(expected_arg_names)], expected_arg_names)
 
     def test_gradient_checkpointing_backward_compatibility(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         for model_class in self.all_model_classes:
             if not model_class.supports_gradient_checkpointing:
@@ -182,7 +182,7 @@ class XcodecModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Copied from transformers.tests.encodec.test_modeling_encodecEncodecModelTest.test_determinism
     def test_determinism(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def check_determinism(first, second):
             # outputs are not tensors but list (since each sequence don't have the same frame_length)
@@ -209,7 +209,7 @@ class XcodecModelTest(ModelTesterMixin, unittest.TestCase):
 
     # Copied from transformers.tests.encodec.test_modeling_encodecEncodecModelTest.test_model_outputs_equivalence
     def test_model_outputs_equivalence(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
 
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0

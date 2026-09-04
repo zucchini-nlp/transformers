@@ -122,7 +122,7 @@ class AfmoeModelTest(CausalLMModelTest, unittest.TestCase):
         pass
 
     def test_router_logits_without_aux_loss(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         config.num_dense_layers = 0
         config.output_router_logits = True
         input_ids = input_dict["input_ids"]
@@ -137,7 +137,7 @@ class AfmoeModelTest(CausalLMModelTest, unittest.TestCase):
         self.assertIsNone(result.aux_loss)
 
     def test_moe_legacy_conversion_mapping_registered(self):
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         model = AfmoeModel(config)
         weight_mapping = get_model_conversion_mapping(model)
         found_fused_expert_converter = any(

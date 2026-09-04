@@ -162,7 +162,7 @@ class MiniCPMV4_6ModelTest(VLMModelTest, unittest.TestCase):
         return config, inputs_dict
 
     def _image_features_prepare_config_and_inputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         inputs_dict = {
             key: value
             for key, value in inputs_dict.items()
@@ -171,7 +171,7 @@ class MiniCPMV4_6ModelTest(VLMModelTest, unittest.TestCase):
         return config, inputs_dict
 
     def _video_features_prepare_config_and_inputs(self):
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         return config, {
             "pixel_values_videos": inputs_dict["pixel_values"],
             "target_sizes_videos": inputs_dict["target_sizes"],
@@ -309,7 +309,7 @@ class MiniCPMV4_6ModelTest(VLMModelTest, unittest.TestCase):
 
     def test_attention_outputs(self):
         """Overwritten: Qwen3.5 alternates between full attention and gated deltanet layers."""
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.return_dict = True
         config._attn_implementation = "eager"
         seq_len = getattr(self.model_tester, "seq_length", None)

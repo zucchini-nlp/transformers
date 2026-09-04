@@ -176,7 +176,7 @@ class FuyuModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin
         self.model_tester = FuyuModelTester(self)
 
     def test_mismatching_image_patches(self):
-        config, input_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, input_dict = self.prepare_config_and_inputs_for_common()
         for model_class in self.all_model_classes:
             model = model_class(config).to(torch_device)
             curr_input_dict = copy.deepcopy(input_dict)  # in=place modifications further
@@ -252,7 +252,7 @@ class FuyuModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTesterMixin
 
         The Fuyu model uses image_patches, except for get_image_features, where they're called pixel_values.
         """
-        config, inputs_dict = self.model_tester.prepare_config_and_inputs_for_common()
+        config, inputs_dict = self.prepare_config_and_inputs_for_common()
         inputs_dict = {"pixel_values": inputs_dict["image_patches"]}
         return config, inputs_dict
 

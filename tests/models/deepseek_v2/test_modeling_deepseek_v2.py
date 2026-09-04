@@ -67,7 +67,7 @@ class DeepseekV2ModelTest(CausalLMModelTest, unittest.TestCase):
         Overwritten: DeepseekV2 implements RoPE in the complex domain, as opposed to in the real domain with
         `sin` and `cos`. Nevertheless, the checks are the same as in the original test.
         """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         scaling_factor = 10
         short_input_length = 10
         long_input_length = int(config.max_position_embeddings * 1.5)
@@ -122,7 +122,7 @@ class DeepseekV2ModelTest(CausalLMModelTest, unittest.TestCase):
     def test_tp_plan_matches_params(self):
         """Need to overwrite as the plan contains keys that are valid but depend on some configs flags and cannot
         be valid all at the same time"""
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
+        config, _ = self.prepare_config_and_inputs_for_common()
         # The key is valid but not always used based on the flag
         if config.q_lora_rank is not None:
             config.base_model_tp_plan.pop("layers.*.self_attn.q_proj")
