@@ -244,39 +244,30 @@ class CohereCompassModelTester(VLMModelTester):
             input_ids[:, past_occupied_pos + 2 : past_occupied_pos + 2 + self.num_video_tokens] = self.video_token_id
         return input_ids
 
-    def get_additional_inputs(self, config, input_ids, modality_inputs, modality):
-        mm_token_type_ids = torch.zeros_like(input_ids)
-        data = {"mm_token_type_ids": mm_token_type_ids}
-        if modality == "image":
-            data["mm_token_type_ids"][input_ids == self.image_token_id] = 1
-            data["image_grid_thw"] = torch.tensor([[1, 2, 2]] * self.batch_size, device=torch_device)
-        elif modality == "video":
-            data["mm_token_type_ids"][input_ids == self.video_token_id] = 2
-            data["video_grid_thw"] = torch.tensor(
-                [[self.num_frames // self.temporal_patch_size, 2, 2]] * self.batch_size, device=torch_device
-            )
-        else:
-            raise ValueError(f"Unrecognized modality={modality}")
-
-        return data
-
-    def get_config(self):
-        return self.config_class(
-            text_config=self.get_text_config().to_dict(),
-            vision_config=self.get_vision_config().to_dict(),
-            image_token_id=self.image_token_id,
-            video_token_id=self.video_token_id,
-            vision_start_token_id=self.vision_start_token_id,
-            vision_end_token_id=self.vision_end_token_id,
-            tie_word_embeddings=self.tie_word_embeddings,
-            pad_token_id=self.pad_token_id,
-        )
-
     def prepare_text_inputs(self):
         input_ids = torch.randint(3, self.vocab_size, (self.batch_size, self.seq_length), device=torch_device)
         attention_mask = torch.ones_like(input_ids)
         return input_ids, attention_mask
 
+    def _prepare_image_inputs(self, input_ids, config, modality_inputs):
+        input_ids, data = super()._prepare_image_inputs(input_ids, config, modality_inputs)
+        mm_token_type_ids = data.get("mm_token_type_ids", torch.zeros_like(input_ids))
+        mm_token_type_ids[input_ids == self.image_token_id] = 1
+        data["mm_token_type_ids"] = mm_token_type_ids
+        data["image_grid_thw"] = torch.tensor([[1, 2, 2]] * self.batch_size, device=torch_device)
+        return input_ids, data
+
+    def _prepare_video_inputs(self, input_ids, config, modality_inputs):
+        input_ids, data = super()._prepare_video_inputs(input_ids, config, modality_inputs)
+        mm_token_type_ids = data.get("mm_token_type_ids", torch.zeros_like(input_ids))
+        mm_token_type_ids[input_ids == self.video_token_id] = 2
+        data["mm_token_type_ids"] = mm_token_type_ids
+        data["video_grid_thw"] = torch.tensor(
+            [[self.num_frames // self.temporal_patch_size, 2, 2]] * self.batch_size, device=torch_device
+        )
+        return input_ids, data
+
+    # TODO: delete this = used once and is already same as `_preapre_inputs_and_config`
     def prepare_image_inputs(self, config):
         """A single-image, single-row batch with the correct number of image placeholder tokens."""
         vision_config = config.vision_config

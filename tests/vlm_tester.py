@@ -13,14 +13,10 @@
 # limitations under the License.
 
 import copy
-import functools
-import inspect
 import unittest
 from inspect import signature
 
-import pytest
-
-from .multimodal_tester import MultiModalModelTest, MultiModalModelTester, ids_tensor
+from .multimodal_tester import MultiModalModelTest, MultiModalModelTester
 from .test_modeling_common import (
     floats_tensor,
     is_torch_available,
@@ -69,7 +65,7 @@ class VLMModelTester(MultiModalModelTester):
         kwargs.setdefault("num_labels", 3)
         kwargs.setdefault("num_choices", 4)
         kwargs.setdefault("image_token_id", 3)
-        kwargs.setdefault("image_token_id", 4)
+        kwargs.setdefault("video_token_id", 4)
         kwargs.setdefault("is_decoder", False)
         kwargs.setdefault("image_size", 8)
         kwargs.setdefault("patch_size", 4)
@@ -90,32 +86,6 @@ class VLMModelTester(MultiModalModelTester):
         # Computed default depending on base-class defaults for hidden_size / num_attention_heads.
         if not hasattr(self, "head_dim"):
             self.head_dim = self.hidden_size // self.num_attention_heads
-
-    # allow inputs to be prepared for each supported vision modality and its combinations
-    def prepare_config_and_inputs_for_common(self, modalities: list[str] | None = None):
-        config = self.get_config()
-        input_ids = ids_tensor([self.batch_size, self.seq_length], self.vocab_size)
-
-        # Avoid flaky tests by scrubbing any accidental special tokens produced by ids_tensor.
-        # Modality placeholder tokens are scrubbed and placed by `_prepare_modality_inputs`.
-        safe_token_id = self._safe_token_id()
-        for token_id in self._special_token_ids:
-            input_ids[input_ids == token_id] = safe_token_id
-
-        # Create attention mask with final input_ids (after modality placeholders are placed) — important
-        # for models that derive padding from token values.
-        attention_mask = self.create_attention_mask(input_ids) if self.use_input_mask else None
-        inputs_dict = {"input_ids": input_ids, "attention_mask": attention_mask}
-
-        if modalities is not None:
-            modality_inputs = {}
-            for modality in modalities:
-                input_ids, current_data = self._prepare_modality_inputs(input_ids, config, modality=modality)
-                current_data.update(self.get_additional_inputs(config, input_ids, current_data, modality=modality))
-                modality_inputs.update(current_data)
-            inputs_dict.update(modality_inputs)
-            inputs_dict["input_ids"] = input_ids  # re-set to add placeholder IDs
-        return config, inputs_dict
 
     # -- Overridable VLM-specific hooks ------------------------------------------------------
 
@@ -142,11 +112,12 @@ class VLMModelTester(MultiModalModelTester):
     def place_video_tokens(self, input_ids, config):
         # Override if the video tokens shouldn't be placed at the start of the test sequence
         video_token_id = getattr(config, "video_token_id", self.video_token_id)
+        offset = self.num_image_tokens if hasattr(self, "num_image_tokens") else 0
         # Clear any accidental video tokens first
         input_ids = input_ids.clone()
         input_ids[input_ids == video_token_id] = self.bos_token_id
         # Place video tokens after image
-        input_ids[:, self.num_image_tokens : self.num_image_tokens + self.num_video_tokens] = video_token_id
+        input_ids[:, offset : offset + self.num_video_tokens] = video_token_id
         return input_ids
 
     # -- Hooks consumed by the shared base ---------------------------------------------------
@@ -159,18 +130,16 @@ class VLMModelTester(MultiModalModelTester):
         return special_tokens
 
     def _build_modality_sub_configs(self):
-        return {"vision_config": self.get_vision_config()}
+        return {**super()._build_modality_sub_configs(), "vision_config": self.get_vision_config()}
 
-    def _prepare_modality_inputs(self, input_ids, config, modality: str):
-        data = {}
-        if modality == "image":
-            data["pixel_values"] = self.create_pixel_values()
-            input_ids = self.place_image_tokens(input_ids, config)
-        elif modality == "video":
-            data["pixel_values_videos"] = self.create_pixel_values_videos()
-            input_ids = self.place_video_tokens(input_ids, config)
-        else:
-            raise ValueError(f"Unrecognized modality={modality}")
+    def _prepare_image_inputs(self, input_ids, config, modality_inputs):
+        data = {"pixel_values": self.create_pixel_values()}
+        input_ids = self.place_image_tokens(input_ids, config)
+        return input_ids, data
+
+    def _prepare_video_inputs(self, input_ids, config, modality_inputs):
+        data = {"pixel_values_videos": self.create_pixel_values_videos()}
+        input_ids = self.place_video_tokens(input_ids, config)
         return input_ids, data
 
     # -- Vision sub-config construction ------------------------------------------------------
@@ -197,98 +166,6 @@ class VLMModelTest(MultiModalModelTest):
     """
 
     MODALITY_COMBINATIONS = [("image",), ("video",), ("image", "video")]
-
-    # All `test_xxx` NOT listed here is assumed to depend on
-    # `prepare_config_and_inputs_for_common()` and gets fanned out per modality
-    # Do not change it per model test as well!
-    MODALITY_INDEPENDENT_TESTS = {
-        "test_config",
-        "test_model_is_small",
-        "test_from_pretrained_no_checkpoint",
-        "test_keep_in_fp32_modules_exist",
-        "test_keep_in_fp32_modules",
-        "test_save_load_keys_to_ignore_on_save",
-        "test_load_contiguous_weights",
-        "test_can_init_all_missing_weights",
-        "test_init_weights_can_init_buffers",
-        "test_all_tensors_are_parameter_or_buffer",
-        "test_resize_tokens_embeddings",
-        "test_model_get_set_embeddings",
-        "test_model_main_input_name",
-        "test_model_base_model_prefix",
-        "test_correct_missing_keys",
-        "test_can_use_safetensors",
-        "test_load_save_without_tied_weights",
-        "test_tied_weights_keys",
-        "test_model_weights_reload_no_missing_tied_weights",
-        "test_disk_offload_bin",
-        "test_disk_offload_safetensors",
-        "test_cpu_offload",
-        "test_load_with_mismatched_shapes",
-        "test_can_load_ignoring_mismatched_shapes",
-        "test_attn_implementation_composite_models",
-        "test_sdpa_can_dispatch_composite_models",
-        "test_generation_tester_mixin_inheritance",
-        "test_can_be_initialized_on_meta",
-        "test_can_load_with_device_context_manager",
-        "test_can_load_with_global_device_set",
-        "test_cannot_load_with_meta_device_context_manager",
-        "test_config_attn_implementation_setter",
-        "test_internal_model_config_and_subconfig_are_same",
-        "test_can_set_attention_dynamically",
-        "test_can_set_attention_dynamically_composite_model",
-        "test_bc_torch_dtype",
-        "test_tp_plan_matches_params",
-        "test_reverse_loading_mapping",
-        "test_can_load_from_already_mapped_keys",
-        "test_format_of_can_record_outputs",
-        "test_can_capture_specific_layers_hidden_states",
-        "test_kernels_can_load_without_crashing",
-    }
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        if "model_tester_class" not in cls.__dict__:
-            return
-
-        supported = cls.model_tester_class.base_model_class.input_modalities
-        combos = [c for c in cls.MODALITY_COMBINATIONS if all(m in supported for m in c)]
-        test_names = [
-            name
-            for name, _ in inspect.getmembers(cls, predicate=inspect.isfunction)
-            if name.startswith("test_") and name not in cls.MODALITY_INDEPENDENT_TESTS
-        ]
-
-        for name in test_names:
-            original = getattr(cls, name)
-            required = getattr(original, "required_modalities", None)
-
-            if required is not None:
-
-                @functools.wraps(original)
-                def wrapper(self, *args, __orig=original, __required=required, **kw):
-                    self.current_modalities = __required
-                    return __orig(self, *args, **kw)
-
-                setattr(cls, name, wrapper)
-                continue
-
-            for combo in combos:
-                new_name = f"{name}_{'_'.join(combo)}"
-
-                @functools.wraps(original)
-                def wrapper(self, *args, __orig=original, __combo=combo, **kw):
-                    self.current_modalities = __combo
-                    return __orig(self, *args, **kw)
-
-                setattr(cls, new_name, wrapper)
-
-                for modality in combo:
-                    wrapper = getattr(pytest.mark, modality)(wrapper)
-                wrapper = pytest.mark.multimodal_combo("_".join(combo))(wrapper)
-
-    def prepare_config_and_inputs_for_common(self):
-        return self.model_tester.prepare_config_and_inputs_for_common(self.current_modalities)
 
     def test_mismatching_num_image_tokens(self):
         """

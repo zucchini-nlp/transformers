@@ -742,7 +742,7 @@ class ModelTesterMixin(ExportTesterMixin):
     _is_composite = False
     model_split_percents = [0.5, 0.7, 0.9]
 
-    # DON'T set `current_modalities` in models! It's auti-set when initializing a MultiModal subclass
+    # DON'T set `current_modalities` in models! It's auto-set when initializing a MultiModal subclass
     current_modalities = None
 
     # Note: for all mixins that utilize the Hub in some way, we should ensure that

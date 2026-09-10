@@ -11,7 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
+import inspect
 from inspect import signature
+
+import pytest
 
 from transformers.testing_utils import _TEXT_MODEL_TESTER_DEFAULTS
 
@@ -107,13 +111,6 @@ class MultiModalModelTester:
         """Default causal (lower-triangular) attention mask. Override for bidirectional models like Gemma3."""
         return torch.tril(torch.ones_like(input_ids).to(torch_device))
 
-    def get_additional_inputs(self, config, input_ids, modality_inputs, modality: str):
-        """Model-specific extra inputs (e.g. LlavaNext `image_sizes`, Qwen3VL `mm_token_type_ids`).
-
-        ``modality_inputs`` is the full dict returned by ``_prepare_modality_inputs``.
-        """
-        return {}
-
     @property
     def _special_token_ids(self):
         """Special token ids that must never appear as random text tokens. Subclasses add modality tokens."""
@@ -121,14 +118,7 @@ class MultiModalModelTester:
 
     def _build_modality_sub_configs(self):
         """Return the {sub-config-key: sub-config-instance} entries for the main config constructor."""
-        raise NotImplementedError
-
-    def _prepare_modality_inputs(self, input_ids, config):
-        """Create modality features, place modality placeholder tokens in ``input_ids``, and return:
-
-        (input_ids_with_placeholders, modality_inputs_dict)
-        """
-        raise NotImplementedError
+        return {}
 
     # -- End of overridable hooks -------------------------------------------------------------
 
@@ -140,9 +130,8 @@ class MultiModalModelTester:
                 return i
         raise ValueError("vocab_size is too small and there is no token ID that is not a special token!")
 
-    def prepare_config_and_inputs_for_common(self):
+    def prepare_config_and_inputs_for_common(self, modalities: list[str] | None = None):
         config = self.get_config()
-
         input_ids = ids_tensor([self.batch_size, self.seq_length], self.vocab_size)
 
         # Avoid flaky tests by scrubbing any accidental special tokens produced by ids_tensor.
@@ -151,15 +140,19 @@ class MultiModalModelTester:
         for token_id in self._special_token_ids:
             input_ids[input_ids == token_id] = safe_token_id
 
-        input_ids, modality_inputs = self._prepare_modality_inputs(input_ids, config)
-
         # Create attention mask with final input_ids (after modality placeholders are placed) — important
         # for models that derive padding from token values.
         attention_mask = self.create_attention_mask(input_ids) if self.use_input_mask else None
-
         inputs_dict = {"input_ids": input_ids, "attention_mask": attention_mask}
-        inputs_dict.update(modality_inputs)
-        inputs_dict.update(self.get_additional_inputs(config, input_ids, modality_inputs))
+
+        if modalities is not None:
+            modality_inputs = {}
+            for modality in modalities:
+                prepare_fn = getattr(self, f"_prepare_{modality}_inputs")
+                input_ids, current_data = prepare_fn(input_ids, config, modality_inputs)
+                modality_inputs.update(current_data)
+            inputs_dict.update(modality_inputs)
+            inputs_dict["input_ids"] = input_ids  # re-set to add placeholder IDs
         return config, inputs_dict
 
     # -- Config construction helpers ----------------------------------------------------------
@@ -232,6 +225,54 @@ class MultiModalModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTeste
     # Multimodal models are always composite
     _is_composite = True
 
+    # All `test_xxx` NOT listed here is assumed to depend on
+    # `prepare_config_and_inputs_for_common()` and gets fanned out per modality
+    # Do not change it per model test as well!
+    MODALITY_INDEPENDENT_TESTS = {
+        "test_config",
+        "test_model_is_small",
+        "test_from_pretrained_no_checkpoint",
+        "test_keep_in_fp32_modules_exist",
+        "test_keep_in_fp32_modules",
+        "test_save_load_keys_to_ignore_on_save",
+        "test_load_contiguous_weights",
+        "test_can_init_all_missing_weights",
+        "test_init_weights_can_init_buffers",
+        "test_all_tensors_are_parameter_or_buffer",
+        "test_resize_tokens_embeddings",
+        "test_model_get_set_embeddings",
+        "test_model_main_input_name",
+        "test_model_base_model_prefix",
+        "test_correct_missing_keys",
+        "test_can_use_safetensors",
+        "test_load_save_without_tied_weights",
+        "test_tied_weights_keys",
+        "test_model_weights_reload_no_missing_tied_weights",
+        "test_disk_offload_bin",
+        "test_disk_offload_safetensors",
+        "test_cpu_offload",
+        "test_load_with_mismatched_shapes",
+        "test_can_load_ignoring_mismatched_shapes",
+        "test_attn_implementation_composite_models",
+        "test_sdpa_can_dispatch_composite_models",
+        "test_generation_tester_mixin_inheritance",
+        "test_can_be_initialized_on_meta",
+        "test_can_load_with_device_context_manager",
+        "test_can_load_with_global_device_set",
+        "test_cannot_load_with_meta_device_context_manager",
+        "test_config_attn_implementation_setter",
+        "test_internal_model_config_and_subconfig_are_same",
+        "test_can_set_attention_dynamically",
+        "test_can_set_attention_dynamically_composite_model",
+        "test_bc_torch_dtype",
+        "test_tp_plan_matches_params",
+        "test_reverse_loading_mapping",
+        "test_can_load_from_already_mapped_keys",
+        "test_format_of_can_record_outputs",
+        "test_can_capture_specific_layers_hidden_states",
+        "test_kernels_can_load_without_crashing",
+    }
+
     def setUp(self):
         if self.model_tester_class is None:
             raise ValueError(
@@ -255,3 +296,47 @@ class MultiModalModelTest(ModelTesterMixin, GenerationTesterMixin, PipelineTeste
     def test_config(self):
         """Test config common functionality."""
         self.config_tester.run_common_tests()
+
+    def prepare_config_and_inputs_for_common(self):
+        return self.model_tester.prepare_config_and_inputs_for_common(self.current_modalities)
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        if "model_tester_class" not in cls.__dict__:
+            return
+
+        supported = cls.model_tester_class.base_model_class.input_modalities
+        combos = [c for c in cls.MODALITY_COMBINATIONS if all(m in supported for m in c)]
+        test_names = [
+            name
+            for name, _ in inspect.getmembers(cls, predicate=inspect.isfunction)
+            if name.startswith("test_") and name not in cls.MODALITY_INDEPENDENT_TESTS
+        ]
+
+        for name in test_names:
+            original = getattr(cls, name)
+            required = getattr(original, "required_modalities", None)
+
+            if required is not None:
+
+                @functools.wraps(original)
+                def wrapper(self, *args, __orig=original, __required=required, **kw):
+                    self.current_modalities = __required
+                    return __orig(self, *args, **kw)
+
+                setattr(cls, name, wrapper)
+                continue
+
+            for combo in combos:
+                new_name = f"{name}_{'_'.join(combo)}"
+
+                @functools.wraps(original)
+                def wrapper(self, *args, __orig=original, __combo=combo, **kw):
+                    self.current_modalities = __combo
+                    return __orig(self, *args, **kw)
+
+                setattr(cls, new_name, wrapper)
+
+                for modality in combo:
+                    wrapper = getattr(pytest.mark, modality)(wrapper)
+                wrapper = pytest.mark.multimodal_combo("_".join(combo))(wrapper)

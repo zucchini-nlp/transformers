@@ -78,17 +78,20 @@ class ALMModelTester(MultiModalModelTester):
         the tail of each sequence text-only, which downstream tests (e.g. resize_token_embeddings
         overwriting column -2) rely on.
         """
+        offset = self.num_image_tokens if hasattr(self, "num_image_tokens") else 0
+        offset += self.num_video_tokens if hasattr(self, "num_video_tokens") else 0
+
         input_ids = input_ids.clone()
         input_ids[input_ids == self.audio_token_id] = self.pad_token_id
         for i in range(input_ids.shape[0]):
             n = num_audio_tokens[i].item() if isinstance(num_audio_tokens, torch.Tensor) else num_audio_tokens
-            if 1 + int(n) > self.seq_length:
+            if 1 + offset + int(n) > self.seq_length:
                 raise ValueError(
                     f"Cannot place {int(n)} audio tokens after BOS in a sequence of length {self.seq_length}. "
                     "This likely indicates a mismatch between your feature extraction/configuration and your sequence length. "
                     "Please ensure `seq_length` is >= the number of audio embedding positions + 1."
                 )
-            input_ids[i, 1 : 1 + int(n)] = self.audio_token_id
+            input_ids[i, 1 + offset : 1 + offset + int(n)] = self.audio_token_id
         return input_ids
 
     def get_audio_feature_key(self):
@@ -123,9 +126,9 @@ class ALMModelTester(MultiModalModelTester):
         return super()._special_token_ids | {self.audio_token_id}
 
     def _build_modality_sub_configs(self):
-        return {self.audio_config_key: self.get_audio_config()}
+        return {**super()._build_modality_sub_configs(), self.audio_config_key: self.get_audio_config()}
 
-    def _prepare_modality_inputs(self, input_ids, config):
+    def _prepare_audio_inputs(self, input_ids, config, modality_inputs):
         audio_features = self.create_audio_features()
         audio_mask = self.create_audio_mask()
         audio_embeds_mask = self.get_audio_embeds_mask(audio_mask)
@@ -159,6 +162,8 @@ class ALMModelTest(MultiModalModelTest):
     - `all_model_classes`: Override if not using default from model_tester
     - `pipeline_model_mapping`: Override if not using default from model_tester
     """
+
+    MODALITY_COMBINATIONS = [("audio",)]
 
     def test_sdpa_can_dispatch_on_flash(self):
         # `test_sdpa_can_dispatch_on_flash` already pops the attention mask, but we cannot simply pop the
