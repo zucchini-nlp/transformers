@@ -30,7 +30,7 @@ from ...modeling_rope_utils import RopeParameters
 from ...utils import auto_docstring
 
 
-@auto_docstring(checkpoint="allenai/Olmo2-7B-1124-hf")
+@auto_docstring(checkpoint="allenai/OLMo-2-1124-7B")
 @strict
 class Olmo2Config(PreTrainedConfig):
     r"""
@@ -80,7 +80,7 @@ class Olmo2Config(PreTrainedConfig):
     pad_token_id: int | None = 1
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = 50279
-    tie_word_embeddings: int = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
     attention_dropout: float | int = 0.0

@@ -25,8 +25,10 @@ from ...utils import auto_docstring
 @auto_docstring(checkpoint="Qwen/Qwen2-VL-7B-Instruct")
 @strict
 class Qwen2VLVisionConfig(PreTrainedConfig):
-    model_type = "qwen2_vl"
+    model_type = "qwen2_vl_vision"
     base_config_key = "vision_config"
+    default_rope_type = "axial"
+    attribute_map = {"num_attention_heads": "num_heads"}
 
     depth: int = 32
     embed_dim: int = 1280
@@ -39,6 +41,7 @@ class Qwen2VLVisionConfig(PreTrainedConfig):
     spatial_merge_size: int = 2
     temporal_patch_size: int | list[int] | tuple[int, int] = 2
     initializer_range: float = 0.02
+    rope_parameters: dict | None = None
 
 
 @auto_docstring(checkpoint="Qwen/Qwen2-VL-7B-Instruct")
@@ -180,7 +183,13 @@ class Qwen2VLConfig(PreTrainedConfig):
             text_kwargs["dtype"] = kwargs.get("torch_dtype", kwargs.get("dtype"))  # don't pop the dtype
             self.text_config = self.sub_configs["text_config"](**text_kwargs)
 
+        # BC: pre-v5 saves placed `tie_word_embeddings` inside text_config. Forward it to the outer
+        # config (where v5's tying logic looks) when the root value is the default. Checked after
+        # text_config init so it also covers a text config passed as an already-initialized instance.
+        if not self.tie_word_embeddings and getattr(self.text_config, "tie_word_embeddings", False):
+            self.tie_word_embeddings = True
+
         super().__post_init__(**kwargs)
 
 
-__all__ = ["Qwen2VLConfig", "Qwen2VLTextConfig"]
+__all__ = ["Qwen2VLConfig", "Qwen2VLTextConfig", "Qwen2VLVisionConfig"]

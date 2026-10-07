@@ -81,7 +81,7 @@ class ModernVBertConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     initializer_cutoff_factor: float = 2.0
     classifier_pooling: Literal["cls", "mean"] = "cls"
-    classifier_dropout: float = 0.0
+    classifier_dropout: float | int = 0.0
     classifier_bias: bool = False
     tie_word_embeddings: bool = False
 
@@ -243,7 +243,7 @@ class ModernVBertPreTrainedModel(SmolVLMPreTrainedModel):
     custom_intro="""
     ModernVBertModel is a model that combines a vision encoder (SigLIP) and a text encoder (ModernBert).
 
-    ModernVBert is the base model of the visual retriver ColModernVBert, and was introduced in the following paper:
+    ModernVBert is the base model of the visual retriever ColModernVBert, and was introduced in the following paper:
     [*ModernVBERT: Towards Smaller Visual Document Retrievers*](https://arxiv.org/abs/2510.01149).
     """
 )

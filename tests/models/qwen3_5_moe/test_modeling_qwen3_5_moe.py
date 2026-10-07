@@ -14,18 +14,17 @@
 """Testing suite for the PyTorch Qwen3.5 model."""
 
 import copy
-import os
-import re
 import tempfile
 import unittest
 
-from safetensors.torch import load_file
+from parameterized import parameterized
 
-from transformers import is_torch_available
-from transformers.conversion_mapping import get_model_conversion_mapping
-from transformers.core_model_loading import WeightRenaming, process_target_pattern
+from transformers import DataCollatorWithFlattening, is_torch_available
 from transformers.testing_utils import (
+    require_causal_conv1d,
+    require_flash_linear_attention,
     require_torch,
+    require_torch_gpu,
     torch_device,
 )
 
@@ -34,7 +33,6 @@ from ...generation.test_utils import GenerationTesterMixin
 from ...test_configuration_common import ConfigTester
 from ...test_modeling_common import (
     ModelTesterMixin,
-    compare_state_dicts,
     floats_tensor,
     ids_tensor,
 )
@@ -44,6 +42,8 @@ if is_torch_available():
     import torch
 
     from transformers import (
+        AutoModelForCausalLM,
+        AutoModelForImageTextToText,
         Qwen3_5MoeConfig,
         Qwen3_5MoeForCausalLM,
         Qwen3_5MoeForConditionalGeneration,
@@ -60,12 +60,20 @@ class Qwen3_5MoeTextModelTester(CausalLMModelTester):
 
     def __init__(self, parent):
         super().__init__(parent=parent)
+        self.hidden_act = "silu"
         self.layer_types = ["full_attention", "linear_attention"]
         self.linear_conv_kernel_dim = 2
         self.linear_key_head_dim = 16
         self.linear_value_head_dim = 16
         self.linear_num_key_heads = 4
         self.linear_num_value_heads = 8
+        self.rope_parameters = {
+            "rope_type": "default",
+            "rope_theta": 10_000,
+            "mrope_section": [2, 1, 1],
+            "mrope_interleaved": True,
+        }
+        self.head_dim = 32
 
 
 @require_torch
@@ -137,91 +145,55 @@ class Qwen3_5MoeTextModelTest(CausalLMModelTest, unittest.TestCase):
             self.assertEqual(len(self_attentions), sum(layer == "full_attention" for layer in config.layer_types))
             self.assertListEqual(list(self_attentions[0].shape[-3:]), [config.num_attention_heads, seq_len, seq_len])
 
+    @unittest.skip("Intentionally not reversable (no changes) as only load time within a VLM depends on this")
     def test_reverse_loading_mapping(self, check_keys_were_modified=True):
-        """
-        Overwritten to check for the moe portion but ignore the prefix as it results into a noop
-        (except we have a VLM struct initially)
-        """
-        config, _ = self.model_tester.prepare_config_and_inputs_for_common()
-
-        #  Some MoE models alternate between a classic MLP and a MoE layer, in which case we want to have at
-        # lest one MoE layer here to check the mapping
-        config_to_set = config.get_text_config(decoder=True)
-        config_to_set.first_k_dense_replace = 1  # means that the first layer (idx 0) will be MLP, then MoE
-        config_to_set.moe_layer_start_index = 1  # same as above but for Ernie 4.5...
-        config_to_set.mlp_only_layers = [0]  # same but for qwens
-        config_to_set.num_dense_layers = 1  # lfm2_moe
-
-        for model_class in self.all_model_classes:
-            # Each individual model is a subtest
-            with self.subTest(model_class.__name__):
-                model = model_class(copy.deepcopy(config))
-                # Skip if no conversions
-                conversions = get_model_conversion_mapping(model, add_legacy=False)
-                if len(conversions) == 0:
-                    self.skipTest("No conversion found for this model")
-
-                # Find the model keys, so the targets according to the conversions
-                model_keys = list(model.state_dict().keys())
-
-                with tempfile.TemporaryDirectory() as tmpdirname:
-                    # Serialize with reverse mapping
-                    model.save_pretrained(tmpdirname)
-                    state_dict = load_file(os.path.join(tmpdirname, "model.safetensors"))
-                    # Get all the serialized keys that we just saved according to the reverse mapping
-                    serialized_keys = list(state_dict.keys())
-
-                if check_keys_were_modified:
-                    # They should be different, otherwise we did not perform any mapping
-                    self.assertNotEqual(sorted(serialized_keys), sorted(model_keys), "No key mapping was performed!")
-
-                # Check that for each conversion entry, we at least map to one key
-                for conversion in conversions:
-                    for source_pattern in conversion.source_patterns:
-                        # Sometimes the mappings specify keys that are tied, so absent from the saved state dict
-                        if isinstance(conversion, WeightRenaming):
-                            # We need to revert the target pattern to make it compatible with regex search
-                            target_pattern_reversed = conversion.target_patterns[0]
-                            captured_group = process_target_pattern(source_pattern)[1]
-                            if captured_group:
-                                target_pattern_reversed = target_pattern_reversed.replace(r"\1", captured_group)
-                            if any(re.search(target_pattern_reversed, k) for k in model.all_tied_weights_keys.keys()):
-                                continue
-                        num_matches = sum(re.search(source_pattern, key) is not None for key in serialized_keys)
-
-                        # Key change: special case to load causal lm within vlm
-                        if source_pattern == "^model.language_model":
-                            continue
-
-                        self.assertTrue(
-                            num_matches > 0,
-                            f"`{source_pattern}` in `{conversion}` did not match any of the source keys. "
-                            "This indicates whether that the pattern is not properly written, ot that it could not be reversed correctly",
-                        )
-
-                # If everything is still good at this point, let's test that we perform the same operations both when
-                # reverting ops from `from_pretrained` and from `__init__`
-                with tempfile.TemporaryDirectory() as tmpdirname:
-                    # The model was instantiated from __init__ before being saved
-                    model.save_pretrained(tmpdirname)
-                    state_dict_saved_from_init = load_file(os.path.join(tmpdirname, "model.safetensors"))
-
-                    # Now reload it
-                    model_reloaded = model_class.from_pretrained(tmpdirname)
-
-                    # Make sure both loaded state_dict are identical
-                    self.assertTrue(compare_state_dicts(model_reloaded.state_dict(), model.state_dict()))
-
-                    # The model was instantiated from `from_pretrained` before being saved
-                    model_reloaded.save_pretrained(tmpdirname)
-                    state_dict_saved_from_pretrained = load_file(os.path.join(tmpdirname, "model.safetensors"))
-
-                    # Make sure both saved state_dict are identical
-                    self.assertTrue(compare_state_dicts(state_dict_saved_from_init, state_dict_saved_from_pretrained))
-
-    @unittest.skip("The specific cache format cannot be instantiated from dp/ddp data.")
-    def test_multi_gpu_data_parallel_forward(self):
         pass
+
+    @require_causal_conv1d
+    @require_flash_linear_attention
+    @require_torch_gpu
+    def test_padding_free_matches_padded_fast_path_regression(self):
+        torch.manual_seed(0)
+        config = self.model_tester.get_config()
+        model = Qwen3_5MoeForCausalLM(config).to(torch_device).eval()
+
+        data_collator = DataCollatorWithFlattening(
+            return_tensors="pt", return_seq_idx=True, return_flash_attn_kwargs=True
+        )
+        test_cases = [
+            (
+                torch.tensor([[0, 0, 0, 1, 2, 3], [0, 0, 0, 0, 4, 5]], device=torch_device),
+                torch.tensor([[0, 0, 0, 1, 1, 1], [0, 0, 0, 0, 1, 1]], dtype=torch.long, device=torch_device),
+                [{"input_ids": [1, 2, 3]}, {"input_ids": [4, 5]}],
+            ),
+            (
+                torch.tensor([[0, 1, 2, 3, 4, 5], [0, 0, 0, 0, 0, 6]], device=torch_device),
+                torch.tensor([[0, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 1]], dtype=torch.long, device=torch_device),
+                [{"input_ids": [1, 2, 3, 4, 5]}, {"input_ids": [6]}],
+            ),
+        ]
+
+        for padded_input_ids, attention_mask, features in test_cases:
+            position_ids = ((attention_mask == 1).long().cumsum(dim=1) - 1) * (attention_mask == 1).long()
+            padding_free_batch = data_collator(features)
+            padding_free_batch = {
+                key: value.to(torch_device) if torch.is_tensor(value) else value
+                for key, value in padding_free_batch.items()
+            }
+
+            with torch.no_grad():
+                res_padded = model(
+                    input_ids=padded_input_ids,
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    use_cache=False,
+                )
+                res_padfree = model(**padding_free_batch, use_cache=False)
+
+            logits_padded = res_padded.logits[attention_mask.bool()]
+            logits_padfree = res_padfree.logits[0]
+
+            torch.testing.assert_close(logits_padded, logits_padfree, atol=1e-5, rtol=1e-5)
 
 
 class Qwen3_5MoeVisionText2TextModelTester:
@@ -238,19 +210,23 @@ class Qwen3_5MoeVisionText2TextModelTester:
             "eos_token_id": 1,
             "pad_token_id": 2,
             "hidden_act": "silu",
-            "head_dim": 8,
+            "head_dim": 32,
             "hidden_size": 32,
             "vocab_size": 99,
             "intermediate_size": 37,
             "max_position_embeddings": 512,
-            "model_type": "qwen3_vl",
+            "model_type": "qwen3_5_moe_text",
             "num_attention_heads": 4,
             "num_hidden_layers": 2,
             "layer_types": ["full_attention", "linear_attention"],
             "num_key_value_heads": 2,
-            "rope_theta": 10000,
             "tie_word_embeddings": True,
-            "rope_parameters": {"rope_type": "default", "mrope_section": [16, 8, 8], "mrope_interleaved": True},
+            "rope_parameters": {
+                "rope_type": "default",
+                "rope_theta": 10_000,
+                "mrope_section": [2, 1, 1],
+                "mrope_interleaved": True,
+            },
             "linear_conv_kernel_dim": 2,
             "linear_key_head_dim": 16,
             "linear_value_head_dim": 16,
@@ -298,7 +274,6 @@ class Qwen3_5MoeVisionText2TextModelTester:
         self.num_hidden_layers = text_config["num_hidden_layers"]
         self.num_attention_heads = text_config["num_attention_heads"]
         self.num_key_value_heads = text_config["num_key_value_heads"]
-        self.rope_theta = text_config["rope_theta"]
         self.rope_parameters = text_config["rope_parameters"]
         self.hidden_act = text_config["hidden_act"]
         self.max_position_embeddings = text_config["max_position_embeddings"]
@@ -385,6 +360,63 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
 
     def test_config(self):
         self.config_tester.run_common_tests()
+
+    @parameterized.expand([("from_pretrained",), ("from_config",)])
+    def test_automodelforcausallm(self, loader: str) -> None:
+        """`AutoModelForCausalLM` must unwrap the text sub-config for composite-to-text-only mappings."""
+        config = self.model_tester.get_config()
+        self.assertIsInstance(config, Qwen3_5MoeConfig, msg="Test setup expects the composite Qwen3_5MoeConfig.")
+
+        if loader == "from_config":
+            with torch.device("meta"):
+                model = AutoModelForCausalLM.from_config(config)
+        else:
+            full_model = Qwen3_5MoeForConditionalGeneration(config)
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                full_model.save_pretrained(tmp_dir)
+                model = AutoModelForCausalLM.from_pretrained(tmp_dir)
+
+        self.assertIsInstance(model, Qwen3_5MoeForCausalLM)
+        self.assertIsInstance(model.config, Qwen3_5MoeTextConfig)
+
+    def test_automodelforcausallm_dtype(self) -> None:
+        """`AutoModelForCausalLM` must honor a concrete `dtype`, overriding the saved composite dtype (#46459)."""
+        config = self.model_tester.get_config()
+        # The saved dtype (bf16) must differ from the requested one (fp32) to exercise the bug.
+        full_model = Qwen3_5MoeForConditionalGeneration(config).to(torch.bfloat16)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            full_model.save_pretrained(tmp_dir)
+
+            # #46459 regression: a concrete `dtype` must win over the saved bf16 composite dtype.
+            model = AutoModelForCausalLM.from_pretrained(tmp_dir, dtype=torch.float32)
+            self.assertIsInstance(model, Qwen3_5MoeForCausalLM)
+            self.assertEqual(next(model.parameters()).dtype, torch.float32)
+
+            # Default behavior is unchanged: `auto` and no dtype still load in the checkpoint's saved bf16.
+            model_auto = AutoModelForCausalLM.from_pretrained(tmp_dir, dtype="auto")
+            self.assertEqual(next(model_auto.parameters()).dtype, torch.bfloat16)
+            model_default = AutoModelForCausalLM.from_pretrained(tmp_dir)
+            self.assertEqual(next(model_default.parameters()).dtype, torch.bfloat16)
+
+            # The legacy `torch_dtype` alias is honored the same way.
+            model_legacy = AutoModelForCausalLM.from_pretrained(tmp_dir, torch_dtype=torch.float32)
+            self.assertEqual(next(model_legacy.parameters()).dtype, torch.float32)
+
+            # Non-regression guard: loading the whole VLM already honored `dtype` (this path does not
+            # hit the text-config swap), and must keep doing so before and after the fix.
+            vlm = AutoModelForImageTextToText.from_pretrained(tmp_dir, dtype=torch.float32)
+            self.assertEqual(vlm.config.dtype, torch.float32)
+            self.assertEqual(vlm.config.text_config.dtype, torch.float32)
+            self.assertEqual(vlm.config.vision_config.dtype, torch.float32)
+            # Check the actual weights load in fp32, not just the config metadata.
+            self.assertTrue(all(param.dtype == torch.float32 for param in vlm.parameters()))
+
+    @unittest.skip(
+        "Conversion only for the `CausalLM` loading from saved `ConditionalLM`, doesn't apply to simple VLM"
+    )
+    def test_reverse_loading_mapping(self, check_keys_were_modified=True):
+        pass
 
     def _get_conv_state_shape(self, batch_size: int, config):
         num_v_heads = config.linear_num_value_heads
@@ -534,7 +566,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
                 channels * temporal_patch * (patch_size**2),
             ]
         )
-        image_grid_thw = torch.tensor([[1, 1, 1]] * (bsz * num_images))
+        image_grid_thw = torch.tensor([[1, 1, 1]] * (bsz * num_images), device=torch_device)
         self.assertEqual(pixel_values.shape[0], image_grid_thw.prod(dim=1).sum().item())
 
         insertion_point = 0
@@ -587,7 +619,7 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
             ]
         )
 
-        video_grid_thw = torch.tensor([[patch_t, patch_h, patch_w]] * (bsz * num_video))
+        video_grid_thw = torch.tensor([[patch_t, patch_h, patch_w]] * (bsz * num_video), device=torch_device)
         self.assertEqual(pixel_values_videos.shape[0], video_grid_thw.prod(dim=1).sum().item())
 
         input_ids[:, -1] = self.model_tester.pad_token_id
@@ -646,7 +678,3 @@ class Qwen3_5MoeModelTest(ModelTesterMixin, GenerationTesterMixin, unittest.Test
                 mm_token_type_ids=mm_token_type_ids,
             )
             self.assertIsNotNone(outputs)
-
-    @unittest.skip("The specific cache format cannot be instantiated from dp/ddp data.")
-    def test_multi_gpu_data_parallel_forward(self):
-        pass

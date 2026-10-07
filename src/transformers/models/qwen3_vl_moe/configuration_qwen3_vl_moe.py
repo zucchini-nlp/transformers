@@ -64,6 +64,11 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
         "layers.*.mlp.up_proj": "colwise",
         "layers.*.mlp.down_proj": "rowwise",
     }
+    base_model_ep_plan = {
+        "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
+        "layers.*.mlp.experts.down_proj": "grouped_gemm",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
+    }
     base_model_pp_plan = {
         "embed_tokens": (["input_ids"], ["inputs_embeds"]),
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
@@ -90,6 +95,7 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
     moe_intermediate_size: int = 1408
     num_experts_per_tok: int = 4
     num_experts: int = 60
+    output_router_logits: bool = False
     router_aux_loss_coef: float = 0.001
     mlp_only_layers: list[int] | None = None
     pad_token_id: int | None = None
@@ -122,8 +128,10 @@ class Qwen3VLMoeVisionConfig(PreTrainedConfig):
         Indexed of layers for deepstack embeddings.
     """
 
-    model_type = "qwen3_vl_moe"
+    model_type = "qwen3_vl_moe_vision"
     base_config_key = "vision_config"
+    default_rope_type = "axial"
+    attribute_map = {"num_attention_heads": "num_heads"}
 
     depth: int = 27
     hidden_size: int = 1152
@@ -138,6 +146,7 @@ class Qwen3VLMoeVisionConfig(PreTrainedConfig):
     num_position_embeddings: int = 2304
     deepstack_visual_indexes: list[int] | tuple[int, ...] = (8, 16, 24)
     initializer_range: float = 0.02
+    rope_parameters: dict | None = None
 
 
 @auto_docstring(checkpoint="Qwen/Qwen3-VL-30B-A3B-Instruct")
@@ -173,6 +182,9 @@ class Qwen3VLMoeConfig(PreTrainedConfig):
 
     def __post_init__(self, **kwargs):
         if isinstance(self.vision_config, dict):
+            # old ckpt with incorrect model type -> override manually
+            if self.vision_config.get("model_type") == "qwen3_vl_moe":
+                self.vision_config["model_type"] = "qwen3_vl_moe_vision"
             self.vision_config = self.sub_configs["vision_config"](**self.vision_config)
         elif self.vision_config is None:
             self.vision_config = self.sub_configs["vision_config"]()
@@ -185,4 +197,4 @@ class Qwen3VLMoeConfig(PreTrainedConfig):
         super().__post_init__(**kwargs)
 
 
-__all__ = ["Qwen3VLMoeConfig", "Qwen3VLMoeTextConfig"]
+__all__ = ["Qwen3VLMoeConfig", "Qwen3VLMoeTextConfig", "Qwen3VLMoeVisionConfig"]

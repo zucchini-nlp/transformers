@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Audio Spectogram Transformer (AST) model configuration"""
+"""Audio Spectrogram Transformer (AST) model configuration"""
 
 from huggingface_hub.dataclasses import strict
 
@@ -52,8 +52,8 @@ class ASTConfig(PreTrainedConfig):
     num_attention_heads: int = 12
     intermediate_size: int = 3072
     hidden_act: str = "gelu"
-    hidden_dropout_prob: float = 0.0
-    attention_probs_dropout_prob: float = 0.0
+    hidden_dropout_prob: float | int = 0.0
+    attention_probs_dropout_prob: float | int = 0.0
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-12
     patch_size: int | list[int] | tuple[int, int] = 16

@@ -50,6 +50,8 @@ from .image_utils import (
     get_image_type,
     get_max_height_width,
     infer_channel_dimension_format,
+    is_valid_image,
+    load_image_as_tensor,
 )
 from .processing_utils import ImagesKwargs, Unpack
 from .utils import (
@@ -59,7 +61,7 @@ from .utils import (
     is_vision_available,
     logging,
 )
-from .utils.import_utils import is_rocm_platform, is_torchdynamo_compiling, requires
+from .utils.import_utils import is_rocm_platform, is_torchdynamo_compiling, is_torchvision_greater_or_equal, requires
 
 
 if is_vision_available():
@@ -89,24 +91,27 @@ class TorchvisionBackend(BaseImageProcessor):
         self._set_attributes(**kwargs)
 
     @property
-    def is_fast(self) -> bool:
-        """
-        `bool`: Whether or not this image processor is using the fast (Torchvision) backend.
-        The `is_fast` property is deprecated and will be removed in v5.3 of Transformers.
-        Use the `backend` attribute instead (e.g., `processor.backend == "torchvision"`).
-        """
-        logger.warning_once(
-            "The `is_fast` property is deprecated and will be removed in v5.3 of Transformers. "
-            "Use the `backend` attribute instead (e.g., `processor.backend == 'torchvision'`)."
-        )
-        return True
-
-    @property
     def backend(self) -> str:
         """
         `str`: The backend used by this image processor.
         """
         return "torchvision"
+
+    def fetch_images(self, image_url_or_urls: str | list[str] | list[list[str]]):
+        """
+        Convert a single or a list of URLs / paths into `torch.Tensor` objects.
+
+        Already-valid image objects (tensors, numpy arrays, PIL Images) are passed through
+        unchanged so that callers who pre-load images are unaffected.
+        """
+        if isinstance(image_url_or_urls, (list, tuple)):
+            return [self.fetch_images(x) for x in image_url_or_urls]
+        elif isinstance(image_url_or_urls, str):
+            return load_image_as_tensor(image_url_or_urls)
+        elif is_valid_image(image_url_or_urls):
+            return image_url_or_urls
+        else:
+            raise TypeError(f"only a single or a list of entries is supported but got type={type(image_url_or_urls)}")
 
     def process_image(
         self,
@@ -214,11 +219,13 @@ class TorchvisionBackend(BaseImageProcessor):
                 interpolation = resample
         else:
             interpolation = tvF.InterpolationMode.BILINEAR
-        if interpolation == tvF.InterpolationMode.LANCZOS:
+        if interpolation == tvF.InterpolationMode.LANCZOS and (
+            not is_torchvision_greater_or_equal("0.27") or image.device.type != "cpu"
+        ):
             logger.warning_once(
-                "You have used a torchvision backend image processor with LANCZOS resample which not yet supported for torch.Tensor. "
-                "BICUBIC resample will be used as an alternative. Please fall back to a pil backend image processor if you "
-                "want full consistency with the original model."
+                "LANCZOS resample requires torchvision >= 0.27 and processing on CPU; it is not supported on CUDA or for "
+                "torchvision < 0.27. Falling back to BICUBIC which approximates LANCZOS. To match the original model exactly"
+                ", upgrade torchvision and move the tensors to CPU before resizing, or use a PIL backend image processor instead."
             )
             interpolation = tvF.InterpolationMode.BICUBIC
 
@@ -283,10 +290,11 @@ class TorchvisionBackend(BaseImageProcessor):
         image: "torch.Tensor",
         mean: float | Iterable[float],
         std: float | Iterable[float],
+        inplace: bool = False,
         **kwargs,
     ) -> "torch.Tensor":
         """Normalize an image using Torchvision."""
-        return tvF.normalize(image, mean, std)
+        return tvF.normalize(image, mean, std, inplace=inplace)
 
     @lru_cache(maxsize=10)
     def _fuse_mean_std_and_rescale_factor(
@@ -324,7 +332,8 @@ class TorchvisionBackend(BaseImageProcessor):
             device=images.device,
         )
         if do_normalize:
-            images = self.normalize(images.to(dtype=torch.float32), image_mean, image_std)
+            inplace = images.dtype != torch.float32  # Convert copied tensors inplace for speed
+            images = self.normalize(images.to(torch.float32), image_mean, image_std, inplace=inplace)
         elif do_rescale:
             images = self.rescale(images, rescale_factor)
 
@@ -413,19 +422,6 @@ class PilBackend(BaseImageProcessor):
     def __init__(self, **kwargs: Unpack[ImagesKwargs]):
         super().__init__(**kwargs)
         self._set_attributes(**kwargs)
-
-    @property
-    def is_fast(self) -> bool:
-        """
-        `bool`: Whether or not this image processor is using the fast (Torchvision) backend.
-        The `is_fast` property is deprecated and will be removed in v5.3 of Transformers.
-        Use the `backend` attribute instead (e.g., `processor.backend == "torchvision"`).
-        """
-        logger.warning_once(
-            "The `is_fast` property is deprecated and will be removed in v5.3 of Transformers. "
-            "Use the `backend` attribute instead (e.g., `processor.backend == 'torchvision'`)."
-        )
-        return False
 
     @property
     def backend(self) -> str:

@@ -62,7 +62,7 @@ class LongT5Config(PreTrainedConfig):
     global_block_size: int = 16
     relative_attention_num_buckets: int = 32
     relative_attention_max_distance: int = 128
-    dropout_rate: float = 0.1
+    dropout_rate: float | int = 0.1
     layer_norm_epsilon: float = 1e-6
     initializer_factor: float = 1.0
     feed_forward_proj: str = "relu"
@@ -83,6 +83,11 @@ class LongT5Config(PreTrainedConfig):
 
         if self.feed_forward_proj == "gated-gelu":
             self.dense_act_fn = "gelu_new"
+
+        # Same quirk as T5: `tie_word_embeddings=False` indicates the 1.1v (no decoder output scaling), but the
+        # checkpoints only store `shared.weight` so weights are always tied.
+        self.scale_decoder_outputs = self.tie_word_embeddings
+        self.tie_word_embeddings = True
 
         super().__post_init__(**kwargs)
 

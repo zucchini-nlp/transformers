@@ -84,6 +84,9 @@ def _get_json_schema_type(param_type: type) -> dict[str, str]:
         str: {"type": "string"},
         bool: {"type": "boolean"},
         type(None): {"type": "null"},
+        list: {"type": "array"},
+        tuple: {"type": "array"},
+        dict: {"type": "object"},
         Any: {},
     }
     if is_vision_available():
@@ -113,9 +116,12 @@ def _parse_type_hint(hint: str) -> dict:
         if len(subtypes) == 1:
             # A single non-null type can be expressed directly
             return_dict = subtypes[0]
-        elif all("type" in subtype and isinstance(subtype["type"], str) for subtype in subtypes):
-            # A union of basic types can be expressed as a list in the schema
-            return_dict = {"type": sorted([subtype["type"] for subtype in subtypes])}
+        elif all(subtype.keys() == {"type"} and isinstance(subtype["type"], str) for subtype in subtypes):
+            # A union of basic types can be expressed as a list in the schema. Subtypes carrying extra keys
+            # (`items`, `enum`, `prefixItems`, ...) must go through `anyOf` so that information is not lost
+            # Duplicates are dropped, since different hints (e.g. `list | tuple`) can map to the same type
+            subtype_names = sorted({subtype["type"] for subtype in subtypes})
+            return_dict = {"type": subtype_names[0] if len(subtype_names) == 1 else subtype_names}
         else:
             # A union of more complex types requires "anyOf"
             return_dict = {"anyOf": subtypes}
@@ -371,7 +377,7 @@ def get_json_schema(func: Callable) -> dict:
         desc = param_descriptions[arg]
         enum_choices = re.search(r"\(choices:\s*(.*?)\)\s*$", desc, flags=re.IGNORECASE)
         if enum_choices:
-            schema["enum"] = [c.strip() for c in json.loads(enum_choices.group(1))]
+            schema["enum"] = [c.strip() if isinstance(c, str) else c for c in json.loads(enum_choices.group(1))]
             desc = enum_choices.string[: enum_choices.start()].strip()
         schema["description"] = desc
 
@@ -383,7 +389,7 @@ def get_json_schema(func: Callable) -> dict:
 
 @lru_cache
 @no_type_check
-def _get_template_variables(chat_template: str) -> frozenset[str]:
+def _get_template_variables(chat_template: str | None) -> frozenset[str]:
     """Return the set of undeclared variables referenced by a chat template.
 
     Uses ``jinja2.meta.find_undeclared_variables`` so that callers can
@@ -391,6 +397,8 @@ def _get_template_variables(chat_template: str) -> frozenset[str]:
     without maintaining a manual allowlist. Needed only to support BC as we
     allowed all `kwargs` to be merged into one in the past
     """
+    if chat_template is None:
+        return frozenset()
     compiled = _compile_jinja_template(chat_template)
     ast = compiled.environment.parse(chat_template)
     return frozenset(jinja2.meta.find_undeclared_variables(ast))
@@ -499,7 +507,7 @@ def render_jinja_template(
     documents: ChatType | None = None,
     chat_template: str | None = None,
     return_assistant_tokens_mask: bool = False,
-    continue_final_message: bool = False,
+    continue_final_message: bool | str = False,
     add_generation_prompt: bool = False,
     **kwargs,
 ) -> str:
@@ -541,8 +549,18 @@ def render_jinja_template(
             chat = chat.messages
         if continue_final_message:
             chat = deepcopy(chat)
-            final_message = chat[-1]["content"]
-            if isinstance(final_message, (list, tuple)):
+            continue_final_message = continue_final_message if isinstance(continue_final_message, str) else "content"
+
+            if (final_message := chat[-1].get(continue_final_message)) is None:
+                raise ValueError(
+                    f'continue_final_message is set but the final message has no "{continue_final_message}" to continue!'
+                )
+            if continue_final_message not in chat_template:
+                raise ValueError(
+                    f'continue_final_message is set to "{continue_final_message}" but this is not an accepted field in the chat_template'
+                )
+
+            elif isinstance(final_message, (list, tuple)):
                 for content_block in reversed(final_message):
                     if "text" in content_block:
                         # Pick the last text block in the message (the first one we hit while iterating in reverse)
@@ -554,7 +572,7 @@ def render_jinja_template(
                         "continue_final_message is set but we could not find any text to continue in the final message!"
                     )
             else:
-                chat[-1]["content"] = chat[-1]["content"] + continue_final_message_tag
+                chat[-1][continue_final_message] = chat[-1][continue_final_message] + continue_final_message_tag
         if return_assistant_tokens_mask:
             rendered_chat, generation_indices = _render_with_assistant_indices(
                 compiled_template=compiled_template,
@@ -582,6 +600,7 @@ def render_jinja_template(
                     "applying the chat template! This can happen if the chat template deletes portions of "
                     "the final message. Please verify the chat template and final message in your chat to "
                     "ensure they are compatible."
+                    f"Final message to continue: {final_message.strip()}\nRendered chat:\n{rendered_chat}"
                 )
             tag_loc = rendered_chat.rindex(continue_final_message_tag.strip())
             if rendered_chat[tag_loc : tag_loc + len(continue_final_message_tag)] == continue_final_message_tag:

@@ -62,6 +62,12 @@ class Mistral4Config(PreTrainedConfig):
         "layers": (["hidden_states", "attention_mask"], ["hidden_states"]),
         "norm": (["hidden_states"], ["hidden_states"]),
     }
+    base_model_ep_plan = {
+        "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
+        "layers.*.mlp.experts.down_proj": "grouped_gemm",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
+    }
+
     attribute_map = {
         "num_local_experts": "n_routed_experts",
     }
@@ -75,6 +81,7 @@ class Mistral4Config(PreTrainedConfig):
     num_key_value_heads: int | None = 32
     n_shared_experts: int = 1
     n_routed_experts: int = 128
+    output_router_logits: bool = False
     routed_scaling_factor: float = 1.0
     kv_lora_rank: int = 256
     q_lora_rank: int | None = 1024
@@ -126,24 +133,6 @@ class Mistral4Config(PreTrainedConfig):
         super().__post_init__(
             ignore_keys_at_rope_validation={"llama_4_scaling_beta", "max_position_embeddings"}, **kwargs
         )
-
-    def convert_rope_params_to_dict(self, ignore_keys_at_rope_validation: set | None = None, **kwargs):
-        rope_scaling = kwargs.pop("rope_scaling", None)
-        self.rope_parameters = rope_scaling or self.rope_parameters
-        self.rope_parameters = self.rope_parameters if self.rope_parameters is not None else {}
-
-        # Standardize and validate the correctness of rotary position embeddings parameters
-        self.rope_parameters.setdefault("rope_theta", kwargs.pop("rope_theta", self.default_theta))
-        self.standardize_rope_params()
-        if ignore_keys_at_rope_validation is not None:
-            self.ignore_keys_at_rope_validation = self.ignore_keys_at_rope_validation | ignore_keys_at_rope_validation
-        self.validate_rope()
-
-        # Convert to float because RoPE fn expect a float. Models on the hub were saved as int
-        for key in ["beta_fast", "beta_slow", "factor"]:
-            if key in self.rope_parameters:
-                self.rope_parameters[key] = float(self.rope_parameters[key])
-        return kwargs
 
 
 __all__ = ["Mistral4Config"]

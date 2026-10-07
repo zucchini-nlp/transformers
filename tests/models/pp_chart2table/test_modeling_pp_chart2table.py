@@ -18,6 +18,8 @@ import unittest
 from transformers import AutoModelForImageTextToText, AutoProcessor
 from transformers.testing_utils import cleanup, require_torch, require_vision, slow, torch_device
 
+from ...test_processing_common import url_to_local_path
+
 
 @slow
 @require_vision
@@ -33,7 +35,9 @@ class PPChart2TableIntegrationTest(unittest.TestCase):
                 "content": [
                     {
                         "type": "image",
-                        "url": "https://paddle-model-ecology.bj.bcebos.com/paddlex/imgs/demo_image/chart_parsing_02.png",
+                        "url": url_to_local_path(
+                            "https://huggingface.co/datasets/hf-internal-testing/transformers-synthetic-assets/resolve/main/images/paddle_chart_parsing_02.png"
+                        ),
                     },
                 ],
             },
@@ -50,7 +54,7 @@ class PPChart2TableIntegrationTest(unittest.TestCase):
             truncation=True,
             return_dict=True,
             return_tensors="pt",
-        ).to(self.model.device)
+        ).to(self.model.device, dtype=self.model.dtype)
 
         generated_ids = self.model.generate(**inputs, do_sample=False, max_new_tokens=32)
         generated_ids_trimmed = [out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)]
@@ -58,7 +62,7 @@ class PPChart2TableIntegrationTest(unittest.TestCase):
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
 
-        expected_output = ["年份 | 单家五星级旅游饭店年平均营收 (百万元) | 单家五星级旅游饭店年平均利润 (百万元)\n"]
+        expected_output = ["年份 | 火锅店经营情况\n2018 | 95\n2019 | 100\n20"]
         self.assertEqual(decoded_output, expected_output)
 
     def test_small_model_integration_test_pp_chart2table_batched(self):
@@ -69,7 +73,7 @@ class PPChart2TableIntegrationTest(unittest.TestCase):
             truncation=True,
             return_dict=True,
             return_tensors="pt",
-        ).to(self.model.device)
+        ).to(self.model.device, dtype=self.model.dtype)
 
         generated_ids = self.model.generate(**inputs, do_sample=False, max_new_tokens=6)
         generated_ids_trimmed = [out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)]
@@ -77,5 +81,5 @@ class PPChart2TableIntegrationTest(unittest.TestCase):
             generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )
 
-        expected_output = ["年份 | 单家", "年份 | 单家"]
+        expected_output = ["年份 | 火", "年份 | 火"]
         self.assertEqual(decoded_output, expected_output)

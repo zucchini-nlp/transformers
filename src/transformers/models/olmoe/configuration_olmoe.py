@@ -54,6 +54,11 @@ class OlmoeConfig(PreTrainedConfig):
         "layers.*.mlp.experts.down_proj": "rowwise",
         "layers.*.mlp.experts": "moe_tp_experts",
     }
+    base_model_ep_plan = {
+        "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
+        "layers.*.mlp.experts.down_proj": "grouped_gemm",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
+    }
 
     vocab_size: int = 50304
     hidden_size: int = 2048
@@ -69,7 +74,7 @@ class OlmoeConfig(PreTrainedConfig):
     pad_token_id: int | None = 1
     bos_token_id: int | None = None
     eos_token_id: int | list[int] | None = 50279
-    tie_word_embeddings: int = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     attention_bias: bool = False
     attention_dropout: float | int = 0.0

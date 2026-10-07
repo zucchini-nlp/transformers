@@ -22,7 +22,17 @@ from ...utils import auto_docstring
 @auto_docstring(checkpoint="openai/gpt-oss-20b")
 @strict
 class GptOssConfig(PreTrainedConfig):
+    r"""
+    swiglu_alpha (`float`, *optional*, defaults to 1.702):
+        Sigmoid gain of the clamped SwiGLU the experts apply.
+    swiglu_limit (`float`, *optional*, defaults to 7.0):
+        Clamp applied to the gate (above) and the up projection (both sides) before that SwiGLU.
+    """
+
     model_type = "gpt_oss"
+    attribute_map = {
+        "num_experts": "num_local_experts",
+    }
     default_theta = 150000.0
     base_model_pp_plan = {
         "embed_tokens": (["input_ids"], ["inputs_embeds"]),
@@ -30,12 +40,11 @@ class GptOssConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
     base_model_ep_plan = {
-        "layers.*.mlp.router": "ep_router",
         "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
         "layers.*.mlp.experts.gate_up_proj_bias": "grouped_gemm",
         "layers.*.mlp.experts.down_proj": "grouped_gemm",
         "layers.*.mlp.experts.down_proj_bias": "grouped_gemm",
-        "layers.*.mlp.experts": "moe_tp_experts",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
     }
 
     num_hidden_layers: int = 36
@@ -55,7 +64,9 @@ class GptOssConfig(PreTrainedConfig):
     rope_parameters: dict | None = None
     attention_dropout: float | int = 0.0
     num_experts_per_tok: int = 4
-    router_aux_loss_coef: float = 0.9
+    swiglu_alpha: float = 1.702
+    swiglu_limit: float = 7.0
+    router_aux_loss_coef: float = 0.001
     output_router_logits: bool = False
     use_cache: bool = True
     layer_types: list[str] | None = None

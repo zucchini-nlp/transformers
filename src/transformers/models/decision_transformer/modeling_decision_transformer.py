@@ -413,7 +413,6 @@ class DecisionTransformerGPT2Model(DecisionTransformerGPT2PreTrainedModel):
             position_ids=position_ids,
         )
 
-        encoder_attention_mask = None
         if encoder_hidden_states is not None:
             encoder_attention_mask = create_bidirectional_mask(
                 config=self.config,
@@ -458,12 +457,12 @@ class DecisionTransformerGPT2Model(DecisionTransformerGPT2PreTrainedModel):
         )
 
 
-@dataclass
 @auto_docstring(
     custom_intro="""
     Base class for model's outputs that also contains a pooling of the last hidden states.
     """
 )
+@dataclass
 class DecisionTransformerOutput(ModelOutput):
     r"""
     state_preds (`torch.FloatTensor` of shape `(batch_size, sequence_length, state_dim)`):

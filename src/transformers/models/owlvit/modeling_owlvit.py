@@ -55,15 +55,15 @@ def contrastive_loss(logits: torch.Tensor) -> torch.Tensor:
     return nn.functional.cross_entropy(logits, torch.arange(len(logits), device=logits.device))
 
 
-# Copied from transformers.models.clip.modeling_clip.clip_loss with clip->owlvit
-def owlvit_loss(similarity: torch.Tensor) -> torch.Tensor:
+# Copied from transformers.models.clip.modeling_clip.image_text_contrastive_loss
+def image_text_contrastive_loss(similarity: torch.Tensor) -> torch.Tensor:
     caption_loss = contrastive_loss(similarity)
-    image_loss = contrastive_loss(similarity.t())
+    image_loss = contrastive_loss(similarity.T)
     return (caption_loss + image_loss) / 2.0
 
 
-@dataclass
 @auto_docstring
+@dataclass
 class OwlViTOutput(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
@@ -168,16 +168,16 @@ def generalized_box_iou(boxes1, boxes2):
     return iou - (area - union) / area
 
 
-@dataclass
 @auto_docstring(
     custom_intro="""
     Output type of [`OwlViTForObjectDetection`].
     """
 )
+@dataclass
 class OwlViTObjectDetectionOutput(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` are provided)):
-        Total loss as a linear combination of a negative log-likehood (cross-entropy) for class prediction and a
+        Total loss as a linear combination of a negative log-likelihood (cross-entropy) for class prediction and a
         bounding box loss. The latter is defined as a linear combination of the L1 loss and the generalized
         scale-invariant IoU loss.
     loss_dict (`Dict`, *optional*):
@@ -220,12 +220,12 @@ class OwlViTObjectDetectionOutput(ModelOutput):
         )
 
 
-@dataclass
 @auto_docstring(
     custom_intro="""
     Output type of [`OwlViTForObjectDetection.image_guided_detection`].
     """
 )
+@dataclass
 class OwlViTImageGuidedObjectDetectionOutput(ModelOutput):
     r"""
     logits (`torch.FloatTensor` of shape `(batch_size, num_patches, num_queries)`):
@@ -290,7 +290,7 @@ class OwlViTVisionEmbeddings(nn.Module):
         self.num_patches = (config.image_size // config.patch_size) ** 2
         self.num_positions = self.num_patches + 1
         self.position_embedding = nn.Embedding(self.num_positions, self.embed_dim)
-        self.register_buffer("position_ids", torch.arange(self.num_positions).expand((1, -1)), persistent=False)
+        self.position_ids = nn.Buffer(torch.arange(self.num_positions).expand((1, -1)), persistent=False)
 
     # Copied from transformers.models.clip.modeling_clip.CLIPVisionEmbeddings.interpolate_pos_encoding
     def interpolate_pos_encoding(self, embeddings: torch.Tensor, height: int, width: int) -> torch.Tensor:
@@ -351,9 +351,7 @@ class OwlViTTextEmbeddings(nn.Module):
         self.position_embedding = nn.Embedding(config.max_position_embeddings, config.hidden_size)
 
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
-        self.register_buffer(
-            "position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)), persistent=False
-        )
+        self.position_ids = nn.Buffer(torch.arange(config.max_position_embeddings).expand((1, -1)), persistent=False)
 
     def forward(
         self,
@@ -526,14 +524,11 @@ class OwlViTPreTrainedModel(PreTrainedModel):
         "hidden_states": OwlViTEncoderLayer,
         "attentions": OwlViTAttention,
     }
-    _keys_to_ignore_on_load_unexpected = [
-        r".*text_model\.embeddings\.position_ids",
-        r".*vision_model\.embeddings\.position_ids",
-    ]
 
     @torch.no_grad()
     def _init_weights(self, module: nn.Module):
         """Initialize the weights"""
+        super()._init_weights(module)
         factor = self.config.initializer_factor
         if isinstance(module, OwlViTTextEmbeddings):
             init.normal_(module.token_embedding.weight, mean=0.0, std=factor * 0.02)
@@ -568,13 +563,6 @@ class OwlViTPreTrainedModel(PreTrainedModel):
             init.constant_(module.logit_scale, self.config.logit_scale_init_value)
         elif isinstance(module, OwlViTForObjectDetection):
             init.copy_(module.box_bias, module.compute_box_bias(module.num_patches_height, module.num_patches_width))
-        if isinstance(module, nn.LayerNorm):
-            init.zeros_(module.bias)
-            init.ones_(module.weight)
-        if isinstance(module, nn.Linear):
-            init.normal_(module.weight, mean=0.0, std=factor)
-            if module.bias is not None:
-                init.zeros_(module.bias)
 
 
 # Copied from transformers.models.clip.modeling_clip.CLIPEncoder with CLIP->OwlViT
@@ -599,20 +587,6 @@ class OwlViTEncoder(nn.Module):
         attention_mask: torch.Tensor | None = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> BaseModelOutput:
-        r"""
-        Args:
-            inputs_embeds (`torch.FloatTensor` of shape `(batch_size, sequence_length, hidden_size)`):
-                Optionally, instead of passing `input_ids` you can choose to directly pass an embedded representation.
-                This is useful if you want more control over how to convert `input_ids` indices into associated vectors
-                than the model's internal embedding lookup matrix.
-            attention_mask (`torch.Tensor` of shape `(batch_size, sequence_length)`, *optional*):
-                Mask to avoid performing attention on padding token indices. Mask values selected in `[0, 1]`:
-
-                - 1 for tokens that are **not masked**,
-                - 0 for tokens that are **masked**.
-
-                [What are attention masks?](../glossary#attention-mask)
-        """
         hidden_states = inputs_embeds
         for encoder_layer in self.layers:
             hidden_states = encoder_layer(
@@ -807,7 +781,7 @@ class OwlViTVisionModel(OwlViTPreTrainedModel):
         Examples:
         ```python
         >>> from PIL import Image
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from transformers import AutoProcessor, OwlViTVisionModel
 
@@ -947,7 +921,7 @@ class OwlViTModel(OwlViTPreTrainedModel):
         Examples:
         ```python
         >>> from PIL import Image
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from transformers import AutoProcessor, OwlViTModel
 
@@ -991,7 +965,7 @@ class OwlViTModel(OwlViTPreTrainedModel):
 
         loss = None
         if return_loss:
-            loss = owlvit_loss(logits_per_text)
+            loss = image_text_contrastive_loss(logits_per_text)
 
         text_embeds = text_embeds_norm
 
@@ -1088,8 +1062,8 @@ class OwlViTForObjectDetection(OwlViTPreTrainedModel):
         self.config = config
         self.num_patches_height = self.config.vision_config.image_size // self.config.vision_config.patch_size
         self.num_patches_width = self.config.vision_config.image_size // self.config.vision_config.patch_size
-        self.register_buffer(
-            "box_bias", self.compute_box_bias(self.num_patches_height, self.num_patches_width), persistent=False
+        self.box_bias = nn.Buffer(
+            self.compute_box_bias(self.num_patches_height, self.num_patches_width), persistent=False
         )
 
         self.post_init()
@@ -1328,7 +1302,7 @@ class OwlViTForObjectDetection(OwlViTPreTrainedModel):
 
         Examples:
         ```python
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from PIL import Image
         >>> import torch
@@ -1416,7 +1390,7 @@ class OwlViTForObjectDetection(OwlViTPreTrainedModel):
 
         Examples:
         ```python
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from PIL import Image
         >>> import torch

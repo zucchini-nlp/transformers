@@ -57,12 +57,12 @@ if TYPE_CHECKING:
 logger = logging.get_logger(__name__)
 
 
-@dataclass
 @auto_docstring(
     custom_intro="""
     Base class for Musicgen Melody autoregressive outputs.
     """
 )
+@dataclass
 class MusicgenMelodyOutputWithPast(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `labels` is provided):
@@ -124,7 +124,7 @@ class MusicgenMelodySinusoidalPositionalEmbedding(nn.Module):
             # in forward put the weights on the correct dtype and device of the param
             emb_weights = emb_weights.to(dtype=self.weights.dtype, device=self.weights.device)
 
-        self.register_buffer("weights", emb_weights, persistent=False)
+        self.weights = nn.Buffer(emb_weights, persistent=False)
 
     @staticmethod
     def get_embedding(num_embeddings: int, embedding_dim: int):
@@ -147,7 +147,7 @@ class MusicgenMelodySinusoidalPositionalEmbedding(nn.Module):
     def forward(self, inputs_embeds: torch.Tensor, past_key_values_length: int = 0):
         bsz, seq_len, _ = inputs_embeds.size()
         # Create the position ids from the input token ids.
-        position_ids = (torch.arange(seq_len) + past_key_values_length).to(inputs_embeds.device)
+        position_ids = torch.arange(seq_len, device=inputs_embeds.device) + past_key_values_length
         # expand embeddings if needed
         if seq_len > self.weights.size(0):
             self.make_weights(seq_len, self.embedding_dim)
@@ -238,14 +238,12 @@ class MusicgenMelodyAttention(nn.Module):
         is_cross_attention = key_value_states is not None
 
         # determine input shapes
-        bsz, tgt_len = hidden_states.shape[:-1]
-        src_len = key_value_states.shape[1] if is_cross_attention else tgt_len
+        input_shape = hidden_states.shape[:-1]
 
-        q_input_shape = (bsz, tgt_len, -1, self.head_dim)
-        kv_input_shape = (bsz, src_len, -1, self.head_dim)
+        hidden_shape = (*input_shape, -1, self.head_dim)
 
         # get query proj
-        query_states = self.q_proj(hidden_states).view(*q_input_shape).transpose(1, 2)
+        query_states = self.q_proj(hidden_states).view(hidden_shape).transpose(1, 2)
 
         is_updated = False
         if past_key_values is not None:
@@ -265,8 +263,9 @@ class MusicgenMelodyAttention(nn.Module):
             key_states = curr_past_key_values.layers[self.layer_idx].keys
             value_states = curr_past_key_values.layers[self.layer_idx].values
         else:
-            key_states = self.k_proj(current_states).view(*kv_input_shape).transpose(1, 2)
-            value_states = self.v_proj(current_states).view(*kv_input_shape).transpose(1, 2)
+            kv_shape = (*current_states.shape[:-1], -1, self.head_dim)
+            key_states = self.k_proj(current_states).view(kv_shape).transpose(1, 2)
+            value_states = self.v_proj(current_states).view(kv_shape).transpose(1, 2)
 
             if past_key_values is not None:
                 # save all key/value_states to cache to be re-used for fast auto-regressive generation
@@ -291,7 +290,7 @@ class MusicgenMelodyAttention(nn.Module):
             **kwargs,
         )
 
-        attn_output = attn_output.reshape(bsz, tgt_len, -1).contiguous()
+        attn_output = attn_output.reshape(*input_shape, -1).contiguous()
         attn_output = self.out_proj(attn_output)
 
         return attn_output, attn_weights
@@ -374,20 +373,8 @@ class MusicgenMelodyPreTrainedModel(PreTrainedModel):
 
     @torch.no_grad()
     def _init_weights(self, module):
-        std = self.config.initializer_factor
-        if isinstance(module, nn.Linear):
-            init.normal_(module.weight, mean=0.0, std=std)
-            if module.bias is not None:
-                init.zeros_(module.bias)
-        elif isinstance(module, nn.LayerNorm):
-            init.ones_(module.weight)
-            init.zeros_(module.bias)
-        elif isinstance(module, nn.Embedding):
-            init.normal_(module.weight, mean=0.0, std=std)
-            # Here we need the check explicitly, as we slice the weight in the `zeros_` call, so it looses the flag
-            if module.padding_idx is not None and not getattr(module.weight, "_is_hf_initialized", False):
-                init.zeros_(module.weight[module.padding_idx])
-        elif isinstance(module, MusicgenMelodySinusoidalPositionalEmbedding):
+        super()._init_weights(module)
+        if isinstance(module, MusicgenMelodySinusoidalPositionalEmbedding):
             emb_weights = module.get_embedding(module.num_positions, module.embedding_dim)
             init.copy_(module.weights, emb_weights)
 
@@ -775,6 +762,8 @@ class MusicgenMelodyForCausalLM(MusicgenMelodyPreTrainedModel, GenerationMixin):
         use_cache=True,
         delay_pattern_mask=None,
         guidance_scale=None,
+        next_sequence_length=None,
+        is_first_iteration=False,
         **kwargs,
     ):
         # Overwritten -- MusicGen has custom processing
@@ -805,10 +794,9 @@ class MusicgenMelodyForCausalLM(MusicgenMelodyPreTrainedModel, GenerationMixin):
                     encoder_attention_mask, torch.zeros_like(encoder_attention_mask), dim=0
                 )
 
-        if past_key_values is not None:
-            input_ids = input_ids[:, -1:]
-
-            # we only want to use conditional signal in the 1st generation step but keeping the attention mask
+        input_ids = input_ids[:, -next_sequence_length:] if next_sequence_length is not None else input_ids
+        if not is_first_iteration and use_cache:
+            # we only want to use conditional signal in the 1st generation step
             encoder_hidden_states = None
 
         return {
@@ -1179,6 +1167,7 @@ class MusicgenMelodyForConditionalGeneration(PreTrainedModel, GenerationMixin):
 
     @torch.no_grad()
     def _init_weights(self, module):
+        super()._init_weights(module)
         # MusicgenMelodyForConditionalGeneration is made of PreTrainedModels that have already been initialized
         # Projection layers still need to be initialized.
         std = self.decoder.config.initializer_factor
@@ -1571,6 +1560,8 @@ class MusicgenMelodyForConditionalGeneration(PreTrainedModel, GenerationMixin):
         use_cache=None,
         decoder_delay_pattern_mask=None,
         guidance_scale=None,
+        next_sequence_length=None,
+        is_first_iteration=False,
         **kwargs,
     ):
         # Overwritten -- MusicGen has custom processing
@@ -1591,21 +1582,12 @@ class MusicgenMelodyForConditionalGeneration(PreTrainedModel, GenerationMixin):
             if decoder_attention_mask is not None:
                 decoder_attention_mask = decoder_attention_mask.repeat((2, 1))
 
-        if past_key_values is not None:
-            past_length = past_key_values.get_seq_length()
-
-            # Some generation methods already pass only the last input ID
-            if decoder_input_ids.shape[1] > past_length:
-                remove_prefix_length = past_length
-            else:
-                # Default to old behavior: keep only final ID
-                remove_prefix_length = decoder_input_ids.shape[1] - 1
-
-            decoder_input_ids = decoder_input_ids[:, remove_prefix_length:]
-
-            # we only want to use conditional signal in the 1st generation step but keeping the attention mask
+        decoder_input_ids = (
+            decoder_input_ids[:, -next_sequence_length:] if next_sequence_length is not None else decoder_input_ids
+        )
+        if not is_first_iteration and use_cache:
+            # we only want to use conditional signal in the 1st generation step
             encoder_hidden_states = None
-            # we also have to update the attention mask
 
         return {
             "input_ids": None,  # encoder_hidden_states is defined. input_ids not needed

@@ -43,10 +43,10 @@ def contrastive_loss(logits: torch.Tensor) -> torch.Tensor:
     return nn.functional.cross_entropy(logits, torch.arange(len(logits), device=logits.device))
 
 
-# Copied from transformers.models.clip.modeling_clip.clip_loss with clip->groupvit
-def groupvit_loss(similarity: torch.Tensor) -> torch.Tensor:
+# Copied from transformers.models.clip.modeling_clip.image_text_contrastive_loss
+def image_text_contrastive_loss(similarity: torch.Tensor) -> torch.Tensor:
     caption_loss = contrastive_loss(similarity)
-    image_loss = contrastive_loss(similarity.t())
+    image_loss = contrastive_loss(similarity.T)
     return (caption_loss + image_loss) / 2.0
 
 
@@ -63,8 +63,8 @@ def hard_softmax(logits: torch.Tensor, dim: int):
 def gumbel_softmax(logits: torch.Tensor, tau: float = 1, hard: bool = False, dim: int = -1) -> torch.Tensor:
     # more stable https://github.com/pytorch/pytorch/issues/41663
     gumbel_dist = torch.distributions.gumbel.Gumbel(
-        torch.tensor(0.0, device=logits.device, dtype=logits.dtype),
-        torch.tensor(1.0, device=logits.device, dtype=logits.dtype),
+        torch.full((), 0.0, device=logits.device, dtype=logits.dtype),
+        torch.full((), 1.0, device=logits.device, dtype=logits.dtype),
     )
     gumbels = gumbel_dist.sample(logits.shape)
 
@@ -260,8 +260,8 @@ class GroupViTTokenAssign(nn.Module):
         return new_image_tokens, attention
 
 
-@dataclass
 @auto_docstring
+@dataclass
 class GroupViTModelOutput(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*, returned when `return_loss` is `True`):
@@ -428,9 +428,7 @@ class GroupViTTextEmbeddings(nn.Module):
         self.position_embedding = nn.Embedding(config.max_position_embeddings, embed_dim)
 
         # position_ids (1, len position emb) is contiguous in memory and exported when serialized
-        self.register_buffer(
-            "position_ids", torch.arange(config.max_position_embeddings).expand((1, -1)), persistent=False
-        )
+        self.position_ids = nn.Buffer(torch.arange(config.max_position_embeddings).expand((1, -1)), persistent=False)
 
     def forward(
         self,
@@ -680,7 +678,7 @@ class GroupViTAttention(nn.Module):
 
 # Copied from transformers.models.altclip.modeling_altclip.AltCLIPEncoderLayer with AltCLIP->GroupViT
 class GroupViTEncoderLayer(GradientCheckpointingLayer):
-    def __init__(self, config: GroupViTConfig):
+    def __init__(self, config: GroupViTVisionConfig):
         super().__init__()
         self.embed_dim = config.hidden_size
         self.self_attn = GroupViTAttention(config)
@@ -693,7 +691,7 @@ class GroupViTEncoderLayer(GradientCheckpointingLayer):
         hidden_states: torch.Tensor,
         attention_mask: torch.Tensor,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> tuple[torch.FloatTensor, torch.Tensor | None]:
+    ) -> torch.FloatTensor:
         residual = hidden_states
 
         hidden_states = self.layer_norm1(hidden_states)
@@ -727,19 +725,7 @@ class GroupViTPreTrainedModel(PreTrainedModel):
     def _init_weights(self, module):
         """Initialize the weights"""
 
-        init_range = self.config.initializer_range
-        if isinstance(module, (nn.Linear, nn.Conv2d)):
-            init.normal_(module.weight, mean=0.0, std=init_range)
-            if module.bias is not None:
-                init.zeros_(module.bias)
-        elif isinstance(module, (nn.LayerNorm, nn.BatchNorm1d)):
-            init.zeros_(module.bias)
-            init.ones_(module.weight)
-            if getattr(module, "running_mean", None) is not None:
-                init.zeros_(module.running_mean)
-                init.ones_(module.running_var)
-                init.zeros_(module.num_batches_tracked)
-
+        super()._init_weights(module)
         factor = self.config.initializer_factor
         if isinstance(module, GroupViTTextEmbeddings):
             init.normal_(module.token_embedding.weight, mean=0.0, std=factor * 0.02)
@@ -1073,7 +1059,7 @@ class GroupViTVisionModel(GroupViTPreTrainedModel):
 
         ```python
         >>> from PIL import Image
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from transformers import AutoProcessor, GroupViTVisionModel
 
@@ -1235,7 +1221,7 @@ class GroupViTModel(GroupViTPreTrainedModel):
 
         ```python
         >>> from PIL import Image
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
         >>> from transformers import AutoProcessor, GroupViTModel
 
@@ -1326,7 +1312,7 @@ class GroupViTModel(GroupViTPreTrainedModel):
 
         loss = None
         if return_loss:
-            loss = groupvit_loss(logits_per_text)
+            loss = image_text_contrastive_loss(logits_per_text)
 
         return GroupViTModelOutput(
             loss=loss,

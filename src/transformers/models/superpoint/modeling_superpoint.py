@@ -70,7 +70,6 @@ def simple_nms(scores: torch.Tensor, nms_radius: int) -> torch.Tensor:
     return torch.where(max_mask, scores, zeros)
 
 
-@dataclass
 @auto_docstring(
     custom_intro="""
     Base class for outputs of image point description models. Due to the nature of keypoint detection, the number of
@@ -80,6 +79,7 @@ def simple_nms(scores: torch.Tensor, nms_radius: int) -> torch.Tensor:
     and which are padding.
     """
 )
+@dataclass
 class SuperPointKeypointDescriptionOutput(ModelOutput):
     r"""
     loss (`torch.FloatTensor` of shape `(1,)`, *optional*):
@@ -386,7 +386,7 @@ class SuperPointForKeypointDetection(SuperPointPreTrainedModel):
         >>> from transformers import AutoImageProcessor, SuperPointForKeypointDetection
         >>> import torch
         >>> from PIL import Image
-        >>> import httpx
+        >>> from huggingface_hub.utils import httpx
         >>> from io import BytesIO
 
         >>> url = "http://images.cocodataset.org/val2017/000000039769.jpg"

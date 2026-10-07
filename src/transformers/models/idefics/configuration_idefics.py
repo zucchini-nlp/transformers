@@ -150,7 +150,9 @@ class IdeficsConfig(PreTrainedConfig):
     freeze_vision_module_exceptions: list | tuple = ()
     use_resampler: bool = False
     vision_config: dict | PreTrainedConfig | None = None
+    max_position_embeddings: int = 2048
     perceiver_config: dict | PreTrainedConfig | None = None
+    rope_parameters: dict | None = None
 
     def __post_init__(self, **kwargs):
         if self.perceiver_config is None:
@@ -166,4 +168,4 @@ class IdeficsConfig(PreTrainedConfig):
         super().__post_init__(**kwargs)
 
 
-__all__ = ["IdeficsConfig"]
+__all__ = ["IdeficsConfig", "IdeficsPerceiverConfig", "IdeficsVisionConfig"]

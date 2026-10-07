@@ -17,7 +17,6 @@
 import inspect
 import unittest
 
-import requests
 from parameterized import parameterized
 
 from transformers import (
@@ -28,8 +27,8 @@ from transformers import (
     UVDocImageProcessor,
     UVDocModel,
     is_torch_available,
-    is_vision_available,
 )
+from transformers.image_utils import load_image
 from transformers.testing_utils import (
     require_torch,
     require_torch_accelerator,
@@ -41,13 +40,11 @@ from transformers.testing_utils import (
 from ...test_backbone_common import BackboneTesterMixin
 from ...test_configuration_common import ConfigTester
 from ...test_modeling_common import ModelTesterMixin, floats_tensor
+from ...test_processing_common import url_to_local_path
 
 
 if is_torch_available():
     import torch
-
-if is_vision_available():
-    from PIL import Image
 
 
 class UVDocModelTester:
@@ -310,11 +307,10 @@ class UVDocModelIntegrationTest(unittest.TestCase):
         model_path = "PaddlePaddle/UVDoc_safetensors"
         self.model = AutoModel.from_pretrained(model_path).to(torch_device)
         self.image_processor = UVDocImageProcessor()
-        self.image = Image.open(
-            requests.get(
-                "https://paddle-model-ecology.bj.bcebos.com/paddlex/imgs/demo_image/doc_test.jpg", stream=True
-            ).raw
+        img_url = url_to_local_path(
+            "https://huggingface.co/datasets/hf-internal-testing/transformers-synthetic-assets/resolve/main/images/paddle_doc_test.jpg"
         )
+        self.image = load_image(img_url)
 
     def test_inference_document_rectification(self):
         inputs = self.image_processor(images=self.image, return_tensors="pt").to(torch_device)
@@ -329,11 +325,7 @@ class UVDocModelIntegrationTest(unittest.TestCase):
 
         expected_shape_logits = torch.Size((bs, 2, 45, 31))
         expected_logits = torch.tensor(
-            [
-                [-0.7635, -0.7251, -0.6819],
-                [-0.7643, -0.7250, -0.6814],
-                [-0.7647, -0.7252, -0.6816],
-            ],
+            [[-0.8466, -0.7975, -0.7427], [-0.8476, -0.798, -0.7427], [-0.8476, -0.7981, -0.743]],
             device=torch_device,
         )
 
@@ -341,11 +333,7 @@ class UVDocModelIntegrationTest(unittest.TestCase):
         torch.testing.assert_close(outputs.last_hidden_state[0, 0, :3, :3], expected_logits, rtol=2e-4, atol=2e-4)
 
         expected_images = torch.tensor(
-            [
-                [131, 130, 128],
-                [131, 129, 127],
-                [130, 129, 127],
-            ],
+            [[248, 204, 184], [248, 205, 184], [248, 206, 184]],
             device=torch_device,
             dtype=torch.uint8,
         )

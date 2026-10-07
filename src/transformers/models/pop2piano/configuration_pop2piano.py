@@ -49,7 +49,7 @@ class Pop2PianoConfig(PreTrainedConfig):
     num_heads: int = 8
     relative_attention_num_buckets: int = 32
     relative_attention_max_distance: int = 128
-    dropout_rate: float = 0.1
+    dropout_rate: float | int = 0.1
     layer_norm_epsilon: float = 1e-6
     initializer_factor: float = 1.0
     feed_forward_proj: str = "gated-gelu"
@@ -64,6 +64,12 @@ class Pop2PianoConfig(PreTrainedConfig):
     def __post_init__(self, **kwargs):
         self.num_decoder_layers = self.num_decoder_layers if self.num_decoder_layers is not None else self.num_layers
         self.is_gated_act = self.feed_forward_proj.split("-")[0] == "gated"
+
+        # Same quirk as T5: `tie_word_embeddings=False` indicates no decoder output scaling, but the checkpoint
+        # only stores `shared.weight` so weights are always tied.
+        self.scale_decoder_outputs = self.tie_word_embeddings
+        self.tie_word_embeddings = True
+
         super().__post_init__(**kwargs)
 
 

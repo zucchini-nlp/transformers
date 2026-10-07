@@ -21,7 +21,7 @@ from ...configuration_utils import PreTrainedConfig
 from ...utils import auto_docstring
 
 
-@auto_docstring(checkpoint="facebook/wav2vec2-bert-rel-pos-large")
+@auto_docstring(checkpoint="facebook/w2v-bert-2.0")
 @strict
 class Wav2Vec2BertConfig(PreTrainedConfig):
     r"""
@@ -152,10 +152,10 @@ class Wav2Vec2BertConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     layer_norm_eps: float = 1e-5
     apply_spec_augment: bool = True
-    mask_time_prob: float = 0.05
+    mask_time_prob: float | int = 0.05
     mask_time_length: int = 10
     mask_time_min_masks: int = 2
-    mask_feature_prob: float = 0.0
+    mask_feature_prob: float | int = 0.0
     mask_feature_length: int = 10
     mask_feature_min_masks: int = 0
     ctc_loss_reduction: str = "sum"

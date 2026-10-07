@@ -83,6 +83,7 @@ class YoutuConfig(DeepseekV3Config):
     # remove unused attribute
     n_shared_experts = AttributeError()
     n_routed_experts = AttributeError()
+    output_router_logits = AttributeError()
     routed_scaling_factor = AttributeError()
     n_group = AttributeError()
     topk_group = AttributeError()
@@ -91,6 +92,8 @@ class YoutuConfig(DeepseekV3Config):
     norm_topk_prob = AttributeError()
     pretraining_tp = AttributeError()
     moe_intermediate_size = AttributeError()
+    num_mtp_layers = AttributeError()
+    base_model_ep_plan = AttributeError()
 
     def __post_init__(self, **kwargs):
         if self.initializer_range is None:
@@ -101,9 +104,6 @@ class YoutuConfig(DeepseekV3Config):
 
         self.embedding_initializer_range = self.embedding_initializer_range or 2.0 * self.initializer_range
         super().__post_init__(**kwargs)
-
-    def convert_rope_params_to_dict(self, **kwargs):
-        raise AttributeError("Not overwritten for the Youtu model!")
 
 
 class YoutuRMSNorm(LlamaRMSNorm):

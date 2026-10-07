@@ -46,6 +46,12 @@ class PhimoeConfig(PreTrainedConfig):
 
     model_type = "phimoe"
     keys_to_ignore_at_inference = ["past_key_values"]
+    base_model_ep_plan = {
+        "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
+        "layers.*.mlp.experts.down_proj": "grouped_gemm",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
+    }
+
     default_theta = 1000000.0
 
     vocab_size: int = 32064
@@ -62,7 +68,7 @@ class PhimoeConfig(PreTrainedConfig):
     pad_token_id: int | None = None
     bos_token_id: int | None = 1
     eos_token_id: int | list[int] | None = 2
-    tie_word_embeddings: int = False
+    tie_word_embeddings: bool = False
     rope_parameters: RopeParameters | dict | None = None
     sliding_window: int | None = None
     attention_dropout: float | int = 0.0
