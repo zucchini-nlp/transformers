@@ -27,33 +27,9 @@ from ...image_processing_backends import TorchvisionBackend
 from ...image_processing_utils import BatchFeature
 from ...image_transforms import group_images_by_shape, reorder_images
 from ...image_utils import IMAGENET_STANDARD_MEAN, IMAGENET_STANDARD_STD, PILImageResampling, SizeDict
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
-
-
-class DeepseekOcr2ImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    crop_to_patches (`bool`, *optional*, defaults to `self.crop_to_patches`):
-        Whether to crop the image to patches. Can be overridden by the `crop_to_patches` parameter in the
-        `preprocess` method.
-    min_patches (`int`, *optional*, defaults to `self.min_patches`):
-        The minimum number of patches to be extracted from the image. Only has an effect if `crop_to_patches` is
-        set to `True`. Can be overridden by the `min_patches` parameter in the `preprocess` method.
-    max_patches (`int`, *optional*, defaults to `self.max_patches`):
-        The maximum number of patches to be extracted from the image. Only has an effect if `crop_to_patches` is
-        set to `True`. Can be overridden by the `max_patches` parameter in the `preprocess` method.
-    tile_size (`int`, *optional*, defaults to `768`):
-        The size of each local tile. Must match the model's query embedding size.
-    background_color (`list[int]`, *optional*, defaults to `[127, 127, 127]`):
-        The background color for padding.
-    """
-
-    crop_to_patches: bool
-    min_patches: int
-    max_patches: int
-
-    tile_size: int
-    background_color: list[int]
+from .image_processing_pil_deepseek_ocr2 import DeepseekOcr2ImageProcessorKwargs
 
 
 @lru_cache(maxsize=10)

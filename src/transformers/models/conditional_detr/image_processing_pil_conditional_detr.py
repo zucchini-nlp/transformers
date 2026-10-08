@@ -62,9 +62,8 @@ if is_torch_available():
 
 logger = logging.get_logger(__name__)
 
-SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
 
-
+# Adapted from transformers.models.conditional_detr.image_processing_conditional_detr.ConditionalDetrImageProcessorKwargs
 class ConditionalDetrImageProcessorKwargs(ImagesKwargs, total=False):
     r"""
     format (`str`, *optional*, defaults to `AnnotationFormat.COCO_DETECTION`):
@@ -77,6 +76,9 @@ class ConditionalDetrImageProcessorKwargs(ImagesKwargs, total=False):
 
     format: str | AnnotationFormat
     do_convert_annotations: bool
+
+
+SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
 
 
 # inspired by https://github.com/facebookresearch/conditional_detr/blob/master/datasets/coco.py#L33

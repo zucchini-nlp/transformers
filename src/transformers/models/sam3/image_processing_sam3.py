@@ -40,21 +40,13 @@ from ...image_utils import (
     PILImageResampling,
     SizeDict,
 )
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring, is_vision_available
+from .image_processing_pil_sam3 import Sam3ImageProcessorKwargs
 
 
 if is_vision_available():
     import PIL
-
-
-class Sam3ImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    mask_size (`dict[str, int]`, *optional*):
-        The size `{"height": int, "width": int}` to resize the segmentation maps to.
-    """
-
-    mask_size: dict[str, int]
 
 
 def _compute_stability_score(masks: "torch.Tensor", mask_threshold: float, stability_score_offset: int):

@@ -54,8 +54,6 @@ from ...utils.import_utils import requires
 if is_torch_available():
     import torch
 
-SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
-
 
 class RTDetrImageProcessorKwargs(ImagesKwargs, total=False):
     r"""
@@ -69,6 +67,9 @@ class RTDetrImageProcessorKwargs(ImagesKwargs, total=False):
 
     format: str | AnnotationFormat
     do_convert_annotations: bool
+
+
+SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
 
 
 def prepare_coco_detection_annotation_pil(

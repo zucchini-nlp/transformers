@@ -36,21 +36,13 @@ from ...image_utils import (
     is_valid_image,
     to_numpy_array,
 )
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
+from .image_processing_pil_lightglue import LightGlueImageProcessorKwargs
 
 
 if TYPE_CHECKING:
     from .modeling_lightglue import LightGlueKeypointMatchingOutput
-
-
-class LightGlueImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    do_grayscale (`bool`, *optional*, defaults to `self.do_grayscale`):
-        Whether to convert the image to grayscale. Can be overridden by `do_grayscale` in the `preprocess` method.
-    """
-
-    do_grayscale: bool
 
 
 def _is_valid_image(image):

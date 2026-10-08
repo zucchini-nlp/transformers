@@ -66,9 +66,8 @@ if is_vision_available():
 if is_torch_available():
     import torch
 
-SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
 
-
+# Adapted from transformers.models.grounding_dino.image_processing_grounding_dino.GroundingDinoImageProcessorKwargs
 class GroundingDinoImageProcessorKwargs(ImagesKwargs, total=False):
     r"""
     format (`str`, *optional*, defaults to `AnnotationFormat.COCO_DETECTION`):
@@ -81,6 +80,9 @@ class GroundingDinoImageProcessorKwargs(ImagesKwargs, total=False):
 
     format: str | AnnotationFormat
     do_convert_annotations: bool
+
+
+SUPPORTED_ANNOTATION_FORMATS = (AnnotationFormat.COCO_DETECTION, AnnotationFormat.COCO_PANOPTIC)
 
 
 # inspired by https://github.com/facebookresearch/grounding_dino/blob/master/datasets/coco.py#L33

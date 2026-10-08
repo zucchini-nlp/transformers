@@ -27,33 +27,9 @@ from ...image_processing_backends import TorchvisionBackend
 from ...image_processing_utils import BatchFeature
 from ...image_transforms import group_images_by_shape, reorder_images
 from ...image_utils import OPENAI_CLIP_MEAN, OPENAI_CLIP_STD, ImageInput, PILImageResampling, SizeDict
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
-
-
-class Glm5NextImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    patch_size (`int`, *optional*, defaults to 14):
-        The spatial patch size of the vision encoder.
-    temporal_patch_size (`int`, *optional*, defaults to 2):
-        The temporal patch size of the vision encoder.
-    merge_size (`int`, *optional*, defaults to 2):
-        The merge size of the vision encoder to llm encoder.
-    patch_expand_factor (`int`, *optional*, defaults to 1):
-        The patch_expand_factor of the vision encoder to llm encoder.
-    min_image_tokens (`int`):
-        Minimum number of tokens per image.
-    max_image_tokens (`int`):
-        Maximum number of tokens per image.
-    """
-
-    patch_size: int
-    temporal_patch_size: int
-    merge_size: int
-    patch_expand_factor: int
-
-    min_image_tokens: int
-    max_image_tokens: int
+from .image_processing_pil_glm5_next import Glm5NextImageProcessorKwargs
 
 
 def smart_resize(

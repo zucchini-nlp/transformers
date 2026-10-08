@@ -1396,7 +1396,11 @@ def replace_unprotected_image_processing_imports(files: dict, all_imports: list)
     inside `image_processing_pil` instead of importing them directly from `.image_processing_xxx`, which would crash if
     torchvision is not installed.
     """
-    if not ("image_processing" in files and "image_processing_pil" in files):
+    if not any(item.endswith("ImageProcessorPil") for item in list(files["image_processing_pil"].keys())):
+        # If there's only torch processor - put `TypedDict` in torch file instead of PIL
+        # NOTE: PIL files content should comes first
+        files["image_processing"] = files["image_processing_pil"] | files["image_processing"]
+        del files["image_processing_pil"]
         return files
 
     body = files["image_processing_pil"]
@@ -1927,7 +1931,6 @@ def create_modules(
     # For each class defined in modular, potentially replace the node and add it with its dependencies
     for class_name, node in modular_mapper.classes.items():
         nodes_to_add, file_type, new_imports = get_class_node_and_dependencies(modular_mapper, class_name, node, files)
-
         if package_name != "transformers":
             # New imports involve new files like configuration_xxx.py, etc
             # Those are imported with relative imports by default in the modeling file

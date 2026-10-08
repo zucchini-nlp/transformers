@@ -26,24 +26,10 @@ from ...image_processing_backends import TorchvisionBackend
 from ...image_processing_utils import BatchFeature
 from ...image_transforms import get_resize_output_image_size, group_images_by_shape, reorder_images
 from ...image_utils import ChannelDimension, ImageInput, PILImageResampling, SizeDict
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
 from ...utils.import_utils import requires
-
-
-class PPFormulaNetImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    do_crop_margin (`bool`, *optional*, defaults to `self.do_crop_margin`):
-        Whether to crop the image margins.
-    do_thumbnail (`bool`, *optional*, defaults to `self.do_thumbnail`):
-        Whether to resize the image using thumbnail method.
-    do_align_long_axis (`bool`, *optional*, defaults to `self.do_align_long_axis`):
-        Whether to align the long axis of the image with the long axis of `size` by rotating by 90 degrees.
-    """
-
-    do_crop_margin: bool
-    do_thumbnail: bool
-    do_align_long_axis: bool
+from .image_processing_pil_pp_formulanet import PPFormulaNetImageProcessorKwargs
 
 
 @auto_docstring

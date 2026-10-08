@@ -30,6 +30,7 @@ from ...processing_utils import ImagesKwargs, Unpack
 from ...utils import TensorType, auto_docstring
 
 
+# Adapted from transformers.models.cohere_compass.image_processing_cohere_compass.CohereCompassImageProcessorKwargs
 class CohereCompassImageProcessorKwargs(ImagesKwargs, total=False):
     r"""
     min_pixels (`int`, *optional*, defaults to `56 * 56`):

@@ -27,22 +27,10 @@ from ...feature_extraction_utils import BatchFeature
 from ...image_processing_backends import TorchvisionBackend
 from ...image_transforms import group_images_by_shape, reorder_images
 from ...image_utils import PILImageResampling, SizeDict
-from ...processing_utils import ImagesKwargs
 from ...utils import auto_docstring, requires_backends
 from ...utils.constants import IMAGENET_STANDARD_MEAN, IMAGENET_STANDARD_STD
 from ...utils.generic import TensorType
-
-
-class PPOCRV6SmallRecImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    max_image_width (`int`, *optional*, defaults to `3200`):
-        Maximum image width used during resizing.
-    character_list (`list`, *optional*, defaults to `[]`):
-        Vocabulary list used for text recognition.
-    """
-
-    max_image_width: int
-    character_list: str
+from .image_processing_pil_pp_ocrv6_small_rec import PPOCRV6SmallRecImageProcessorKwargs
 
 
 @auto_docstring

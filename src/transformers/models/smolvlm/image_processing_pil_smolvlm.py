@@ -39,6 +39,7 @@ from ...processing_utils import ImagesKwargs, Unpack
 from ...utils import TensorType, auto_docstring
 
 
+# Adapted from transformers.models.smolvlm.image_processing_smolvlm.SmolVLMImageProcessorKwargs
 class SmolVLMImageProcessorKwargs(ImagesKwargs, total=False):
     """
     do_image_splitting (`bool`, *optional*, defaults to `True`):

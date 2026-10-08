@@ -29,30 +29,9 @@ from ...image_processing_backends import TorchvisionBackend
 from ...image_processing_utils import BatchFeature
 from ...image_transforms import group_images_by_shape, reorder_images
 from ...image_utils import OPENAI_CLIP_MEAN, OPENAI_CLIP_STD, ImageInput, PILImageResampling, SizeDict
-from ...processing_utils import ImagesKwargs, Unpack
+from ...processing_utils import Unpack
 from ...utils import TensorType, auto_docstring
-
-
-# Adapted from transformers.models.hunyuan_vl.image_processing_hunyuan_vl.HunYuanVLImageProcessorKwargs
-class HunYuanVLImageProcessorKwargs(ImagesKwargs, total=False):
-    r"""
-    min_pixels (`int`, *optional*, defaults to `512 * 512`):
-        The min pixels of the image to resize the image.
-    max_pixels (`int`, *optional*, defaults to `2048 * 2048`):
-        The max pixels of the image to resize the image.
-    patch_size (`int`, *optional*, defaults to 16):
-        The spatial patch size of the vision encoder.
-    temporal_patch_size (`int`, *optional*, defaults to 1):
-        The temporal patch size of the vision encoder.
-    merge_size (`int`, *optional*, defaults to 2):
-        The merge size of the vision encoder to llm encoder.
-    """
-
-    min_pixels: int
-    max_pixels: int
-    patch_size: int
-    temporal_patch_size: int
-    merge_size: int
+from .image_processing_pil_hunyuan_vl import HunYuanVLImageProcessorKwargs
 
 
 def smart_resize(

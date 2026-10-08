@@ -77,8 +77,8 @@ from ..glm_ocr.modeling_glm_ocr import (
     GlmOcrVisionModel,
     GlmOcrVisionPatchMerger,
 )
-from ..glmga.image_processing_glmga import GlmgaImageProcessor, GlmgaImageProcessorKwargs
-from ..glmga.image_processing_pil_glmga import GlmgaImageProcessorPil
+from ..glmga.image_processing_glmga import GlmgaImageProcessor
+from ..glmga.image_processing_pil_glmga import GlmgaImageProcessorKwargs, GlmgaImageProcessorPil
 from ..glmga.video_processing_glmga import GlmgaVideoProcessor, GlmgaVideoProcessorInitKwargs
 from ..inkling.modeling_inkling import causal_conv1d_fn, causal_conv1d_update
 from ..llama.modeling_llama import LlamaRMSNorm, eager_attention_forward
