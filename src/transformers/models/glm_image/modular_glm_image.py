@@ -172,7 +172,6 @@ class GlmImageConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=GlmImageVisionConfig),
         "vq_config": SubConfigSpec(config_class=GlmImageVQVAEConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

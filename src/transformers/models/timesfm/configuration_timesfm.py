@@ -50,8 +50,6 @@ class TimesFmConfig(PreTrainedConfig):
     """
 
     model_type = "timesfm"
-    keys_to_ignore_at_inference = []
-    is_encoder_decoder = False
 
     patch_length: int = 32
     context_length: int = 512
@@ -71,6 +69,7 @@ class TimesFmConfig(PreTrainedConfig):
     initializer_range: float = 0.02
     min_timescale: int = 1
     max_timescale: int = 10_000
+    is_encoder_decoder: bool = False
 
 
 __all__ = ["TimesFmConfig"]

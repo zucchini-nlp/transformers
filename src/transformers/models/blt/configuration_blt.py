@@ -204,7 +204,7 @@ class BltConfig(PreTrainedConfig):
     ```"""
 
     model_type = "blt"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     default_theta = 500000.0
     sub_configs_defaults = {
         "patcher_config": SubConfigSpec(config_class=BltPatcherConfig),

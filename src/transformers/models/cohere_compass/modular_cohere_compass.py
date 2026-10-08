@@ -81,7 +81,7 @@ class CohereCompassTextConfig(Cohere2Config):
 
     model_type = "cohere_compass_text"
     base_config_key = "text_config"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     ignore_keys_at_rope_validation = {"mrope_section", "mrope_interleaved"}
 
     rope_parameters: dict[str, RopeParameters | dict | float | str | int | None] | None = None

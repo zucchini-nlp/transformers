@@ -106,7 +106,7 @@ class DiaConfig(PreTrainedConfig):
     """
 
     model_type = "dia"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     sub_configs_defaults = {
         "encoder_config": SubConfigSpec(config_class=DiaEncoderConfig),
         "decoder_config": SubConfigSpec(config_class=DiaDecoderConfig),

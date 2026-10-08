@@ -119,7 +119,6 @@ class HunYuanVLTextConfig(PreTrainedConfig):
     """
 
     model_type = "hunyuan_vl_text"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     vocab_size: int = 290943
     hidden_size: int = 4096
@@ -262,7 +261,6 @@ class HunYuanVLConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=HunYuanVLVisionConfig),
         "text_config": SubConfigSpec(config_class=HunYuanVLTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

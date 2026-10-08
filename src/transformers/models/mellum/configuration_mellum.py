@@ -43,7 +43,6 @@ class MellumConfig(PreTrainedConfig):
     """
 
     model_type = "mellum"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     attribute_map = {
         "num_experts": "num_local_experts",

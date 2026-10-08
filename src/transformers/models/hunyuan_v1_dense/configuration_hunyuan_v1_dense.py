@@ -31,7 +31,6 @@ class HunYuanDenseV1Config(PreTrainedConfig):
     """
 
     model_type = "hunyuan_v1_dense"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     vocab_size: int = 290943
     hidden_size: int = 4096

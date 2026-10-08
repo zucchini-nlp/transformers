@@ -50,7 +50,7 @@ class Glm4vMoeTextConfig(PreTrainedConfig):
     ```"""
 
     model_type = "glm4v_moe_text"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     # Default tensor parallel plan for base model `Glm4vMoe`
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
@@ -188,7 +188,6 @@ class Glm4vMoeConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Glm4vMoeVisionConfig),
         "text_config": SubConfigSpec(config_class=Glm4vMoeTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

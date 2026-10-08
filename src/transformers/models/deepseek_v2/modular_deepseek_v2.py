@@ -92,7 +92,7 @@ class DeepseekV2Config(LlamaConfig):
     }
 
     model_type = "deepseek_v2"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     attribute_map = {
         "num_experts": "n_routed_experts",
     }

@@ -102,7 +102,7 @@ class GlmImageTextConfig(PreTrainedConfig):
 
     model_type = "glm_image_text"
     base_config_key = "text_config"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     # Default tensor parallel plan for base model `GlmImage`
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
@@ -172,7 +172,6 @@ class GlmImageConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=GlmImageVisionConfig),
         "vq_config": SubConfigSpec(config_class=GlmImageVQVAEConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

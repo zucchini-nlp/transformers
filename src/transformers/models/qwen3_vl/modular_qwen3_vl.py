@@ -194,7 +194,6 @@ class Qwen3VLConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Qwen3VLVisionConfig),
         "text_config": SubConfigSpec(config_class=Qwen3VLTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

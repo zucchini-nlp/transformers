@@ -41,7 +41,6 @@ class NemotronConfig(PreTrainedConfig):
     ```"""
 
     model_type = "nemotron"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     vocab_size: int = 256000
     hidden_size: int = 6144

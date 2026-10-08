@@ -152,7 +152,7 @@ class T5Gemma2Config(PreTrainedConfig):
     """
 
     model_type = "t5gemma2"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     sub_configs_defaults = {
         "encoder": SubConfigSpec(config_class=T5Gemma2EncoderConfig),
         "decoder": SubConfigSpec(config_class=T5Gemma2DecoderConfig),

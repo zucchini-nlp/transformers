@@ -62,10 +62,9 @@ class TimesFm2_5Config(PreTrainedConfig):
     """
 
     model_type = "timesfm2_5"
-    keys_to_ignore_at_inference = []
-    is_encoder_decoder = False
 
     patch_length: int = 32
+    is_encoder_decoder: bool = False
 
     context_length: int = 16384
     horizon_length: int = 128

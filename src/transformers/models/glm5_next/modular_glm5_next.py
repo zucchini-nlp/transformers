@@ -293,7 +293,6 @@ class Glm5NextConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Glm5NextVisionConfig),
         "text_config": SubConfigSpec(config_class=Glm5NextTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

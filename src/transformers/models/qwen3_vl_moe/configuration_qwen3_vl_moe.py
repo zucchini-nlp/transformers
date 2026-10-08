@@ -49,7 +49,6 @@ class Qwen3VLMoeTextConfig(PreTrainedConfig):
     ```"""
 
     model_type = "qwen3_vl_moe_text"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     attribute_map = {
         "num_experts": "num_local_experts",
@@ -173,7 +172,6 @@ class Qwen3VLMoeConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Qwen3VLMoeVisionConfig),
         "text_config": SubConfigSpec(config_class=Qwen3VLMoeTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

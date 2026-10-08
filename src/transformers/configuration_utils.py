@@ -352,6 +352,9 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin, Heterogeneous
             Whether or not the model should return a [`~transformers.utils.ModelOutput`] instead of a plain tuple.
         is_encoder_decoder (`bool`, *optional*, defaults to `False`):
             Whether the model is used as an encoder/decoder or not.
+        keys_to_ignore_at_inference (`list[str]`, *optional*, defaults to `["past_key_values"]]`):
+            A list of keys returned by the model during forward calls but should not be preserved in 
+            evaluation memory or concatenated across batches. Used only by `Trainer`.
         chunk_size_feed_forward (`int`, *optional*, defaults to `0`):
             The chunk size of all feed forward layers in the residual attention blocks. A chunk size of `0` means that
             the feed forward layer is not chunked. A chunk size of n means that the feed forward layer processes `n` <
@@ -415,6 +418,7 @@ class PreTrainedConfig(PushToHubMixin, RotaryEmbeddingConfigMixin, Heterogeneous
     dtype: str | torch.dtype | None = None
     chunk_size_feed_forward: int = 0
     is_encoder_decoder: bool = False
+    keys_to_ignore_at_inference: ClassVar[list[str]] = ["past_key_values"]
 
     # Fine-tuning task arguments
     id2label: dict[int, str] | dict[str, str] | None = None

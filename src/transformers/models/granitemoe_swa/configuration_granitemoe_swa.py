@@ -56,7 +56,6 @@ class GraniteMoeSWAConfig(PreTrainedConfig):
     ```"""
 
     model_type = "granitemoe_swa"
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     vocab_size: int = 32000
     hidden_size: int = 4096

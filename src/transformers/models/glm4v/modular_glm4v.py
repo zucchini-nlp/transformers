@@ -130,7 +130,7 @@ class Glm4vTextConfig(PreTrainedConfig):
 
     model_type = "glm4v_text"
     base_config_key = "text_config"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     # Default tensor parallel plan for base model `Glm4v`
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
@@ -200,7 +200,6 @@ class Glm4vConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Glm4vVisionConfig),
         "text_config": SubConfigSpec(config_class=Glm4vTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: dict | PreTrainedConfig | None = None
     vision_config: dict | PreTrainedConfig | None = None

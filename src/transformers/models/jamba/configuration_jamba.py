@@ -49,7 +49,7 @@ class JambaConfig(PreTrainedConfig):
     """
 
     model_type = "jamba"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     attribute_map = {
         "num_local_experts": "num_experts",
     }

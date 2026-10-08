@@ -179,7 +179,6 @@ class Cosmos3EdgeConfig(PreTrainedConfig):
         "vision_config": SubConfigSpec(config_class=Cosmos3EdgeVisionConfig),
         "text_config": SubConfigSpec(config_class=Cosmos3EdgeTextConfig),
     }
-    keys_to_ignore_at_inference = ["past_key_values"]
 
     text_config: Cosmos3EdgeTextConfig | dict | None = None
     vision_config: Cosmos3EdgeVisionConfig | dict | None = None

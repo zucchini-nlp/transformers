@@ -83,7 +83,7 @@ class Glm4vMoeTextConfig(Glm4MoeConfig):
 
     model_type = "glm4v_moe_text"
     base_config_key = "text_config"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     # Default tensor parallel plan for base model `Glm4vMoe`
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",

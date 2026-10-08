@@ -61,7 +61,7 @@ class ApertusConfig(PreTrainedConfig):
     ```"""
 
     model_type = "apertus"
-    keys_to_ignore_at_inference = ["past_key_values"]
+
     default_theta = 12000000.0
     base_model_tp_plan = {
         "layers.*.self_attn.q_proj": "colwise",
