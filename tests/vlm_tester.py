@@ -14,7 +14,6 @@
 
 import copy
 import unittest
-from inspect import signature
 
 from .multimodal_tester import MultiModalModelTest, MultiModalModelTester
 from .test_modeling_common import (
@@ -71,6 +70,7 @@ class VLMModelTester(MultiModalModelTester):
         kwargs.setdefault("vision_feature_layer", -1)
         kwargs.setdefault("tie_word_embeddings", False)
         kwargs.setdefault("num_image_tokens", (kwargs["image_size"] // kwargs["patch_size"]) ** 2)
+        kwargs.setdefault("vision_rope_parameters", {"rope_type": "axial", "rope_theta": 10_000})
 
         super().__init__(parent, **kwargs)
 
@@ -86,6 +86,11 @@ class VLMModelTester(MultiModalModelTester):
         return floats_tensor([batch_size, self.num_channels, self.image_size, self.image_size], scale=1.0)
 
     def place_image_tokens(self, input_ids, config):
+        # Images of single token usually don't stuble upon edge cases like real model
+        # Lets enforce bigger images for better testing
+        if self.num_image_tokens == 1:
+            raise ValueError("You must use a bigger test image to occupy at least `2` tokens.")
+
         # Override if the image tokens shouldn't be placed at the start of the test sequence
         image_token_id = getattr(config, "image_token_id", self.image_token_id)
         # Clear any accidental image tokens first
@@ -102,26 +107,17 @@ class VLMModelTester(MultiModalModelTester):
         return super()._special_token_ids | {self.image_token_id}
 
     def _build_modality_sub_configs(self):
-        return {"vision_config": self.get_vision_config()}
+        sub_configs = {}
+        for key, specs in self.config_class.sub_configs_defaults.items():
+            subconfig_cls = self._resolve_config_cls(specs)
+            sub_configs[key] = self._build_sub_config(subconfig_cls, prefix=key[:-7])
+        return sub_configs
 
     def _prepare_modality_inputs(self, input_ids, config, batch_size: int | None = None):
         pixel_values = self.create_pixel_values(batch_size=batch_size)
         input_ids = self.place_image_tokens(input_ids, config)
         additional_inputs = self.get_additional_inputs(config, input_ids, pixel_values, batch_size=batch_size)
         return input_ids, {"pixel_values": pixel_values, **additional_inputs}
-
-    # -- Vision sub-config construction ------------------------------------------------------
-
-    @property
-    def vision_config_args(self):
-        return list(signature(self.vision_config_class.__init__).parameters.keys())
-
-    def get_vision_config(self):
-        kwargs = self._collect_kwargs(self.vision_config_args, self.vision_config_class)
-        # do not use the same rope config as LM backbone, vision will always use axial rope (i hope)
-        if "rope_parameters" in kwargs:
-            kwargs["rope_parameters"] = {"rope_type": "axial", "rope_theta": 10_000}
-        return self.vision_config_class(**kwargs)
 
 
 class VLMModelTest(MultiModalModelTest):

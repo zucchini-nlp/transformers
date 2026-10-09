@@ -129,7 +129,7 @@ def get_tiny_audio_config(tester) -> "ParakeetEncoderConfig":
 def set_omni_tester_defaults(kwargs):
     """Sizes shared by the vision and audio testers. Both build the full model (vision, audio and a tiny hybrid
     NemotronH language model); they only differ in which modality they feed."""
-    kwargs.setdefault("image_size", 32)
+    kwargs.setdefault("image_size", 64)
     kwargs.setdefault("patch_size", 16)
     kwargs.setdefault("downsample_ratio", 0.5)
     kwargs.setdefault("vision_hidden_size", 32)
@@ -154,8 +154,8 @@ class NemotronHOmniVision2TextModelTester(VLMModelTester):
 
     def __init__(self, parent, **kwargs):
         set_omni_tester_defaults(kwargs)
-        # a (32 // 16) ** 2 patch grid pixel-shuffles 2x2 into a single image token
-        kwargs.setdefault("num_image_tokens", 1)
+        # a (64 // 16) ** 2 patch grid pixel-shuffles 2x2 into a single image token
+        kwargs.setdefault("num_image_tokens", 4)
         super().__init__(parent, **kwargs)
 
     @property

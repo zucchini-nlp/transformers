@@ -99,18 +99,6 @@ class HunYuanVLVisionText2TextModelTester(VLMModelTester):
         self.device = torch_device
         self.grid_hw = self.image_size // self.patch_size
         self.num_image_patches = self.grid_hw**2
-        self.num_image_placeholder_tokens = self.num_image_tokens
-
-    def get_config(self):
-        return HunYuanVLConfig(
-            attn_implementation="eager",
-            text_config=self.get_text_config().to_dict(),
-            vision_config=self.get_vision_config().to_dict(),
-            image_token_id=self.image_token_id,
-        )
-
-    def create_attention_mask(self, input_ids):
-        return torch.ones_like(input_ids, device=torch_device)
 
     def create_pixel_values(self, batch_size: int | None = None):
         # Override to 5D for patch-based models
@@ -118,12 +106,6 @@ class HunYuanVLVisionText2TextModelTester(VLMModelTester):
         return floats_tensor(
             [batch_size * self.num_image_patches, self.num_channels * self.patch_size * self.patch_size]
         ).to(torch_device)
-
-    def place_image_tokens(self, input_ids, config):
-        input_ids = input_ids.clone()
-        input_ids[input_ids == self.image_token_id] = config.text_config.pad_token_id
-        input_ids[:, : self.num_image_placeholder_tokens] = self.image_token_id
-        return input_ids
 
     def get_additional_inputs(self, config, input_ids, pixel_values, batch_size: int | None = None):
         batch_size = batch_size if batch_size is not None else self.batch_size
@@ -137,10 +119,6 @@ class HunYuanVLVisionText2TextModelTester(VLMModelTester):
     def prepare_config_and_inputs(self):
         config, inputs_dict = self.prepare_config_and_inputs_for_common()
         config.text_config.rope_parameters["mrope_section"] = [2, 2, 2, 2]
-        # HunYuanVL uses 4 multimodal RoPE axes: position, width, height, and temporal.
-        inputs_dict["position_ids"] = (
-            torch.arange(self.seq_length, device=torch_device).view(1, 1, -1).expand(4, self.batch_size, -1)
-        )
         return config, inputs_dict
 
 

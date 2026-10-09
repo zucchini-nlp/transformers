@@ -92,6 +92,8 @@ class Glm5NextVisionText2TextModelTester(VLMModelTester):
         kwargs.setdefault("mlp_layer_types", ["dense", "sparse"])
         kwargs.setdefault("layer_types", ["linear_attention", "indexed_attention"])
         super().__init__(parent, **kwargs)
+        self.num_heads = self.num_attention_heads
+        self.out_hidden_size = self.hidden_size
 
     def create_pixel_values(self, batch_size: int | None = None):
         # Override to 5D for patch-based models
@@ -103,15 +105,18 @@ class Glm5NextVisionText2TextModelTester(VLMModelTester):
             ]
         )
 
+    @property
+    def _special_token_ids(self):
+        return super()._special_token_ids | {
+            self.video_token_id,
+            self.video_start_token_id,
+            self.image_start_token_id,
+            self.video_end_token_id,
+            self.image_end_token_id,
+        }
+
     def place_image_tokens(self, input_ids, config):
         input_ids = input_ids.clone()
-        # Clear any accidental special tokens first
-        input_ids[input_ids == self.video_token_id] = self.pad_token_id
-        input_ids[input_ids == self.image_token_id] = self.pad_token_id
-        input_ids[input_ids == self.video_start_token_id] = self.pad_token_id
-        input_ids[input_ids == self.image_start_token_id] = self.pad_token_id
-        input_ids[input_ids == self.video_end_token_id] = self.pad_token_id
-        input_ids[input_ids == self.image_end_token_id] = self.pad_token_id
         # Place image tokens with image start/end prefix/suffix
         input_ids[:, 0] = self.image_start_token_id
         input_ids[:, 1 : 1 + self.num_image_tokens] = self.image_token_id
@@ -129,32 +134,6 @@ class Glm5NextVisionText2TextModelTester(VLMModelTester):
             ),
             "mm_token_type_ids": mm_token_type_ids,
         }
-
-    def get_vision_config(self):
-        return self.vision_config_class(
-            depth=self.depth,
-            hidden_act=self.hidden_act,
-            hidden_size=self.hidden_size,
-            num_heads=self.num_attention_heads,
-            out_hidden_size=self.hidden_size,
-            intermediate_size=self.intermediate_size,
-            projection_intermediate_size=self.projection_intermediate_size,
-            patch_size=self.patch_size,
-            spatial_merge_size=self.spatial_merge_size,
-            temporal_patch_size=self.temporal_patch_size,
-        )
-
-    def get_config(self):
-        return self.config_class(
-            text_config=self.get_text_config(),
-            vision_config=self.get_vision_config(),
-            image_token_id=self.image_token_id,
-            video_token_id=self.video_token_id,
-            video_start_token_id=self.video_start_token_id,
-            video_end_token_id=self.video_end_token_id,
-            image_start_token_id=self.image_start_token_id,
-            image_end_token_id=self.image_end_token_id,
-        )
 
 
 @require_torch

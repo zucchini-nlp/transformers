@@ -124,19 +124,6 @@ class Qwen3VLVisionText2TextModelTester(VLMModelTester):
             "mm_token_type_ids": mm_token_type_ids,
         }
 
-    def get_config(self):
-        # Qwen3VLConfig expects text_config and vision_config as dicts, not config objects
-        return self.config_class(
-            text_config=self.get_text_config().to_dict(),
-            vision_config=self.get_vision_config().to_dict(),
-            image_token_id=self.image_token_id,
-            video_token_id=self.video_token_id,
-            vision_start_token_id=self.vision_start_token_id,
-            vision_end_token_id=self.vision_end_token_id,
-            tie_word_embeddings=self.tie_word_embeddings,
-            pad_token_id=self.pad_token_id,
-        )
-
 
 @require_torch
 class Qwen3VLModelTest(VLMModelTest, unittest.TestCase):

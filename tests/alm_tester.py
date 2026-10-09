@@ -151,7 +151,7 @@ class ALMModelTester(MultiModalModelTester):
         return list(signature(self.audio_config_class.__init__).parameters.keys())
 
     def get_audio_config(self):
-        kwargs = self._collect_kwargs(self.audio_config_args, self.audio_config_class)
+        kwargs = self._collect_kwargs(self.audio_config_args, self.audio_config_class, prefix="audio")
         return self.audio_config_class(**kwargs)
 
 

@@ -81,9 +81,6 @@ class GraniteSpeechModelTester(ALMModelTester):
         num_audio_tokens = nblocks * (config.window_size // config.downsample_rate)
         return torch.ones([self.batch_size, num_audio_tokens], dtype=torch.long).to(torch_device)
 
-    def create_attention_mask(self, input_ids):
-        return torch.ones(input_ids.shape, dtype=torch.long).to(torch_device)
-
     def create_and_check_granite_speech_model_fp16_forward(self, config, input_ids, input_features, attention_mask):
         model = GraniteSpeechForConditionalGeneration(config=config)
         model.to(torch_device)

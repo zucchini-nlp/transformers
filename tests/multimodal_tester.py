@@ -14,6 +14,7 @@
 from copy import deepcopy
 from inspect import signature
 
+from transformers import PreTrainedConfig
 from transformers.testing_utils import _TEXT_MODEL_TESTER_DEFAULTS
 
 from .test_configuration_common import ConfigTester
@@ -29,7 +30,7 @@ from .test_pipeline_mixin import PipelineTesterMixin
 
 
 if is_torch_available():
-    import torch
+    pass
 
 
 class MultiModalModelTester:
@@ -106,7 +107,7 @@ class MultiModalModelTester:
 
     def create_attention_mask(self, input_ids):
         """Default causal (lower-triangular) attention mask. Override for bidirectional models like Gemma3."""
-        return torch.tril(torch.ones_like(input_ids).to(torch_device))
+        return input_ids.ne(self.pad_token_id).to(torch_device)
 
     def get_additional_inputs(self, config, input_ids, modality_inputs, batch_size: int | None = None):
         """Model-specific extra inputs (e.g. LlavaNext `image_sizes`, Qwen3VL `mm_token_type_ids`).
@@ -174,7 +175,7 @@ class MultiModalModelTester:
                 args.append(token_arg)
         return args
 
-    def _collect_kwargs(self, sig_keys, config_class):
+    def _collect_kwargs(self, sig_keys, config_class, prefix=""):
         """Collect kwargs for ``config_class`` by matching ``sig_keys`` (and its ``attribute_map``) against ``self``."""
         attribute_map = getattr(config_class, "attribute_map", {})
         model_name_to_common_name = {v: k for k, v in attribute_map.items()}
@@ -184,7 +185,9 @@ class MultiModalModelTester:
             # from pointing to the same object. For ex: both might share the "same"
             # `rope_params` and overriding the value for text config causes an override
             # for all other subconfig, messing up with test settings
-            if hasattr(self, k) and k != "self":
+            if prefix is not None and hasattr(self, f"{prefix}_{k}") and k != "self":
+                kwargs[k] = deepcopy(getattr(self, f"{prefix}_{k}"))
+            elif hasattr(self, k) and k != "self":
                 kwargs[k] = deepcopy(getattr(self, k))
             elif k in model_name_to_common_name and hasattr(self, model_name_to_common_name[k]):
                 kwargs[k] = deepcopy(getattr(self, model_name_to_common_name[k]))
@@ -199,6 +202,23 @@ class MultiModalModelTester:
     def get_text_config(self):
         kwargs = self._collect_kwargs(self.text_config_args, self.text_config_class)
         return self.text_config_class(**kwargs)
+
+    def _resolve_config_cls(self, specs):
+        if issubclass(specs.config_class, PreTrainedConfig):
+            return specs.config_class
+        return specs.get_config_class(specs.model_type)
+
+    def _build_sub_config(self, config_cls, prefix):
+        sig = list(signature(config_cls.__init__).parameters.keys())
+        kwargs = self._collect_kwargs(sig, config_cls, prefix=prefix)
+
+        # Recurse into nested sub-configs, if the class declares any
+        nested_defaults = getattr(config_cls, "sub_configs_defaults", None) or {}
+        for key, specs in nested_defaults.items():
+            nested_cls = self._resolve_config_cls(specs)
+            kwargs[key] = self._build_sub_config(nested_cls, prefix=f"{prefix}_{key[:-7]}")
+
+        return config_cls(**kwargs)
 
     def create_and_check_model(
         self, config, input_ids, token_type_ids, input_mask, sequence_labels, token_labels, choice_labels
