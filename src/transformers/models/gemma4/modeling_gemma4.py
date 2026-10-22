@@ -49,6 +49,7 @@ from ...modeling_layers import GradientCheckpointingLayer
 from ...modeling_outputs import BaseModelOutputWithPast, BaseModelOutputWithPooling
 from ...modeling_rope_utils import ROPE_INIT_FUNCTIONS, dynamic_rope_update
 from ...modeling_utils import ALL_ATTENTION_FUNCTIONS, PreTrainedModel
+from ...multimodal_modeling_utils import MultimodalModelMixin
 from ...processing_utils import Unpack
 from ...utils import (
     ModelOutput,
@@ -56,7 +57,6 @@ from ...utils import (
     auto_docstring,
     can_return_tuple,
     is_accelerate_available,
-    torch_compilable_check,
 )
 from ...utils.generic import merge_with_config_defaults
 from ...utils.output_capturing import OutputRecorder, capture_outputs
@@ -2150,10 +2150,7 @@ def get_block_sequence_ids_for_mask(mm_token_type_ids: torch.Tensor, device: tor
     language modeling head.
     """
 )
-class Gemma4Model(Gemma4PreTrainedModel):
-    # we are filtering the logits/labels so we shouldn't divide the loss based on num_items_in_batch
-    accepts_loss_kwargs = False
-
+class Gemma4Model(Gemma4PreTrainedModel, MultimodalModelMixin):
     def __init__(self, config: Gemma4Config):
         super().__init__(config)
         self.vision_tower = AutoModel.from_config(config.vision_config) if config.vision_config is not None else None
@@ -2175,8 +2172,6 @@ class Gemma4Model(Gemma4PreTrainedModel):
         )
         self.post_init()
 
-    @can_return_tuple
-    @auto_docstring(custom_intro="Projects the last hidden state from the vision model into language model space.")
     def get_image_features(
         self,
         pixel_values: torch.FloatTensor,
@@ -2201,51 +2196,6 @@ class Gemma4Model(Gemma4PreTrainedModel):
         split_sizes = (non_pad_mask.sum(dim=-1) // k_squared).tolist()
         vision_outputs.pooler_output = torch.split(pooler_output, split_sizes)
         return vision_outputs
-
-    def get_placeholder_mask(
-        self,
-        input_ids: torch.LongTensor | None = None,
-        inputs_embeds: torch.FloatTensor | None = None,
-    ) -> tuple[torch.BoolTensor, torch.BoolTensor, torch.BoolTensor]:
-        """
-        Obtains mask for multimodal placeholders (replaced by soft tokens) and hard text tokens.
-
-        Masks will be obtained from `mm_token_type_ids`, `input_ids`, or `inputs_embeds` as available and in that
-        precedence order. If passing `input_ids` or `inputs_embeds`, the image mask will be derived using
-        `config.image_token_id`. Same goes for audio and video masks
-
-        Args:
-            input_ids: A tensor containing the hard token IDs from the text tokenizer.
-            inputs_embeds: A tensor containing the embeddings for all hard text tokens.
-
-        Returns:
-            image_mask, video_mask, audio_mask
-        """
-        if input_ids is not None:
-            special_image_mask = input_ids == self.config.image_token_id
-            special_video_mask = input_ids == self.config.video_token_id
-            special_audio_mask = input_ids == self.config.audio_token_id
-        else:
-            special_image_mask = (
-                inputs_embeds
-                == self.get_input_embeddings()(
-                    torch.full((), self.config.image_token_id, dtype=torch.long, device=inputs_embeds.device)
-                )
-            ).all(-1)
-            special_video_mask = (
-                inputs_embeds
-                == self.get_input_embeddings()(
-                    torch.full((), self.config.video_token_id, dtype=torch.long, device=inputs_embeds.device)
-                )
-            ).all(-1)
-            special_audio_mask = (
-                inputs_embeds
-                == self.get_input_embeddings()(
-                    torch.full((), self.config.audio_token_id, dtype=torch.long, device=inputs_embeds.device)
-                )
-            ).all(-1)
-
-        return special_image_mask, special_video_mask, special_audio_mask
 
     @merge_with_config_defaults
     @can_return_tuple
@@ -2291,95 +2241,36 @@ class Gemma4Model(Gemma4PreTrainedModel):
         if input_ids is not None and per_layer_inputs is not None:
             raise ValueError("You cannot specify per_layer_inputs if input_ids is provided")
 
-        if (pixel_values is not None or pixel_values_videos is not None) and mm_encoder_outputs is not None:
-            raise ValueError(
-                "You cannot specify both pixel_values/pixel_values_videos and mm_encoder_outputs at the same time"
-            )
+        needs_per_layer_inputs = per_layer_inputs is None and self.config.get_text_config().hidden_size_per_layer_input
+        llm_input_ids = llm_inputs_embeds = None
+        if inputs_embeds is None or needs_per_layer_inputs:
+            multimodal_mask = self._get_multimodal_mask(input_ids, inputs_embeds)  # ids if given, else embeds
 
-        image_mask, video_mask, audio_mask = self.get_placeholder_mask(input_ids, inputs_embeds)
-        multimodal_mask = image_mask | video_mask | audio_mask
+            if input_ids is not None:
+                llm_input_ids = input_ids.masked_fill(multimodal_mask, self.config.text_config.pad_token_id)
+            if inputs_embeds is None:
+                inputs_embeds = llm_inputs_embeds = self.get_input_embeddings()(llm_input_ids)
+            else:
+                pad_embedding = self.language_model.embed_tokens.weight[self.config.text_config.pad_token_id]
+                llm_inputs_embeds = torch.where(
+                    multimodal_mask.to(inputs_embeds.device)[..., None], pad_embedding, inputs_embeds
+                )
 
-        # Replace image id with PAD if the image token if OOV, to avoid index-errors
-        llm_input_ids = None
-        if inputs_embeds is None:
-            llm_input_ids = input_ids.clone()
-            llm_input_ids = torch.where(multimodal_mask, self.config.text_config.pad_token_id, llm_input_ids)
-            inputs_embeds = self.get_input_embeddings()(llm_input_ids)
+            if needs_per_layer_inputs:
+                per_layer_inputs = self.language_model.get_per_layer_inputs(llm_input_ids, llm_inputs_embeds)
 
-        if per_layer_inputs is None and self.config.get_text_config().hidden_size_per_layer_input:
-            pad_embedding = self.language_model.embed_tokens.weight[self.config.text_config.pad_token_id, :]
-            multimodal_mask = multimodal_mask.to(inputs_embeds.device)
-            llm_inputs_embeds = torch.where(multimodal_mask[..., None], pad_embedding.view(1, 1, -1), inputs_embeds)
-            per_layer_inputs = self.language_model.get_per_layer_inputs(llm_input_ids, llm_inputs_embeds)
-
-        # Merge text and images
-        mm_encoder_outputs = mm_encoder_outputs if mm_encoder_outputs is not None else {}
-        if mm_encoder_outputs.get("image") is None and pixel_values is not None:
-            mm_encoder_outputs["image"] = self.get_image_features(pixel_values, image_position_ids, return_dict=True)
-
-        if mm_encoder_outputs.get("image") is not None:
-            image_features = torch.cat(mm_encoder_outputs["image"].pooler_output, dim=0).to(
-                inputs_embeds.device, inputs_embeds.dtype
-            )
-
-            # Confirm the number of soft tokens from the vision tower matches the number of slots in the embeddings.
-            n_image_tokens = image_mask.sum()
-            image_mask = image_mask.unsqueeze(-1).expand_as(inputs_embeds).to(inputs_embeds.device)
-            torch_compilable_check(
-                inputs_embeds[image_mask].numel() == image_features.numel(),
-                f"Image features and image tokens do not match, tokens: {n_image_tokens}, features:"
-                f" {image_features.shape[0]}",
-            )
-
-            inputs_embeds = inputs_embeds.masked_scatter(
-                image_mask.to(inputs_embeds.device), image_features.to(inputs_embeds.device)
-            )
-
-        if mm_encoder_outputs.get("video") is None and pixel_values_videos is not None:
-            mm_encoder_outputs["video"] = self.get_video_features(
-                pixel_values_videos, video_position_ids, return_dict=True
-            )
-
-        if mm_encoder_outputs.get("video") is not None:
-            video_features = torch.cat(mm_encoder_outputs["video"].pooler_output, dim=0).to(
-                inputs_embeds.device, inputs_embeds.dtype
-            )
-
-            # Confirm the number of soft tokens from the vision tower matches the number of slots in the embeddings.
-            n_video_tokens = video_mask.sum()
-            video_mask = video_mask.unsqueeze(-1).expand_as(inputs_embeds).to(inputs_embeds.device)
-            torch_compilable_check(
-                inputs_embeds[video_mask].numel() == video_features.numel(),
-                f"Video features and video tokens do not match, tokens: {n_video_tokens}, features:"
-                f" {video_features.shape[0]}",
-            )
-
-            inputs_embeds = inputs_embeds.masked_scatter(
-                video_mask.to(inputs_embeds.device), video_features.to(inputs_embeds.device)
-            )
-
-        # Merge text and audio
-        if input_features is not None and input_features_mask is not None:
-            audio_output = self.get_audio_features(input_features, input_features_mask, return_dict=True)
-            audio_features = audio_output.pooler_output
-            audio_mask_from_encoder = audio_output.attention_mask  # True = valid
-
-            # Strip padding tokens: only keep real (non-padding) audio soft tokens.
-            # audio_mask_from_encoder is True for valid positions, False for padding tokens.
-            # This mirrors the vision encoder's padding stripping (see Gemma4VisionEncoder.forward).
-            audio_features = audio_features[audio_mask_from_encoder.to(audio_features.device)]
-
-            n_audio_tokens = audio_mask.sum()
-            audio_mask = audio_mask.unsqueeze(-1).expand_as(inputs_embeds).to(inputs_embeds.device)
-            torch_compilable_check(
-                inputs_embeds[audio_mask].numel() == audio_features.numel(),
-                f"Audio features and audio tokens do not match, tokens: {n_audio_tokens}, features:"
-                f" {audio_features.shape[0] * audio_features.shape[1]}",
-            )
-
-            inputs_embeds = inputs_embeds.masked_scatter(
-                audio_mask.to(inputs_embeds.device), audio_features.to(inputs_embeds.device, inputs_embeds.dtype)
-            )
+        inputs_embeds, mm_encoder_outputs = self.merge_multimodal_embeddings(
+            inputs_embeds=inputs_embeds,
+            input_ids=input_ids,
+            pixel_values=pixel_values,
+            pixel_values_videos=pixel_values_videos,
+            input_features=input_features,
+            image_kwargs={"image_position_ids": image_position_ids},
+            video_kwargs={"video_position_ids": video_position_ids},
+            audio_kwargs={"input_features_mask": input_features_mask},
+            mm_encoder_outputs=mm_encoder_outputs,
+            **kwargs,  # pass over output-xxx or attn-kwargs
+        )
 
         # It may already have been prepared by, e.g., `generate`
         if position_ids is None:
@@ -2426,8 +2317,8 @@ class Gemma4Model(Gemma4PreTrainedModel):
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
-            image_hidden_states=image_features if mm_encoder_outputs.get("image") is not None else None,
-            audio_hidden_states=audio_features if input_features is not None else None,
+            image_hidden_states=mm_encoder_outputs.get("image") if mm_encoder_outputs is not None else None,
+            audio_hidden_states=mm_encoder_outputs.get("audio") if mm_encoder_outputs is not None else None,
             shared_kv_states=outputs.shared_kv_states,
             router_logits=outputs.router_logits,
         )
@@ -2438,20 +2329,12 @@ class Gemma4Model(Gemma4PreTrainedModel):
     def set_per_layer_input_embeddings(self, value):
         self.language_model.embed_tokens_per_layer = value
 
-    @can_return_tuple
-    @auto_docstring(custom_intro="Projects the last hidden state from the audio encoder into language model space.")
     def get_audio_features(
         self,
         input_features: torch.Tensor,
         input_features_mask: torch.Tensor,
         **kwargs: Unpack[TransformersKwargs],
     ) -> tuple | Gemma4AudioModelOutput:
-        r"""
-        input_features (`torch.FloatTensor` of shape `(num_images, seq_length, num_features)`):
-            The tensors corresponding to the input audio.
-        input_features_mask (`torch.FloatTensor` of shape `(num_images, seq_length)`):
-            The attention mask for the input audio.
-        """
         if self.audio_tower is None:
             raise ValueError(
                 "Audio features were requested, but the model was initialized without an audio_config. "
@@ -2459,12 +2342,15 @@ class Gemma4Model(Gemma4PreTrainedModel):
             )
 
         audio_outputs = self.audio_tower(input_features, input_features_mask, return_dict=True, **kwargs)
-        audio_outputs.pooler_output = self.embed_audio(inputs_embeds=audio_outputs.last_hidden_state)
+        audio_features = self.embed_audio(inputs_embeds=audio_outputs.last_hidden_state)
+
+        # Strip padding tokens: only keep real (non-padding) audio soft tokens.
+        # This mirrors the vision encoder's padding stripping (see Gemma4VisionEncoder.forward).
+        audio_mask_from_encoder = audio_outputs.attention_mask  # True = valid
+        audio_outputs.pooler_output = audio_features[audio_mask_from_encoder.to(audio_features.device)]
 
         return audio_outputs
 
-    @can_return_tuple
-    @auto_docstring(custom_intro="Projects the last hidden state from the vision encoder into language model space.")
     def get_video_features(
         self,
         pixel_values_videos: torch.FloatTensor,

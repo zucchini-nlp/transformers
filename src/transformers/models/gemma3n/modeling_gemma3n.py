@@ -1936,9 +1936,6 @@ class Gemma3nMultimodalEmbedder(nn.Module):
     """
 )
 class Gemma3nModel(Gemma3nPreTrainedModel):
-    # we are filtering the logits/labels so we shouldn't divide the loss based on num_items_in_batch
-    accepts_loss_kwargs = False
-
     def __init__(self, config: Gemma3nConfig):
         super().__init__(config)
         self.vision_tower = AutoModel.from_config(config=config.vision_config)
@@ -2194,7 +2191,6 @@ class Gemma3nModel(Gemma3nPreTrainedModel):
 )
 class Gemma3nForConditionalGeneration(Gemma3nPreTrainedModel, GenerationMixin):
     _tied_weights_keys = {"lm_head.weight": "model.language_model.embed_tokens.weight"}
-    accepts_loss_kwargs = False
 
     def __init__(self, config: Gemma3nConfig):
         super().__init__(config)
