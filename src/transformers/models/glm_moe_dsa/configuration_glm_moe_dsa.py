@@ -82,10 +82,9 @@ class GlmMoeDsaConfig(PreTrainedConfig):
         "norm": (["hidden_states"], ["hidden_states"]),
     }
     base_model_ep_plan = {
-        "layers.*.mlp.gate": "ep_router",
         "layers.*.mlp.experts.gate_up_proj": "grouped_gemm",
         "layers.*.mlp.experts.down_proj": "grouped_gemm",
-        "layers.*.mlp.experts": "moe_tp_experts",
+        "layers.*.mlp.experts": "ep_dispatch_experts",
     }
 
     attribute_map = {"num_local_experts": "n_routed_experts"}
@@ -161,10 +160,6 @@ class GlmMoeDsaConfig(PreTrainedConfig):
         # BC: re-route `num_experts` to `n_routed_experts`
         if (num_experts := kwargs.get("num_experts")) is not None:
             self.n_routed_experts = num_experts
-        # Default to MoE from the second layer and on
-        if self.mlp_layer_types is None:
-            self.mlp_layer_types = ["dense"] + ["sparse"] * (self.num_hidden_layers - 1)
-        self.qk_head_dim = self.qk_nope_head_dim + self.qk_rope_head_dim
         super().__post_init__(**kwargs)
 
 
